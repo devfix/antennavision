@@ -1,0 +1,2 @@
+HertzianDipole:
+"0", "-1e-3 * sin(theta)", "0"

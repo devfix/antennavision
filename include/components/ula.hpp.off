@@ -1,0 +1,36 @@
+//
+// Created by Tristan Krause on 2026-04-28.
+//
+
+
+#pragma once
+
+#include <vector>
+#include "iradiator.hpp"
+#include "types.hpp"
+
+
+template <typename ElementType>
+struct ULA : IRadiator
+{
+    ULA(complex_t pos, double alpha, int num, double distance) : IRadiator(pos, alpha)
+    {
+        double const length = distance * (num - 1);
+        for (int k = 0u; k < num; k++)
+        {
+            elements_.emplace_back(complex_t{0, -length / 2 + distance * k}, 0);
+        }
+    }
+    [[nodiscard]] complex_t get_relative_gain(complex_t pos, double freq) const final
+    {
+        complex_t v{0,0};
+        for(auto const& element : elements_)
+        {
+            v += element.get_gain(pos, freq);
+        }
+        return v;
+    }
+
+private:
+    std::vector<ElementType> elements_;
+};

@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "setup_name": "Test_Setup_1"
+  },
+  "references": [
+    {
+      "id": "ref0",
+      "origin": null,
+      "translation": {
+        "x": 6,
+        "y": 7,
+        "z": 8
+      },
+      "rotation": {
+        "yaw": 0.0,
+        "pitch": 0.2,
+        "roll": 0.2
+      }
+    },
+    {
+      "id": "ref1",
+      "origin": "ref0",
+      "translation": {
+        "x": 6,
+        "y": 7,
+        "z": 8
+      },
+      "rotation": {
+        "yaw": 0.0,
+        "pitch": 0.0,
+        "roll": 0.5
+      }
+    }
+  ],
+  "sources": [
+    {
+      "id": "source_1",
+      "type": "SignalSource",
+      "power_dbm": 10.0
+    }
+  ],
+  "radiators": [
+    {
+      "id": "radiator_1",
+      "reference": "",
+      "type": "HertzianDipole",
+      "length": 1e-3
+    },
+    {
+      "id": "radiator_2",
+      "reference": "",
+      "type": "CustomRadiator",
+      "effective_length": [
+        "0",
+        "cos(pi/2*cos(theta))/sin(theta+1e-12)",
+        "sin(phi/2)^3"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "source_1#0",
+      "to": "radiator_1#0"
+    }
+  ],
+  "tasks": [
+    {
+      "type": "plot_directivity_over_theta",
+      "radiator": "radiator_1",
+      "phis": [0.0, 1.0]
+    },
+    {
+      "type": "plot_directivity_over_theta",
+      "radiator": "radiator_2",
+      "phis": [0.0, 0.5, 1.0]
+    },
+    {
+      "type": "plot_radiation_pattern",
+      "radiator": "radiator_2",
+      "plane": (x1,y1,z1) , (x2,y2,z2);
+    },
+    {
+      "type": "plot_radiation_pattern",
+      "radiator": "radiator_2",
+      "plane": (x1,y1,z1) , (x2,y2,z2);
+    }
+  ]
+}
