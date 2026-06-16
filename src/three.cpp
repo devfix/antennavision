@@ -4,7 +4,7 @@
 
 #include "three.hpp"
 #include <format>
-#include "geometry.hpp"
+#include "math.hpp"
 #include "manifest.hpp"
 
 namespace
@@ -17,9 +17,7 @@ namespace
 
     template <typename T, typename... Args>
     size_t total_size(const std::vector<T> &first, const Args &...rest)
-    {
-        return first.size() + (rest.size() + ...);
-    }
+    { return first.size() + (rest.size() + ...); }
 
     template <typename T, typename... Args>
     std::vector<T> concat_and_destroy(std::vector<T> &&first, Args &&...rest)
@@ -72,7 +70,7 @@ namespace three
         js["pos"] = pos_center.toNdArray().toStlVector();
 
         // default orientation of a cylinder in THREE is (0,1,0)
-        auto const quat = geometry::quaternion_from_directions(Vec3(0.0, 1.0, 0.0), direction);
+        auto const quat = math::quaternion_from_directions(Vec3(0.0, 1.0, 0.0), direction);
         js["quat"] = {quat.i(), quat.j(), quat.k(), quat.s()};
         js["radial_segments"] = segments_radial;
         return js;
@@ -90,7 +88,7 @@ namespace three
         js["pos"] = pos_center.toNdArray().toStlVector();
 
         // default orientation of a cone in THREE is (0,1,0)
-        auto const quat = geometry::quaternion_from_directions(Vec3(0.0, 1.0, 0.0), direction);
+        auto const quat = math::quaternion_from_directions(Vec3(0.0, 1.0, 0.0), direction);
         js["quat"] = {quat.i(), quat.j(), quat.k(), quat.s()};
         js["radial_segments"] = segments_radial;
         return js;
@@ -106,7 +104,7 @@ namespace three
         js["pos"] = pos.toNdArray().toStlVector();
 
         // default orientation of a plane in THREE is (0,0,1)
-        auto const quat = Quaternion(dir_target, angle) * geometry::quaternion_from_directions(Vec3(0.0, 0.0, 1.0), dir_target);
+        auto const quat = Quaternion(dir_target, angle) * math::quaternion_from_directions(Vec3(0.0, 0.0, 1.0), dir_target);
         js["quat"] = {quat.i(), quat.j(), quat.k(), quat.s()};
         return js;
     }

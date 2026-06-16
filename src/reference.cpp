@@ -19,3 +19,8 @@ Vec3 Reference::global_from_local(Vec3 const &pos) const
     Vec3 const pos_global = orientation.rotate(pos) + this->pos;
     return origin ? origin->global_from_local(pos_global) : pos_global;
 }
+
+Vec3 Reference::localize(Reference const &reference) const
+{
+    return local_from_global(reference.global_from_local(POS_ZERO));
+}

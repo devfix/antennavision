@@ -1,5 +1,6 @@
 # JetBrains IDE
 .idea/
+.clion.source.upload.marker
 
 # Prerequisites
 *.d

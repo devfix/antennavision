@@ -2,10 +2,10 @@
 // Created by Tristan Krause on 2026-06-03.
 //
 
-#include "geometry.hpp"
+#include "math.hpp"
 #include <cmath>
 
-namespace geometry
+namespace math
 {
     double angle_between_vectors(Vec3 vec1, Vec3 vec2)
     {
@@ -16,6 +16,7 @@ namespace geometry
         vec2 /= norm2;
         return std::atan2(vec1.cross(vec2).norm(), vec1.dot(vec2));
     }
+
     Quaternion quaternion_from_directions(Vec3 dir_initial, Vec3 dir_target)
     {
         double const angle = angle_between_vectors(dir_initial, dir_target);

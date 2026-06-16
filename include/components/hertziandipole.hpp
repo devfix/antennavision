@@ -11,6 +11,6 @@ struct HertzianDipole : Radiator
 
     double const length;  /// length of the Hertzian dipole, must be small compared to the wave length
 
-    [[nodiscard]] Vec3 calc_el_polar(double theta, double phi) const override;
+    [[nodiscard]] Vec3 calc_polar_effective_length(double theta, double phi) const override;
     [[nodiscard]] complex_t calc_radiation_gain(Vec3 const& pos, double freq) const override;
 };
