@@ -75,14 +75,13 @@
       "phis": [0.0, 0.5, 1.0]
     },
     {
-      "type": "plot_radiation_pattern",
-      "radiator": "radiator_2",
-      "plane": (x1,y1,z1) , (x2,y2,z2);
-    },
-    {
-      "type": "plot_radiation_pattern",
-      "radiator": "radiator_2",
-      "plane": (x1,y1,z1) , (x2,y2,z2);
+      "type": "plot_gain_over_straight",
+      "source": "radiator_1",
+      "sink": "radiator_2",
+      "reference": "ref1",
+      "start" : -1.0,
+      "stop": 1.0,
+      "axis": "x"
     }
   ]
 }

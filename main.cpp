@@ -95,11 +95,11 @@ int main(int argc, char* argv[])
     std::cout << BANNER;
     std::cout << APPLICATION_NAME << " v." << APPLICATION_VERSION << "\n\n";
 
-    if (argc == 1)
-    {
-        std::print("missing n parameter\n");
-        return 1;
-    }
+    //if (argc == 1)
+    //{
+    //    std::print("missing n parameter\n");
+    //    return 1;
+    //}
 
     auto setup = Setup::from_file("../setup.json");
     setup.export_to_three();
