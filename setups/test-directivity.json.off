@@ -1,0 +1,35 @@
+{
+  "metadata": {
+    "setup_name": "test-directivity"
+  },
+  "radiators": [
+    {
+      "id": "HertzianDipole",
+      "reference": "",
+      "type": "HertzianDipole",
+      "length": 1e-3
+    },
+    {
+      "id": "CustomRadiator",
+      "reference": "",
+      "type": "CustomRadiator",
+      "effective_length": [
+        "0",
+        "cos(pi/2*cos(theta))/sin(theta+1e-12)",
+        "sin(phi/2)^3"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "type": "plot_directivity_over_theta",
+      "radiator": "HertzianDipole",
+      "phis": [0.0, 1.0]
+    },
+    {
+      "type": "plot_directivity_over_theta",
+      "radiator": "CustomRadiator",
+      "phis": [0.0, 0.5, 1.0]
+    },
+  ]
+}

@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
         if (path_setup.path().extension() == ".json") { paths_setup.push_back(path_setup.path()); }
     }
 
-    std::println("Loading {} setups", paths_setup.size());
+    std::println("Found {} setup files", paths_setup.size());
     std::vector<std::unique_ptr<Setup>> setups;
     std::ranges::transform(paths_setup, std::back_inserter(setups), Setup::from_file);
     for (auto const &setup : setups)

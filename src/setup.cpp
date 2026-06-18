@@ -124,7 +124,7 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
 {
     auto const &metadata = json_get(js, "metadata");
     std::string_view const setup_name = json_get(metadata, "setup_name").get<std::string_view>();
-    std::println("loading setup '{}'", setup_name);
+    std::println("Setup name: {}", setup_name);
 
     std::deque<Reference> references;
     Reference const &global_origin = references.emplace_back("", nullptr, Vec3(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
@@ -137,7 +137,7 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
             auto const origin_id = optional_from_json<std::string_view>(json_get(reference, "origin"));
             auto const translation = vec3_from_json(json_get(reference, "translation"));
             auto const rotation = quaternion_from_json(json_get(reference, "rotation"));
-            std::println("loading reference [id: '{}', origin: '{}', translation: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]", id,
+            std::println("Creating reference [id: '{}', origin: '{}', translation: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]", id,
                          origin_id.value_or("<null>"), translation.x, translation.y, translation.z, rotation.yaw() / PI, rotation.pitch() / PI, rotation.roll() / PI);
             Reference const &origin = origin_id ? find_reference_by_id(references, origin_id.value()) : global_origin;
             references.emplace_back(id, &origin, translation, rotation);
@@ -153,7 +153,7 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
             if (!is_valid_id(id)) { throw std::runtime_error(std::format("Invalid radiator id '{}', only letters, numbers, '-', and '_' is allowed!", id)); }
             auto const origin_id = json_get_as<std::string_view>(radiator, "reference");
             auto const type = json_get_as<std::string_view>(radiator, "type");
-            std::println("loading radiator [id: '{}', origin: '{}', type: '{}']", id, origin_id, type);
+            std::println("Creating radiator [id: '{}', origin: '{}', type: '{}']", id, origin_id, type);
             Reference const &origin = find_reference_by_id(references, origin_id);
             if (type == "HertzianDipole") { radiators.push_back(std::make_unique<HertzianDipole>(id, origin, json_get_as<double>(radiator, "length"))); }
             else if (type == "CustomRadiator")
@@ -179,7 +179,7 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
         for (auto const &task : json_get(js, "tasks"))
         {
             auto const type = json_get_as<std::string_view>(task, "type");
-            std::println("loading task {}", type);
+            std::println("Found task of type '{}'", type);
             std::string task_name;
             if (type == "plot_directivity_over_theta")
             {
@@ -202,9 +202,9 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
             }
             else
             {
-                throw std::runtime_error(std::format("unknown task type \"{}\"", type));
+                throw std::runtime_error(std::format("Unknown task type \"{}\"", type));
             }
-            std::println("creating task: {}", task_name);
+            std::println("Created task: {}", task_name);
         }
     }
 
@@ -214,8 +214,9 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
 
 std::unique_ptr<Setup> Setup::from_file(path const &p)
 {
+    std::println("Loading setup file '{}'", p.string());
     std::ifstream file(p);
-    if (!file.is_open()) { throw std::runtime_error(std::format("Failed to open setup file: {}", p.string())); }
+    if (!file.is_open()) { throw std::runtime_error(std::format("Could not open setup file '{}'", p.string())); }
     nlohmann::json const js = nlohmann::json::parse(file);
     file.close();
 
@@ -246,10 +247,10 @@ void Setup::run_tasks()
 {
     for (auto &[task_name, task] : tasks)
     {
-        std::println("running task: {}", task_name);
+        std::println("Running task: {}", task_name);
         task();
     }
-    std::println("all tasks completed.");
+    std::println("All tasks completed.");
 }
 
 Reference &Setup::get_reference_by_id(std::string_view const id) { return find_reference_by_id(references, id); }
