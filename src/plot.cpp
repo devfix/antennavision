@@ -69,8 +69,9 @@ void plot::plot_directivity_over_theta(path const &dir_plot, Radiator const &rad
     fig.export_figure(dir_plot, {dplot::ExportType::PDF});
 }
 
-void plot::plot_gain_over_straight(path const &dir_plot, Radiator const &source, Radiator const &sink, Reference &ref_start, Reference const &ref_stop, double wave_length)
+void plot::plot_gain_over_straight(path const &dir_plot, Radiator const &source, Radiator const &sink, Reference &ref_start, Reference const &ref_stop, double wave_length, char distance_axis)
 {
+
     std::string name = std::format("{}.{}.{}", __func__, source.id, sink.id);
     std::println("creating plot: {}", name);
 
@@ -84,7 +85,7 @@ void plot::plot_gain_over_straight(path const &dir_plot, Radiator const &source,
         ts.enable = true;
 
         dplot::AxisSetup as;
-        as.label = R"($d\ / \ \mathrm{m}$)";
+        as.label = std::format("${} \\ / \\ {}$", distance_axis, R"(\mathrm{m})");
         as.scale = 1.0;
         as.tick = ts;
         as.label_shift = "0.2cm";
@@ -115,20 +116,38 @@ void plot::plot_gain_over_straight(path const &dir_plot, Radiator const &source,
     }
 
     constexpr std::size_t n_points = 101;
-    Vec3 const delta = ref_stop.translation - ref_start.translation;
-    double const length = delta.norm();
-    Vec3 const start = ref_start.translation;
-    NdArray gain(n_points);
-    NdArray distance(n_points);
-    for (std::size_t k = 0; k < n_points; k++)
+    Vec3 const pos_start = ref_start.pos;
+    NdArray const rotation_start = ref_start.rotation.toNdArray();
+    Vec3 const pos_delta = ref_stop.pos - ref_start.pos;
+    NdArray const rotation_delta = ref_stop.rotation.toNdArray() - ref_start.rotation.toNdArray();
+    double const length = pos_delta.norm();
+    NdArray gians(n_points, 1);
+    NdArray distances(n_points, 1);
+    double distance = 0;
+
+    double *distance_ptr = &distance;
+    switch (distance_axis)
+    {
+        case 'x': distance_ptr = &ref_start.pos.x; break;
+        case 'y': distance_ptr = &ref_start.pos.y; break;
+        case 'z': distance_ptr = &ref_start.pos.z; break;
+        case 'd':
+            break; // already set
+        default:
+            throw std::runtime_error(std::format("Error in {}: Unknown distance_axis '{}'", __func__, distance_axis));
+    }
+    for (NdArray::index_type k = 0; k < n_points; k++)
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
-        ref_start.translation = start + f * delta;
-        gain[k] = source.calc_power_gain(sink, wave_length);
-        distance[k] = f * length;
-
+        ref_start.pos = pos_start + pos_delta * f;
+        ref_start.rotation = rotation_start + rotation_delta * f;
+        gians[k] = source.calc_power_gain(sink, wave_length);
+        distance = f * length;
+        distances[k] = *distance_ptr;
     }
-    fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, distance, gain)); //, std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / PI)));
+    ref_start.pos = pos_start;
+    ref_start.rotation = rotation_start;
+    fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, distances, gians)); //, std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / PI)));
     fig.export_figure(dir_plot, {dplot::ExportType::PDF});
 }
 

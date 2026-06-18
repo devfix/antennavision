@@ -61,11 +61,11 @@ TEST_CASE("setup without rotation", "[TestSetup]")
   ]
 }
 )");
-    Setup su = Setup::from_json(js);
-    su.export_to_three();
-    auto const& ref1 = su.get_reference_by_id("ref1");
-    auto const& ref2 = su.get_reference_by_id("ref2");
-    auto const& ref3 = su.get_reference_by_id("ref3");
+    auto const su = Setup::from_json(js);
+    su->export_to_three();
+    auto const& ref1 = su->get_reference_by_id("ref1");
+    auto const& ref2 = su->get_reference_by_id("ref2");
+    auto const& ref3 = su->get_reference_by_id("ref3");
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);
@@ -126,11 +126,11 @@ TEST_CASE("setup with rotation", "[TestSetup]")
   ]
 }
 )");
-    Setup su = Setup::from_json(js);
-    su.export_to_three();
-    auto const &ref1 = su.get_reference_by_id("ref1");
-    auto const &ref2 = su.get_reference_by_id("ref2");
-    auto const &ref3 = su.get_reference_by_id("ref3");
+    auto const su = Setup::from_json(js);
+    su->export_to_three();
+    auto const &ref1 = su->get_reference_by_id("ref1");
+    auto const &ref2 = su->get_reference_by_id("ref2");
+    auto const &ref3 = su->get_reference_by_id("ref3");
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);

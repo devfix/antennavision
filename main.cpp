@@ -1,8 +1,8 @@
 #include <NumCpp.hpp>
-#include <execution>
-#include "print.hpp"
 #include <dplot.hpp>
+#include <execution>
 #include <ranges>
+#include "print.hpp"
 
 #include "bitmap.hpp"
 #include "components/hertziandipole.hpp"
@@ -90,29 +90,40 @@ void compute_rect(array_t const &x_values, array_t const &y_values, std::vector<
 }
 */
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     std::cout << BANNER;
     std::cout << APPLICATION_NAME << " v." << APPLICATION_VERSION << "\n\n";
 
-    //if (argc == 1)
-    //{
-    //    std::print("missing n parameter\n");
-    //    return 1;
-    //}
+    if (argc == 1)
+    {
+        std::println("Usage: {} <setup_dir>", argv[0]);
+        return 0;
+    }
 
-    auto setup = Setup::from_file("../setup.json");
-    setup.export_to_three();
-    setup.run_tasks();
+    std::println("Working directory: {}", std::filesystem::current_path().string());
 
-    plot::plot_gain_over_straight("quick-plot", setup.get_radiator_by_id("transmitter"), setup.get_radiator_by_id("receiver"), setup.get_reference_by_id("ref_rx_start"), setup.get_reference_by_id("ref_rx_stop"), 0.1);
+    path const path_setups_dir(std::filesystem::weakly_canonical(path(argv[1])));
+    std::filesystem::create_directories(path_setups_dir);
+    std::vector<path> paths_setup;
+    for (const auto &path_setup : std::filesystem::directory_iterator(path_setups_dir))
+    {
+        if (path_setup.path().extension() == ".json") { paths_setup.push_back(path_setup.path()); }
+    }
+
+    std::println("Loading {} setups", paths_setup.size());
+    std::vector<std::unique_ptr<Setup>> setups;
+    std::ranges::transform(paths_setup, std::back_inserter(setups), Setup::from_file);
+    for (auto const &setup : setups)
+    {
+        setup->export_to_three();
+        setup->run_tasks();
+    }
 
     return 0;
 
-
     std::size_t n = std::stoi(argv[1]);
     std::print("using {} values per dimension\n", n);
-
 
     double freq = 1e9;
     double lambda = SPEED_OF_LIGHT / freq;
@@ -135,6 +146,4 @@ int main(int argc, char* argv[])
     */
 
     return 0;
-
-
 }

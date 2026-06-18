@@ -84,8 +84,10 @@
       "type": "plot_gain_over_straight",
       "source": "transmitter",
       "sink": "receiver",
-      "reference_start": "ref_rx_start",
-      "reference_stop": "ref_rx_stop"
+      "ref_start": "ref_rx_start",
+      "ref_stop": "ref_rx_stop",
+      "wavelength": 0.1,
+      "distance_axis": "x"
     }
   ]
 }

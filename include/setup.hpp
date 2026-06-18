@@ -21,16 +21,16 @@ struct Setup
         double phase;
     };
 
-    static Setup from_json(json const &js);
-    static Setup from_file(path const &p);
+    static std::unique_ptr<Setup> from_json(json const &js);
+    static std::unique_ptr<Setup> from_file(path const &p);
     void export_to_three() const;
     void run_tasks();
 
-    [[nodiscard]] Reference const &get_reference_by_id(std::string_view id) const;
+    [[nodiscard]] Reference &get_reference_by_id(std::string_view id);
     [[nodiscard]] Radiator const &get_radiator_by_id(std::string_view id) const;
 
     std::string const name;
-    std::deque<Reference> const references;
+    std::deque<Reference> references;
     std::deque<std::unique_ptr<Radiator>> const radiators;
     std::deque<std::pair<std::string, std::function<void()>>> const tasks;
 

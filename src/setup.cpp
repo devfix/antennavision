@@ -30,25 +30,31 @@ namespace
     template <typename T>
     auto json_get_as(json const &js, std::string_view const key)
     {
+        if (!js.contains(key)) { throw std::runtime_error(std::format("Could not find key '{}' in json object\n{}", key, js.dump(2))); }
         if constexpr (std::is_same_v<T, NdArray>)
         {
-            if (js.contains(key))
-            {
-                auto const phis = js[key].get<std::vector<double>>();
-                return NdArray(phis.begin(), phis.end());
-            }
+            auto const phis = js[key].get<std::vector<double>>();
+            return NdArray(phis.begin(), phis.end());
+        }
+        else if constexpr (std::is_same_v<T, char>)
+        {
+            std::string_view const str = js[key].get<std::string_view>();
+            if (str.length() != 1) { throw std::runtime_error(std::format("Invalid character entry '{}', expected string of unity length.", str)); }
+            return str.at(0);
         }
         else
         {
-            if (js.contains(key)) { return js[key].get<T>(); }
+            return js[key].get<T>();
         }
-        throw std::runtime_error(std::format("Error: Could not find key '{}' in json object\n{}", key, js.dump(2)));
     }
 
     Vec3 constexpr vec3_from_json(json const &js)
     {
         if (js.is_array()) { return {js.at(0).get<double>(), js.at(1).get<double>(), js.at(2).get<double>()}; }
-        else { return {js.at("x").get<double>(), js.at("y").get<double>(), js.at("z").get<double>()}; }
+        else
+        {
+            return {js.at("x").get<double>(), js.at("y").get<double>(), js.at("z").get<double>()};
+        }
     }
 
     Quaternion constexpr quaternion_from_json(json const &js)
@@ -59,18 +65,16 @@ namespace
 
     template <typename T>
     std::optional<T> optional_from_json(json const &j)
-    {
-        return j.is_null() ? std::nullopt : std::optional<T>{j.get<T>()};
-    }
+    { return j.is_null() ? std::nullopt : std::optional<T>{j.get<T>()}; }
 
-    Reference const &find_reference_by_id(decltype(Setup::references) const &references, std::string_view const id)
+    Reference &find_reference_by_id(decltype(Setup::references) &references, std::string_view const id)
     {
         auto const it = std::ranges::find_if(references, [id](Reference const &reference) { return reference.id == id; });
         if (it != references.end()) { return *it; }
         throw std::runtime_error(std::format("Error: Could not find reference with id '{}'", id));
     }
 
-    Radiator const &find_radiator_by_id(decltype(Setup::radiators) const &radiators, std::string_view const id)
+    Radiator const &find_radiator_by_id(decltype(Setup::radiators) &radiators, std::string_view const id)
     {
         auto const it = std::ranges::find_if(radiators, [id](std::unique_ptr<Radiator> const &radiator_ptr) { return radiator_ptr->id == id; });
         if (it != radiators.end()) { return **it; }
@@ -113,7 +117,7 @@ namespace
     }
 } // namespace
 
-Setup Setup::from_json(json const &js)
+std::unique_ptr<Setup> Setup::from_json(json const &js)
 {
     auto const &metadata = json_get(js, "metadata");
     std::string_view const setup_name = json_get(metadata, "setup_name").get<std::string_view>();
@@ -152,12 +156,14 @@ Setup Setup::from_json(json const &js)
                 auto const effective_length_defs = json_get_as<std::array<std::string_view, 3>>(radiator, "effective_length");
                 std::array<std::function<double(double, double)>, 3> effective_length_parts;
                 std::ranges::transform(effective_length_defs, effective_length_parts.begin(), parse_theta_phi_function);
-                auto effective_length = [effective_length_parts](double const theta, double const phi) -> Vec3 {
-                    return {effective_length_parts[0](theta, phi), effective_length_parts[1](theta, phi), effective_length_parts[2](theta, phi)};
-                };
+                auto effective_length = [effective_length_parts](double const theta, double const phi) -> Vec3
+                { return {effective_length_parts[0](theta, phi), effective_length_parts[1](theta, phi), effective_length_parts[2](theta, phi)}; };
                 radiators.push_back(std::make_unique<CustomRadiator>(id, origin, std::move(effective_length)));
             }
-            else { throw std::runtime_error(std::format("unknown radiator type '{}'", type)); }
+            else
+            {
+                throw std::runtime_error(std::format("unknown radiator type '{}'", type));
+            }
         }
     }
 
@@ -169,23 +175,38 @@ Setup Setup::from_json(json const &js)
         {
             auto const type = json_get_as<std::string_view>(task, "type");
             std::println("loading task {}", type);
+            std::string task_name;
             if (type == "plot_directivity_over_theta")
             {
-                auto const radiator_id = json_get_as<std::string_view>(task, "radiator");
                 auto const phis = json_get_as<NdArray>(task, "phis") * PI;
-                Radiator const &radiator = find_radiator_by_id(radiators, radiator_id);
-                std::string task_name = std::format("{}.{}", type, radiator.id);
-                std::println("creating task: {}", task_name);
+                Radiator const &radiator = find_radiator_by_id(radiators, json_get_as<std::string_view>(task, "radiator"));
+                task_name = std::format("{}.{}", type, radiator.id);
                 tasks.emplace_back(task_name, [dir_plot, &radiator, phis]() { plot::plot_directivity_over_theta(dir_plot, radiator, phis); });
             }
-            else { throw std::runtime_error(std::format("unknown task type \"{}\"", type)); }
+            else if (type == "plot_gain_over_straight")
+            {
+                Radiator const &source = find_radiator_by_id(radiators, json_get_as<std::string_view>(task, "source"));
+                Radiator const &sink = find_radiator_by_id(radiators, json_get_as<std::string_view>(task, "sink"));
+                Reference &ref_start = find_reference_by_id(references, json_get_as<std::string_view>(task, "ref_start"));
+                Reference const &ref_stop = find_reference_by_id(references, json_get_as<std::string_view>(task, "ref_stop"));
+                double wavelength = json_get_as<double>(task, "wavelength");
+                char distance_axis = json_get_as<char>(task, "distance_axis");
+                task_name = std::format("{}.{}.{}", type, source.id, sink.id);
+                tasks.emplace_back(task_name, [dir_plot, &source, &sink, &ref_start, &ref_stop, wavelength, distance_axis]()
+                                   { plot::plot_gain_over_straight(dir_plot, source, sink, ref_start, ref_stop, wavelength, distance_axis); });
+            }
+            else
+            {
+                throw std::runtime_error(std::format("unknown task type \"{}\"", type));
+            }
+            std::println("creating task: {}", task_name);
         }
     }
 
-    return {setup_name, std::move(references), std::move(radiators), std::move(tasks)};
+    return std::unique_ptr<Setup>(new Setup(setup_name, std::move(references), std::move(radiators), std::move(tasks)));
 }
 
-Setup Setup::from_file(path const &p)
+std::unique_ptr<Setup> Setup::from_file(path const &p)
 {
     std::ifstream file(p);
     if (!file.is_open()) { throw std::runtime_error(std::format("Failed to open setup file: {}", p.string())); }
@@ -225,7 +246,7 @@ void Setup::run_tasks()
     std::println("all tasks completed.");
 }
 
-Reference const &Setup::get_reference_by_id(std::string_view const id) const { return find_reference_by_id(references, id); }
+Reference &Setup::get_reference_by_id(std::string_view const id) { return find_reference_by_id(references, id); }
 
 Radiator const &Setup::get_radiator_by_id(std::string_view const id) const { return find_radiator_by_id(radiators, id); }
 

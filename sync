@@ -1,8 +1,2 @@
 #!/bin/bash
-echo "sync debug"
-rsync -e 'ssh -p 222' -az --exclude '_deps' --exclude 'CMakeFiles' respeex@sirious-media.dynv6.net:/home/respeex/antennavision/cmake-build-debug-sirious-media/ cmake-build-debug-sirious-media/
-
-echo "sync release"
-rsync -e 'ssh -p 222' -az --exclude '_deps' --exclude 'CMakeFiles' respeex@sirious-media.dynv6.net:/home/respeex/antennavision/cmake-build-release-sirious-media/ cmake-build-release-sirious-media/
-
-echo "sync completed"
+rsync -e 'ssh -p 222' -azv --exclude '_deps' --exclude 'CMakeFiles' "respeex@sirious-media.dynv6.net:/home/respeex/antennavision/cmake-build-*" .

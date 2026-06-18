@@ -67,6 +67,11 @@ double Radiator::calc_directivity(Vec3 const &pos_local) const
 
 complex_t Radiator::calc_voltage_gain(Radiator const &radiator, double lambda, std::size_t n_theta, std::size_t n_phi) const
 {
+    double const r = (origin.global_from_local(POS_ZERO) - radiator.origin.global_from_local(POS_ZERO)).norm();
+    if (r < lambda / 10)
+    {
+        std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", id, radiator.id, r, r/lambda);
+    }
     auto const [r1, theta1, phi1] = math::spherical_from_cartesian(origin.localize(radiator.origin));
     auto const omega1 = math::omega(theta1, phi1);
     auto const [r2, theta2, phi2] = math::spherical_from_cartesian(radiator.origin.localize(origin));
@@ -109,7 +114,6 @@ complex_t Radiator::calc_voltage_gain(Radiator const &radiator, double lambda, s
     double integral_result = total_sum * d_theta * d_phi;
     complex_t result = num / integral_result;
 
-    double const r = (origin.global_from_local(POS_ZERO) - radiator.origin.global_from_local(POS_ZERO)).norm();
     complex_t const phase_term = std::exp(complex_t(0.0, -2.0 * PI * r / lambda)) / r;
 
     return result * phase_term;
