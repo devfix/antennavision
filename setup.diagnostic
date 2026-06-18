@@ -1,0 +1,49 @@
+This is an incredibly helpful diagnostic report! Your total build time for this single file is **47.91 seconds** (Wall time), which is definitely high enough to justify optimizing it.
+
+Looking closely at your percentages, your compiler is choking on **Optimization and Generation**, heavily driven by complex code structures and template instantiations.
+
+Here are the three massive bottlenecks hidden in this log and exactly how to fix them:
+
+---
+
+### Bottleneck 1: `phase opt and generate` (58% of Wall Time)
+
+This is your single biggest time-sink, taking **27.93 seconds**. It tells us that GCC's optimizer is grinding to a halt trying to reason through your functions to turn them into assembly.
+
+The main culprit inside this phase is **`integrated RA` (Register Allocation)**, which consumes **10% of the total wall time** and generates nearly **1 GB of garbage collection data (`853M`)**.
+
+* **The Cause:** You likely have one or two *massively long* functions in this `.cpp` file, or you are compiling with a very heavy optimization flag (like `-O3`). When a function has too many local variables, loops, or complex paths, the Register Allocator struggles heavily to map those variables to CPU registers.
+* **The Fix:** 1.  Find your longest functions and break them into smaller, separated helper functions.
+2.  If this is a debug build, make sure you are compiling with `-O0` or `-Og` instead of `-O2` or `-O3`.
+
+---
+
+### Bottleneck 2: `template instantiation` (17% of Wall Time)
+
+Your compiler spends **8.38 seconds** just processing templates. Notice the `GGC` (GNU Garbage Collection) column for this line: it consumes **775 Megabytes** of memory just processing templates!
+
+* **The Cause:** You are heavily utilizing heavy template libraries (like `std::variant`, `std::tuple`, `std::regex`, or large third-party libraries like Eigen/Boost).
+* **The Fix:** * If you have complex template types inside your header files that don't change often, look into using **`extern template`** declarations to force the compiler to instantiate them once in a different compilation unit.
+* Check if you are creating heavy objects like `std::regex` inside templates or helper loops and move them out.
+
+
+
+---
+
+### Bottleneck 3: `preprocessing` & `phase parsing` (37% combined)
+
+Combined, preprocessing and parsing are taking roughly **17.7 seconds**.
+
+* **The Cause:** Your file is including too many heavy header files. GCC is spending nearly 4.5 seconds just text-replacing macros and headers before it even starts compiling.
+* **The Fix:** * Clean up your `#include` statements. Use **forward declarations** (`class Setup;`) in your header files instead of full includes wherever possible.
+* If you are on GCC 11+, look into using **Precompiled Headers (PCH)** for heavy standard library files like `<iostream>`, `<algorithm>`, and `<vector>`.
+
+
+
+---
+
+### Summary Checklist to cut this file's compile time in half:
+
+1. **Break up giant functions:** Don't let single functions stretch for hundreds of lines.
+2. **Check your optimization level:** Switch to `-O0` or `-Og` for daily development.
+3. **Prune headers:** Move `#include` statements out of your header files and into your `.cpp` file wherever you can.

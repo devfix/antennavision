@@ -7,6 +7,7 @@
 - [ ] implement PS
 - [ ] implement connections between components
 - [ ] pre compute radiation resistance for gain and directivtiy
+- [ ] remove fmt dependency finally
 
 ## Writing
 - [ ] derive magnetic vector potential using Lorenz Equation

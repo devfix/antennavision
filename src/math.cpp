@@ -22,7 +22,7 @@ namespace math
         double const angle = angle_between_vectors(dir_initial, dir_target);
         if (std::abs(angle) < NUMERICAL_MARGIN) { return {}; } // identity quaternion
 
-        if (std::abs(PI - std::abs(angle)) < NUMERICAL_MARGIN)
+        if (std::abs(pi - std::abs(angle)) < NUMERICAL_MARGIN)
         {
             // We need to rotate around an arbitrary axis orthogonal to dir_initial.
             dir_initial = dir_initial.normalize();

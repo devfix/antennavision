@@ -14,7 +14,7 @@ namespace three
     {
         void add(json &&object);
         void add(std::vector<json> &&objects);
-        void export_to_javascript(path const &p) const;
+        void export_to_javascript(std::filesystem::path const &p) const;
     private:
         std::list<json> objects;
     };

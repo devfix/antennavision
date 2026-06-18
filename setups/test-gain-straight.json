@@ -35,13 +35,13 @@
   "radiators": [
     {
       "id": "transmitter",
-      "reference": "",
+      "ref": "",
       "type": "HertzianDipole",
       "length": 1e-3
     },
     {
       "id": "receiver",
-      "reference": "ref_rx_start",
+      "ref": "ref_rx_start",
       "type": "HertzianDipole",
       "length": 1e-3
     }

@@ -4,19 +4,19 @@
 
 #pragma once
 
-#include <NumCpp.hpp>
 #include <complex>
-#include <filesystem>
-#include <nlohmann/json.hpp>
-#include "fmt/base.h"
+#include <NumCpp/Vector/Vec3.hpp>
+#include <NumCpp/NdArray/NdArrayCore.hpp>
+#include <NumCpp/Rotations/Quaternion.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 using complex_t = std::complex<double>;
 using NdArray = nc::NdArray<double>;
 using Vec3 = nc::Vec3;
 using Quaternion = nc::rotations::Quaternion;
 using json = nlohmann::json;
-using path = std::filesystem::path;
-constexpr auto PI = nc::constants::pi;
+constexpr auto pi = std::numbers::pi;
+constexpr auto sqrt2_2 = std::numbers::sqrt2 / 2.0;
 static constexpr auto POS_ZERO = Vec3(0, 0, 0);
 constexpr double SPEED_OF_LIGHT = 299'792'458;
 constexpr double NUMERICAL_MARGIN = 1e-9;

@@ -3,14 +3,14 @@
 //
 
 #include <catch2/catch_test_macros.hpp>
+#include <nlohmann/json.hpp>
 
-#include "components/testradiator.hpp"
-#include "setup.hpp"
+#include "../include/setup.hpp"
 #include "testutil.hpp"
 
 TEST_CASE("setup without rotation", "[TestSetup]")
 {
-    json js = json::parse(R"(
+    json const js = json::parse(R"(
 {
   "metadata": {
     "setup_name": "test_setup_without_rotation"
@@ -18,7 +18,7 @@ TEST_CASE("setup without rotation", "[TestSetup]")
   "references": [
     {
       "id": "ref1",
-      "origin": null,
+      "origin": "",
       "translation": {
         "x": 1,
         "y": 0,
@@ -75,7 +75,7 @@ TEST_CASE("setup without rotation", "[TestSetup]")
 
 TEST_CASE("setup with rotation", "[TestSetup]")
 {
-    json js = json::parse(R"(
+    json const js = json::parse(R"(
 {
   "metadata": {
     "setup_name": "test_setup_with_rotation"
@@ -83,7 +83,7 @@ TEST_CASE("setup with rotation", "[TestSetup]")
   "references": [
     {
       "id": "ref1",
-      "origin": null,
+      "origin": "",
       "translation": {
         "x": 1,
         "y": 0,

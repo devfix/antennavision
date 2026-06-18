@@ -20,9 +20,9 @@ TEST_CASE("cascaded references without rotation", "[CascadedReferences]")
 
 TEST_CASE("cascaded references with rotation", "[CascadedReferences]")
 {
-    Reference const ref1("ref1", nullptr, Vec3{1, 0, 0}, Quaternion{0, 0, PI/2});
-    Reference const ref2("ref2", &ref1, Vec3{1, 0, 0}, Quaternion{0, -PI/2, 0});
-    Reference const ref3("ref3", &ref2, Vec3{1, 0, 0}, Quaternion{-PI/2, 0, -PI/2});
+    Reference const ref1("ref1", nullptr, Vec3{1, 0, 0}, Quaternion{0, 0, pi/2});
+    Reference const ref2("ref2", &ref1, Vec3{1, 0, 0}, Quaternion{0, -pi/2, 0});
+    Reference const ref3("ref3", &ref2, Vec3{1, 0, 0}, Quaternion{-pi/2, 0, -pi/2});
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);

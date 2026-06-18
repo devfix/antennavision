@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "types.hpp"
+#include <NumCpp/Functions/isclose.hpp>
 #include "reference.hpp"
+#include "types.hpp"
 
 static constexpr double TEST_MARGIN = 1e-6;
 

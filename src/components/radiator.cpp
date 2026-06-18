@@ -4,8 +4,12 @@
 
 #include "components/radiator.hpp"
 #include <string>
-#include "print.hpp"
+#include <NumCpp/Functions/linspace.hpp>
+#include <NumCpp/Functions/meshgrid.hpp>
+#include <NumCpp/Functions/sin.hpp>
+#include <NumCpp/Functions/sum.hpp>
 #include "math.hpp"
+#include "print.hpp"
 
 Radiator::Radiator(std::string_view const id, Reference const &origin) : Component(id, 1, 0), origin(origin), el_theta(std::move(el_theta)), el_phi(std::move(el_phi)) {}
 
@@ -24,11 +28,11 @@ complex_t Radiator::calc_path(std::size_t idx_input, std::size_t idx_output) { t
 double Radiator::calc_directivity(double theta, double phi, std::size_t n_theta, std::size_t n_phi) const
 {
     double num = calc_polar_effective_length_norm(theta, phi);
-    num *= num * 4 * PI;
-    auto theta_edges = nc::linspace(0.0, PI, n_theta + 1);
-    auto phi_edges = nc::linspace(0.0, 2.0 * PI, n_phi + 1);
-    auto d_theta = PI / n_theta;
-    auto d_phi = (2.0 * PI) / n_phi;
+    num *= num * 4 * pi;
+    auto theta_edges = nc::linspace(0.0, pi, n_theta + 1);
+    auto phi_edges = nc::linspace(0.0, 2.0 * pi, n_phi + 1);
+    auto d_theta = pi / n_theta;
+    auto d_phi = (2.0 * pi) / n_phi;
     auto theta_mids = (theta_edges(theta_edges.rSlice(), nc::Slice(0, n_theta)) + theta_edges(theta_edges.rSlice(), nc::Slice(1, n_theta + 1))) / 2.0;
     auto phi_mids = (phi_edges(phi_edges.rSlice(), nc::Slice(0, n_phi)) + phi_edges(phi_edges.rSlice(), nc::Slice(1, n_phi + 1))) / 2.0;
 
@@ -82,10 +86,10 @@ complex_t Radiator::calc_voltage_gain(Radiator const &radiator, double lambda, s
     auto const l2 = radiator.origin.global_from_local(Vec3(nc::dot(omega2, l2_spherial.toNdArray())));
     auto const g = l1.dot(l2);
     auto const num = - 2.0 * complex_t(0.0, 1.0) * lambda * g;
-    auto theta_edges = nc::linspace(0.0, PI, n_theta + 1);
-    auto phi_edges = nc::linspace(0.0, 2.0 * PI, n_phi + 1);
-    auto d_theta = PI / n_theta;
-    auto d_phi = (2.0 * PI) / n_phi;
+    auto theta_edges = nc::linspace(0.0, pi, n_theta + 1);
+    auto phi_edges = nc::linspace(0.0, 2.0 * pi, n_phi + 1);
+    auto d_theta = pi / n_theta;
+    auto d_phi = (2.0 * pi) / n_phi;
     auto theta_mids = (theta_edges(theta_edges.rSlice(), nc::Slice(0, n_theta)) + theta_edges(theta_edges.rSlice(), nc::Slice(1, n_theta + 1))) / 2.0;
     auto phi_mids = (phi_edges(phi_edges.rSlice(), nc::Slice(0, n_phi)) + phi_edges(phi_edges.rSlice(), nc::Slice(1, n_phi + 1))) / 2.0;
 
@@ -114,7 +118,7 @@ complex_t Radiator::calc_voltage_gain(Radiator const &radiator, double lambda, s
     double integral_result = total_sum * d_theta * d_phi;
     complex_t result = num / integral_result;
 
-    complex_t const phase_term = std::exp(complex_t(0.0, -2.0 * PI * r / lambda)) / r;
+    complex_t const phase_term = std::exp(complex_t(0.0, -2.0 * pi * r / lambda)) / r;
 
     return result * phase_term;
 }

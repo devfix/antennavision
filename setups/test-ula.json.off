@@ -2,12 +2,35 @@
   "metadata": {
     "setup_name": "test-directivity"
   },
+  "references": [
+    {
+      "id": "ref_ula_start",
+      "origin": "",
+      "translation": {
+        "x": 0,
+        "y": -1,
+        "z": 0
+      }
+    },
+    {
+      "id": "ref_ula_stop",
+      "origin": "",
+      "translation": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      }
+    }
+  ],
   "radiators": [
     {
-      "id": "HertzianDipole",
-      "reference": "",
-      "type": "HertzianDipole",
-      "length": 1e-3
+      "type": "ULA",
+      "id": "ula1",
+      "ref_start": "ref_ula_start",
+      "ref_start": "ref_ula_stop",
+      "radiator": {
+
+      }
     },
     {
       "id": "CustomRadiator",
@@ -30,6 +53,6 @@
       "type": "plot_directivity_over_theta",
       "radiator": "CustomRadiator",
       "phis": [0.0, 0.5, 1.0]
-    },
+    }
   ]
 }

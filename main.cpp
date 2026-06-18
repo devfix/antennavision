@@ -6,9 +6,9 @@
 
 #include "bitmap.hpp"
 #include "components/hertziandipole.hpp"
+#include "include/setup.hpp"
 #include "manifest.hpp"
 #include "plot.hpp"
-#include "setup.hpp"
 #include "types.hpp"
 
 // #include "ula.hpp"
@@ -103,9 +103,9 @@ int main(int argc, char *argv[])
 
     std::println("Working directory: {}", std::filesystem::current_path().string());
 
-    path const path_setups_dir(std::filesystem::weakly_canonical(path(argv[1])));
+    std::filesystem::path const path_setups_dir(std::filesystem::weakly_canonical(std::filesystem::path(argv[1])));
     std::filesystem::create_directories(path_setups_dir);
-    std::vector<path> paths_setup;
+    std::vector<std::filesystem::path> paths_setup;
     for (const auto &path_setup : std::filesystem::directory_iterator(path_setups_dir))
     {
         if (path_setup.path().extension() == ".json") { paths_setup.push_back(path_setup.path()); }
