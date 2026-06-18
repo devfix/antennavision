@@ -9,6 +9,6 @@
 
 namespace factory
 {
-    Reference make_reference(json const &reference_desc, std::list<Reference> const &references);
-    std::unique_ptr<Radiator> make_radiator(json const &radiator_desc, std::list<Reference> const &references);
+    Reference make_reference(json &reference_desc, std::list<Reference> const &references);
+    std::unique_ptr<Radiator> make_radiator(json &radiator_desc, std::list<Reference> const &references);
 } // namespace factory

@@ -16,8 +16,8 @@
 
 namespace
 {
-    template <typename T>
-    json const &json_get(json const &js, T *key)
+    template <typename ContainerType>
+    ContainerType &json_get(ContainerType &js, std::string_view key)
     {
         factory::assert_key(js, key);
         return js[key];
@@ -52,47 +52,49 @@ namespace
 
 std::unique_ptr<Setup> Setup::from_json(json const &js)
 {
-    auto const &metadata = json_get(js, "metadata");
+    json setup_desc = js;  // create a copy of the json object in order to decompose it
+    auto const &metadata = json_get(setup_desc, "metadata");
     std::string_view const setup_name = json_get(metadata, "setup_name").get<std::string_view>();
     std::println("Setup name: {}", setup_name);
 
     std::list<Reference> references;
     references.emplace_back("", nullptr, Vec3(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
-    if (js.contains("references"))
+    if (setup_desc.contains("references"))
     {
-        for (auto const &reference : json_get(js, "references")) { references.push_back(std::move(factory::make_reference(reference, references))); }
+        for (auto &reference_desc : json_get(setup_desc, "references")) { references.push_back(std::move(factory::make_reference(reference_desc, references))); }
     }
 
     std::list<std::unique_ptr<Radiator>> radiators;
-    if (js.contains("radiators"))
+    if (setup_desc.contains("radiators"))
     {
-        for (auto const &radiator : json_get(js, "radiators")) { radiators.push_back(std::move(factory::make_radiator(radiator, references))); }
+        for (auto &radiator_desc : json_get(setup_desc, "radiators")) { radiators.push_back(std::move(factory::make_radiator(radiator_desc, references))); }
     }
 
     std::list<std::pair<std::string, std::function<void()>>> tasks;
-    if (js.contains("tasks"))
+    if (setup_desc.contains("tasks"))
     {
         auto const dir_plot = std::filesystem::path(setup_name) / "plots";
-        for (auto const &task : json_get(js, "tasks"))
+        for (auto &task_desc : json_get(setup_desc, "tasks"))
         {
-            auto const type = factory::get_string(task, "type");
+            auto const type = factory::get_string(task_desc, "type");
             std::println("Found task of type '{}'", type);
             std::string task_name;
             if (type == "plot_directivity_over_theta")
             {
-                auto const phis = factory::get_ndarray(task, "phis") * nc::constants::pi;
-                Radiator const &radiator = factory::find_radiator_by_id(radiators, factory::get_string(task, "radiator"));
+                auto const phis = factory::get_ndarray(task_desc, "phis") * nc::constants::pi;
+                Radiator const &radiator = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "radiator"));
                 task_name = std::format("{}.{}", type, radiator.id);
+
                 tasks.emplace_back(task_name, [dir_plot, &radiator, phis]() { plot::plot_directivity_over_theta(dir_plot, radiator, phis); });
             }
             else if (type == "plot_gain_over_straight")
             {
-                Radiator const &source = factory::find_radiator_by_id(radiators, factory::get_string(task, "source"));
-                Radiator const &sink = factory::find_radiator_by_id(radiators, factory::get_string(task, "sink"));
-                Reference &ref_start = factory::find_reference_by_id(references, factory::get_string(task, "ref_start"));
-                Reference const &ref_stop = factory::find_reference_by_id(references, factory::get_string(task, "ref_stop"));
-                double wavelength = factory::get_double(task, "wavelength");
-                char distance_axis = factory::get_char(task, "distance_axis");
+                Radiator const &source = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "source"));
+                Radiator const &sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
+                Reference &ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
+                Reference const &ref_stop = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_stop"));
+                double wavelength = factory::get_double(task_desc, "wavelength");
+                char distance_axis = factory::get_char(task_desc, "distance_axis");
                 task_name = std::format("{}.{}.{}", type, source.id, sink.id);
                 tasks.emplace_back(task_name, [dir_plot, &source, &sink, &ref_start, &ref_stop, wavelength, distance_axis]()
                                    { plot::plot_gain_over_straight(dir_plot, source, sink, ref_start, ref_stop, wavelength, distance_axis); });
@@ -102,6 +104,7 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
                 throw std::runtime_error(std::format("Unknown task type \"{}\"", type));
             }
             std::println("Created task: {}", task_name);
+            factory::assert_empty(task_desc);
         }
     }
 
@@ -116,7 +119,6 @@ std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const &p)
     if (!file.is_open()) { throw std::runtime_error(std::format("Could not open setup file '{}'", p.string())); }
     nlohmann::json const js = nlohmann::json::parse(file);
     file.close();
-
     return from_json(js);
 }
 
