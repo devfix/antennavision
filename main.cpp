@@ -105,6 +105,8 @@ int main(int argc, char* argv[])
     setup.export_to_three();
     setup.run_tasks();
 
+    plot::plot_gain_over_straight("quick-plot", setup.get_radiator_by_id("transmitter"), setup.get_radiator_by_id("receiver"), setup.get_reference_by_id("ref_rx_start"), setup.get_reference_by_id("ref_rx_stop"), 0.1);
+
     return 0;
 
 

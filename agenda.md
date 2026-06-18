@@ -13,3 +13,4 @@
 - [ ] derive effective length vector and express field quantities by it
 - [ ] derive beamforming model for PS and TDD
 - [ ] derive beam focusing (x,y)
+- [ ] E focus vs "P focus" (P variation) -> compare Hertzian Dipole vs lambda/2 dipole
