@@ -1,8 +1,8 @@
 # Agenda
 
 ## Software
-- [ ] look for setup files in a directory, loop over all setups
-- [ ] implement plot_gain_over_straight
+- [x] look for setup files in a directory, loop over all setups
+- [x] implement plot_gain_over_straight
 - [ ] implement ULA
 - [ ] implement PS
 - [ ] implement connections between components

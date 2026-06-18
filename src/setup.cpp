@@ -10,6 +10,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <optional>
+#include <regex>
 #include "components/customradiator.hpp"
 #include "components/hertziandipole.hpp"
 #include "components/isotropicradiator.hpp"
@@ -115,6 +116,8 @@ namespace
             return ctx->expression.value();
         };
     }
+
+    bool is_valid_id(std::string const &id) { return std::regex_match(id, std::regex("^[a-zA-Z0-9\\-_]+$")); }
 } // namespace
 
 std::unique_ptr<Setup> Setup::from_json(json const &js)
@@ -129,7 +132,8 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
     {
         for (auto const &reference : json_get(js, "references"))
         {
-            auto const id = json_get_as<std::string_view>(reference, "id");
+            auto const id = json_get_as<std::string>(reference, "id");
+            if (!is_valid_id(id)) { throw std::runtime_error(std::format("Invalid reference id '{}', only letters, numbers, '-', and '_' is allowed!", id)); }
             auto const origin_id = optional_from_json<std::string_view>(json_get(reference, "origin"));
             auto const translation = vec3_from_json(json_get(reference, "translation"));
             auto const rotation = quaternion_from_json(json_get(reference, "rotation"));
@@ -145,7 +149,8 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
     {
         for (auto const &radiator : json_get(js, "radiators"))
         {
-            auto const id = json_get_as<std::string_view>(radiator, "id");
+            auto const id = json_get_as<std::string>(radiator, "id");
+            if (!is_valid_id(id)) { throw std::runtime_error(std::format("Invalid radiator id '{}', only letters, numbers, '-', and '_' is allowed!", id)); }
             auto const origin_id = json_get_as<std::string_view>(radiator, "reference");
             auto const type = json_get_as<std::string_view>(radiator, "type");
             std::println("loading radiator [id: '{}', origin: '{}', type: '{}']", id, origin_id, type);
@@ -162,7 +167,7 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
             }
             else
             {
-                throw std::runtime_error(std::format("unknown radiator type '{}'", type));
+                throw std::runtime_error(std::format("Unknown radiator type '{}'", type));
             }
         }
     }
@@ -203,6 +208,7 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
         }
     }
 
+    // ReSharper disable once CppDFAMemoryLeak
     return std::unique_ptr<Setup>(new Setup(setup_name, std::move(references), std::move(radiators), std::move(tasks)));
 }
 
