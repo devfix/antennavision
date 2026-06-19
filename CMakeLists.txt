@@ -17,57 +17,17 @@ if(CCACHE_PROGRAM)
 else()
     message(STATUS "CCache not found. Proceeding with standard compilation.")
 endif()
-
-
-######### Boost
-set(BOOST_ENABLE_CMAKE ON CACHE BOOL "Enable Boost CMake support")
-set(BOOST_INCLUDE_LIBRARIES headers filesystem system serialization date_time log dynamic_bitset CACHE STRING "Boost components" FORCE)
-FetchContent_Declare(
-        Boost
-        URL https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.7z
-        URL_HASH SHA256=ce132f85fc706aa8b5c7e6e52a8338de33a688e92e7c8fada3713194b109232e
-)
-FetchContent_MakeAvailable(Boost)
-
-# This tells any subsequent find_package(Boost) to look inside the FetchContent directory instead of the host machine.
-set(boost_DIR "${boost_BINARY_DIR}" CACHE PATH "Path to Boost CMake config" FORCE)
 #########
 
 
 ######### NumCpp
+set(NUMCPP_NO_USE_BOOST ON CACHE BOOL "Don't use the boost libraries" FORCE)
 FetchContent_Declare(
         NumCpp
         URL https://github.com/dpilger26/NumCpp/archive/refs/tags/Version_2.16.1.tar.gz
         URL_HASH SHA256=e543049b267ce6bc28463e45db3eaefa4e7c0944c89d709df515736bfef807b4
 )
-FetchContent_GetProperties(NumCpp)
-if(NOT numcpp_POPULATED)
-    FetchContent_Populate(NumCpp)
-
-    # Create the target yourself so you don't care about NumCpp's broken internal search
-    add_library(NumCpp::NumCpp INTERFACE IMPORTED GLOBAL)
-
-    # Point it to the downloaded NumCpp headers
-    target_include_directories(NumCpp::NumCpp INTERFACE "${numcpp_SOURCE_DIR}/include")
-
-    # Explicitly link NumCpp to the Boost headers target created by FetchContent(Boost)
-    target_link_libraries(NumCpp::NumCpp INTERFACE Boost::headers)
-
-    target_link_libraries(NumCpp::NumCpp INTERFACE
-            Boost::headers
-            Boost::date_time
-            Boost::filesystem
-            Boost::system
-            Boost::serialization
-            Boost::log
-    )
-
-    target_include_directories(NumCpp::NumCpp INTERFACE
-            "${boost_SOURCE_DIR}/libs/dynamic_bitset/include"
-            "${boost_SOURCE_DIR}/libs/math/include"
-            "${boost_SOURCE_DIR}/libs/random/include"
-    )
-endif ()
+FetchContent_MakeAvailable(NumCpp)
 #########
 
 
@@ -146,10 +106,6 @@ add_executable(antennavision main.cpp ${SOURCE_FILES})
 target_compile_definitions(antennavision PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(antennavision PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(antennavision PRIVATE
-#        boost_filesystem
-#        boost_date_time
-#        boost_log
-#        boost_log_setup
         NumCpp::NumCpp
         matplot
         fmt::fmt
@@ -168,10 +124,6 @@ add_executable(testrunner ${SOURCE_FILES} ${TEST_FILES})
 target_compile_definitions(testrunner PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(testrunner PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(testrunner PRIVATE
-#        boost_filesystem
-#        boost_date_time
-#        boost_log
-#        boost_log_setup
         NumCpp::NumCpp
         matplot
         fmt::fmt
