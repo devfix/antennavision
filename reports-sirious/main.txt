@@ -1,0 +1,7 @@
+In file included from /home/respeex/antennavision/cmake-build-debug-sirious/_deps/numcpp-src/include/NumCpp/DateTime.hpp:31,
+                 from /home/respeex/antennavision/cmake-build-debug-sirious/_deps/numcpp-src/include/NumCpp.hpp:46,
+                 from ./main.cpp:1:
+/home/respeex/antennavision/cmake-build-debug-sirious/_deps/numcpp-src/include/NumCpp/DateTime/DateTime.hpp:41:10: fatal error: boost/date_time/posix_time/posix_time.hpp: No such file or directory
+   41 | #include "boost/date_time/posix_time/posix_time.hpp"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.

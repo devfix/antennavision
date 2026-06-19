@@ -1,0 +1,2 @@
+g++: warning: : linker input file unused because linking not done
+g++: error: : linker input file not found: No such file or directory
