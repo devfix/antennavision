@@ -1,0 +1,10 @@
+#!/bin/bash
+src="$1"
+dir="reports/$(dirname "$src")"
+out="$dir/$(basename "$(baselabel "$src")").txt"
+mkdir -p "$dir"
+
+g++ -std=c++23 -ftime-report -O0 -c "$src" -o /dev/null -I/home/core/Documents/ws/def/antennavision/include -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/matplotplusplus-src/source -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/matplotplusplus-build/source/matplot -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/fmt-src/include -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/json-src/include -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/dplotpp-src/include -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/exprtk-src -isystem /home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/numcpp-src/include -I/home/core/Documents/ws/def/antennavision/include -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/matplotplusplus-src/source -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/matplotplusplus-build/source/matplot -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/fmt-src/include -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/json-src/include -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/dplotpp-src/include -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/exprtk-src -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/catch2-src/src/catch2/.. -I/home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/catch2-build/generated-includes -isystem /home/core/Documents/ws/def/antennavision/cmake-build-debug-local/_deps/numcpp-src/include > "$out" 2>&1
+
+l="$(cat "$out" | grep TOTAL | awk -F ':' '{print $2}')"
+echo "$l $src"
