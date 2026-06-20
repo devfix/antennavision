@@ -30,6 +30,7 @@ struct Setup
     [[nodiscard]] Radiator const &get_radiator_by_id(std::string_view id) const;
 
     std::string const name;
+    std::map<std::string, double> const variables;
     std::list<Reference> references;
     std::list<std::unique_ptr<Radiator>> const radiators;
     std::list<std::pair<std::string, std::function<void()>>> const tasks;
@@ -38,5 +39,5 @@ struct Setup
     std::vector<Component> inter_components;
 
 private:
-    Setup(std::string_view name, std::list<Reference> &&references, std::list<std::unique_ptr<Radiator>> &&radiators, std::list<std::pair<std::string, std::function<void()>>> && tasks);
+    Setup(std::string_view name, std::map<std::string, double> &&variables, std::list<Reference> &&references, std::list<std::unique_ptr<Radiator>> &&radiators, std::list<std::pair<std::string, std::function<void()>>> && tasks);
 };

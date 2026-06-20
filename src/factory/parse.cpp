@@ -3,12 +3,12 @@
 //
 
 #include "factory/parse.hpp"
-#include <memory>
 #include <exprtk.hpp>
+#include <memory>
 
 namespace factory
 {
-    std::function<double(double, double)> parse_theta_phi_function(std::string_view const expression)
+    std::function<double(double, double)> parse_theta_phi_function(std::string const &expr)
     {
         // Struct to hold all ExprTk internal state variables safely on the heap
         struct ExpressionContext
@@ -30,8 +30,7 @@ namespace factory
         ctx->expression.register_symbol_table(ctx->symbol_table);
 
         // Compile the string
-        exprtk::parser<double> parser;
-        if (!parser.compile(std::string(expression), ctx->expression)) { throw std::runtime_error("ExprTk compilation failed: " + parser.error()); }
+        if (exprtk::parser<double> parser; !parser.compile(expr, ctx->expression)) { throw std::runtime_error("ExprTk compilation failed: " + parser.error()); }
 
         // Return the callable lambda.
         // Capturing 'ctx' by value extends the lifetime of the underlying ExprTk objects.
@@ -41,5 +40,16 @@ namespace factory
             ctx->phi = phi;
             return ctx->expression.value();
         };
+    }
+
+    double parse_double(std::string const &expr, std::map<std::string, double> const &variables)
+    {
+        exprtk::symbol_table<double> symbol_table;
+        exprtk::expression<double> expression;
+        for (auto [key, val] : variables) { symbol_table.add_constant(key, val); }
+        symbol_table.add_constants();
+        expression.register_symbol_table(symbol_table);
+        if (exprtk::parser<double> parser; !parser.compile(expr, expression)) { throw std::runtime_error("ExprTk compilation failed: " + parser.error()); }
+        return expression.value();
     }
 } // namespace factory

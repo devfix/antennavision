@@ -26,13 +26,13 @@ namespace factory
 
     } // namespace
 
-    Reference make_reference(json &reference_desc, std::list<Reference> const &references)
+    Reference make_reference(json &reference_desc, std::list<Reference> const &references, std::map<std::string, double> const& variables)
     {
         auto const id = get_string(reference_desc, "id");
         assert_valid_id(id);
         auto const origin_id = get_string(reference_desc, "origin");
-        auto const translation = get_vec3(reference_desc, "translation", true, true);
-        auto const rotation = get_quaternion(reference_desc, "rotation", true, true);
+        auto const translation = get_vec3(reference_desc, "translation", &variables, true, true);
+        auto const rotation = get_quaternion(reference_desc, "rotation", &variables, true, true);
         std::println("Creating reference [id: '{}', origin: '{}', translation: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]", id, origin_id, translation.x,
                      translation.y, translation.z, rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi);
         Reference const &origin = find_reference_by_id(references, origin_id);
@@ -40,7 +40,7 @@ namespace factory
         return {id, &origin, translation, rotation};
     }
 
-    std::unique_ptr<Radiator> make_radiator(json &radiator_desc, std::list<Reference> const &references)
+    std::unique_ptr<Radiator> make_radiator(json &radiator_desc, std::list<Reference> const &references, std::map<std::string, double> const& variables)
     {
         auto const id = get_string(radiator_desc, "id");
         assert_valid_id(id);
@@ -50,7 +50,7 @@ namespace factory
         Reference const &origin = find_reference_by_id(references, origin_id);
         if (type == "HertzianDipole")
         {
-            double length = get_double(radiator_desc, "length");
+            double length = get_double(radiator_desc, "length", &variables);
             assert_empty(radiator_desc);
             return std::make_unique<HertzianDipole>(id, origin, length);
         }

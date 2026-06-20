@@ -8,7 +8,7 @@
 #include "../include/setup.hpp"
 #include "testutil.hpp"
 
-TEST_CASE("setup without rotation", "[TestSetup]")
+TEST_CASE("setup without rotation", "[TestSetupReferences]")
 {
     json const js = json::parse(R"(
 {
@@ -73,7 +73,7 @@ TEST_CASE("setup without rotation", "[TestSetup]")
     require_close_position(ref3.global_from_local(Vec3{-1, -1, -1}), POS_ZERO);
 }
 
-TEST_CASE("setup with rotation", "[TestSetup]")
+TEST_CASE("setup with rotation", "[TestSetupReferences]")
 {
     json const js = json::parse(R"(
 {

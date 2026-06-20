@@ -10,6 +10,7 @@
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
+#include "factory/parse.hpp"
 #include "plot.hpp"
 #include "print.hpp"
 #include "three.hpp"
@@ -23,26 +24,26 @@ namespace
         return js[key];
     }
 
-    template <typename T>
-        auto json_get_as(json const &js, std::string_view const key)
-    {
-        if (!js.contains(key)) { throw std::runtime_error(std::format("Could not find key '{}' in json object\n{}", key, js.dump(2))); }
-        if constexpr (std::is_same_v<T, NdArray>)
-        {
-            auto const phis = js[key].get<std::vector<double>>();
-            return NdArray(phis.begin(), phis.end());
-        }
-        else if constexpr (std::is_same_v<T, char>)
-        {
-            std::string_view const str = js[key].get<std::string_view>();
-            if (str.length() != 1) { throw std::runtime_error(std::format("Invalid character entry '{}', expected string of unity length.", str)); }
-            return str.at(0);
-        }
-        else
-        {
-            return js[key].get<T>();
-        }
-    }
+    // template <typename T>
+    //     auto json_get_as(json const &js, std::string_view const key)
+    // {
+    //     if (!js.contains(key)) { throw std::runtime_error(std::format("Could not find key '{}' in json object\n{}", key, js.dump(2))); }
+    //     if constexpr (std::is_same_v<T, NdArray>)
+    //     {
+    //         auto const phis = js[key].get<std::vector<double>>();
+    //         return NdArray(phis.begin(), phis.end());
+    //     }
+    //     else if constexpr (std::is_same_v<T, char>)
+    //     {
+    //         std::string_view const str = js[key].get<std::string_view>();
+    //         if (str.length() != 1) { throw std::runtime_error(std::format("Invalid character entry '{}', expected string of unity length.", str)); }
+    //         return str.at(0);
+    //     }
+    //     else
+    //     {
+    //         return js[key].get<T>();
+    //     }
+    // }
 
     // template <typename T>
     // std::optional<T> optional_from_json(json const &j)
@@ -52,22 +53,37 @@ namespace
 
 std::unique_ptr<Setup> Setup::from_json(json const &js)
 {
-    json setup_desc = js;  // create a copy of the json object in order to decompose it
+    json setup_desc = js; // create a copy of the json object in order to decompose it
     auto const &metadata = json_get(setup_desc, "metadata");
     std::string_view const setup_name = json_get(metadata, "setup_name").get<std::string_view>();
     std::println("Setup name: {}", setup_name);
+
+    std::map<std::string, double> variables;
+    if (setup_desc.contains("variables"))
+    {
+        for (auto [key, val] : setup_desc["variables"].items())
+        {
+            if (val.is_string()) { variables[key] = factory::parse_double(val.get<std::string>(), variables); }
+            else if (val.is_number()) { variables[key] = val.get<double>(); }
+            else
+            {
+                throw std::runtime_error(std::format("Invalid type '{}' of variable '{}'", val.type_name(), key));
+            }
+            std::println("Define variable {}={:.15g}", key, variables[key]);
+        }
+    }
 
     std::list<Reference> references;
     references.emplace_back("", nullptr, Vec3(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
     if (setup_desc.contains("references"))
     {
-        for (auto &reference_desc : json_get(setup_desc, "references")) { references.push_back(std::move(factory::make_reference(reference_desc, references))); }
+        for (auto &reference_desc : json_get(setup_desc, "references")) { references.push_back(std::move(factory::make_reference(reference_desc, references, variables))); }
     }
 
     std::list<std::unique_ptr<Radiator>> radiators;
     if (setup_desc.contains("radiators"))
     {
-        for (auto &radiator_desc : json_get(setup_desc, "radiators")) { radiators.push_back(std::move(factory::make_radiator(radiator_desc, references))); }
+        for (auto &radiator_desc : json_get(setup_desc, "radiators")) { radiators.push_back(std::move(factory::make_radiator(radiator_desc, references, variables))); }
     }
 
     std::list<std::pair<std::string, std::function<void()>>> tasks;
@@ -93,7 +109,7 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
                 Radiator const &sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
                 Reference &ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
                 Reference const &ref_stop = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_stop"));
-                double wavelength = factory::get_double(task_desc, "wavelength");
+                double wavelength = factory::get_double(task_desc, "wavelength", &variables);
                 char distance_axis = factory::get_char(task_desc, "distance_axis");
                 task_name = std::format("{}.{}.{}", type, source.id, sink.id);
                 tasks.emplace_back(task_name, [dir_plot, &source, &sink, &ref_start, &ref_stop, wavelength, distance_axis]()
@@ -109,7 +125,7 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
     }
 
     // ReSharper disable once CppDFAMemoryLeak
-    return std::unique_ptr<Setup>(new Setup(setup_name, std::move(references), std::move(radiators), std::move(tasks)));
+    return std::unique_ptr<Setup>(new Setup(setup_name, std::move(variables), std::move(references), std::move(radiators), std::move(tasks)));
 }
 
 std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const &p)
@@ -117,7 +133,7 @@ std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const &p)
     std::println("Loading setup file '{}'", p.string());
     std::ifstream file(p);
     if (!file.is_open()) { throw std::runtime_error(std::format("Could not open setup file '{}'", p.string())); }
-    nlohmann::json const js = nlohmann::json::parse(file);
+    auto const js = nlohmann::ordered_json::parse(file);
     file.close();
     return from_json(js);
 }
@@ -156,6 +172,7 @@ Reference &Setup::get_reference_by_id(std::string_view const id) { return factor
 
 Radiator const &Setup::get_radiator_by_id(std::string_view const id) const { return factory::find_radiator_by_id(radiators, id); }
 
-Setup::Setup(std::string_view const name, std::list<Reference> &&references, std::list<std::unique_ptr<Radiator>> &&radiators, std::list<std::pair<std::string, std::function<void()>>> &&tasks) :
-    name(name), references(std::move(references)), radiators(std::move(radiators)), tasks(std::move(tasks))
+Setup::Setup(std::string_view const name, std::map<std::string, double> &&variables, std::list<Reference> &&references, std::list<std::unique_ptr<Radiator>> &&radiators,
+             std::list<std::pair<std::string, std::function<void()>>> &&tasks) :
+    name(name), variables(std::move(variables)), references(std::move(references)), radiators(std::move(radiators)), tasks(std::move(tasks))
 {}
