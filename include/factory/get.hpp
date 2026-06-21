@@ -5,6 +5,7 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
 #include <NumCpp/NdArray/NdArrayCore.hpp>
 #include <NumCpp/Rotations/Quaternion.hpp>
 #include <NumCpp/Vector/Vec3.hpp>
@@ -19,8 +20,9 @@ namespace factory
     std::string get_string(nlohmann::ordered_json& js, std::string_view key, bool remove=true, bool default_ok =false);
     nc::NdArray<double> get_ndarray(nlohmann::ordered_json &js, std::string_view key, bool remove=true);
     char get_char(nlohmann::ordered_json & js, std::string_view key, bool remove=true);
-    double get_double(nlohmann::ordered_json & js, std::string_view key, std::map<std::string, double> const* variables = nullptr, bool remove=true, bool default_ok =false);
-    nc::Vec3 get_vec3(nlohmann::ordered_json & js, std::string_view key, std::map<std::string, double> const* variables = nullptr, bool remove=true, bool default_ok =false);
-    nc::rotations::Quaternion get_quaternion(nlohmann::ordered_json & js, std::string_view key, std::map<std::string, double> const* variables = nullptr, bool remove=true, bool default_ok =false);
+    double get_double(nlohmann::ordered_json & js, std::string_view key, std::map<std::string, double> const& variables, bool remove=true, bool default_ok =false);
+    std::uint32_t get_uint(nlohmann::ordered_json & js, std::string_view key, std::map<std::string, double> const& variables, bool remove=true, bool default_ok =false);
+    nc::Vec3 get_vec3(nlohmann::ordered_json & js, std::string_view key, std::map<std::string, double> const& variables, bool remove=true, bool default_ok =false);
+    nc::rotations::Quaternion get_quaternion(nlohmann::ordered_json & js, std::string_view key, std::map<std::string, double> const& variables, bool remove=true, bool default_ok =false);
     std::array<std::string, 3> get_string_vec3(nlohmann::ordered_json & js, std::string_view key, bool remove=true);
 } // namespace factory

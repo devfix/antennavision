@@ -55,12 +55,12 @@ TEST_CASE("setup context with references", "[TestSetupContext]")
     {
       "id": "ref1",
       "origin": "",
-      "translation": {
+      "pos": {
         "x": "x",
         "y": "y",
         "z": "z"
       },
-      "rotation": {
+      "rot": {
         "yaw": "yaw",
         "pitch": "pitch",
         "roll": "roll"

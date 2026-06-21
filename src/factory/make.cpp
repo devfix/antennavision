@@ -4,6 +4,7 @@
 
 #include "factory/make.hpp"
 #include <locale>
+#include <nlohmann/json.hpp>
 #include "components/customradiator.hpp"
 #include "components/hertziandipole.hpp"
 #include "factory/find.hpp"
@@ -26,35 +27,37 @@ namespace factory
 
     } // namespace
 
-    Reference make_reference(json &reference_desc, std::list<Reference> const &references, std::map<std::string, double> const& variables)
+    Reference &make_reference(nlohmann::ordered_json &reference_desc, std::list<Reference> &references, std::map<std::string, double> const &variables)
     {
         auto const id = get_string(reference_desc, "id");
         assert_valid_id(id);
         auto const origin_id = get_string(reference_desc, "origin");
-        auto const translation = get_vec3(reference_desc, "translation", &variables, true, true);
-        auto const rotation = get_quaternion(reference_desc, "rotation", &variables, true, true);
-        std::println("Creating reference [id: '{}', origin: '{}', translation: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]", id, origin_id, translation.x,
-                     translation.y, translation.z, rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi);
+        auto const pos = get_vec3(reference_desc, "pos", variables, true, true);
+        auto const rotation = get_quaternion(reference_desc, "rot", variables, true, true);
+        std::println("Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]", id, origin_id, pos.x, pos.y, pos.z,
+                     rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi);
         Reference const &origin = find_reference_by_id(references, origin_id);
         assert_empty(reference_desc);
-        return {id, &origin, translation, rotation};
+        return references.emplace_back(id, &origin, pos, rotation);
     }
 
-    std::unique_ptr<Radiator> make_radiator(json &radiator_desc, std::list<Reference> const &references, std::map<std::string, double> const& variables)
+    void make_radiator(nlohmann::ordered_json &radiator_desc, std::list<Reference> &references, std::list<std::unique_ptr<Radiator>> &radiators, std::map<std::string, double> const &variables,
+                       bool generate)
     {
         auto const id = get_string(radiator_desc, "id");
-        assert_valid_id(id);
+        if (!generate) { assert_valid_id(id); }
         auto const origin_id = get_string(radiator_desc, "ref", true, true);
         auto const type = get_string(radiator_desc, "type");
         std::println("Creating radiator [id: '{}', origin: '{}', type: '{}']", id, origin_id, type);
         Reference const &origin = find_reference_by_id(references, origin_id);
         if (type == "HertzianDipole")
         {
-            double length = get_double(radiator_desc, "length", &variables);
+            double length = get_double(radiator_desc, "length", variables);
             assert_empty(radiator_desc);
-            return std::make_unique<HertzianDipole>(id, origin, length);
+            radiators.push_back(std::make_unique<HertzianDipole>(id, origin, length));
+            return;
         }
-        else if (type == "CustomRadiator")
+        if (type == "CustomRadiator")
         {
             auto const effective_length_defs = get_string_vec3(radiator_desc, "effective_length");
             std::array<std::function<double(double, double)>, 3> effective_length_parts;
@@ -62,7 +65,34 @@ namespace factory
             auto effective_length = [effective_length_parts](double const theta, double const phi) -> Vec3
             { return {effective_length_parts[0](theta, phi), effective_length_parts[1](theta, phi), effective_length_parts[2](theta, phi)}; };
             assert_empty(radiator_desc);
-            return std::make_unique<CustomRadiator>(id, origin, std::move(effective_length));
+            radiators.push_back(std::make_unique<CustomRadiator>(id, origin, std::move(effective_length)));
+            return;
+        }
+        if (type == "ULA")
+        {
+            auto const spacing = get_double(radiator_desc, "spacing", variables);
+            auto const count = get_uint(radiator_desc, "count", variables);
+            auto dir = get_vec3(radiator_desc, "dir", variables);
+            auto const rot = get_quaternion(radiator_desc, "rot", variables, true, true);
+            auto const prototype_desc = radiator_desc.at("radiator");
+
+            if (dir.norm() < NUMERICAL_MARGIN) { throw std::runtime_error(std::format("Invalid direction for ULA '{}'", id)); }
+            dir = dir.normalize();
+
+            double const length = spacing * (count - 1);
+            for (std::remove_const_t<decltype(count)> i = 0; i < count; i++)
+            {
+                double const f = static_cast<double>(i) / static_cast<double>(count - 1);
+                Vec3 const pos = dir * (f - 0.5) * length;
+                auto const &ref = references.emplace_back(std::format("{}:ref:{}", id, i), &origin, pos, rot);
+
+                // We make a copy of the "backup" description and adapt it for the current element of the ULA
+                nlohmann::ordered_json ula_element_desc = prototype_desc;
+                ula_element_desc["id"] = std::format("{}:radiator:{}", id, i);
+                ula_element_desc["ref"] = ref.id;
+                make_radiator(ula_element_desc, references, radiators, variables, true);
+            }
+            return;
         }
         throw std::runtime_error(std::format("Unknown radiator type '{}'", type));
     }

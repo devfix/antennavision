@@ -19,12 +19,12 @@ TEST_CASE("setup without rotation", "[TestSetupReferences]")
     {
       "id": "ref1",
       "origin": "",
-      "translation": {
+      "pos": {
         "x": 1,
         "y": 0,
         "z": 0
       },
-      "rotation": {
+      "rot": {
         "yaw": 0.0,
         "pitch": 0.0,
         "roll": 0.0
@@ -33,12 +33,12 @@ TEST_CASE("setup without rotation", "[TestSetupReferences]")
     {
       "id": "ref2",
       "origin": "ref1",
-      "translation": {
+      "pos": {
         "x": 0,
         "y": 1,
         "z": 0
       },
-      "rotation": {
+      "rot": {
         "yaw": 0.0,
         "pitch": 0.0,
         "roll": 0.0
@@ -47,12 +47,12 @@ TEST_CASE("setup without rotation", "[TestSetupReferences]")
     {
       "id": "ref3",
       "origin": "ref2",
-      "translation": {
+      "pos": {
         "x": 0,
         "y": 0,
         "z": 1
       },
-      "rotation": {
+      "rot": {
         "yaw": 0.0,
         "pitch": 0.0,
         "roll": 0.0
@@ -84,12 +84,12 @@ TEST_CASE("setup with rotation", "[TestSetupReferences]")
     {
       "id": "ref1",
       "origin": "",
-      "translation": {
+      "pos": {
         "x": 1,
         "y": 0,
         "z": 0
       },
-      "rotation": {
+      "rot": {
         "yaw": 0.5,
         "pitch": 0.0,
         "roll": 0.0
@@ -98,12 +98,12 @@ TEST_CASE("setup with rotation", "[TestSetupReferences]")
     {
       "id": "ref2",
       "origin": "ref1",
-      "translation": {
+      "pos": {
         "x": 1,
         "y": 0,
         "z": 0
       },
-      "rotation": {
+      "rot": {
         "yaw": 0.0,
         "pitch": -0.5,
         "roll": 0.0
@@ -112,12 +112,12 @@ TEST_CASE("setup with rotation", "[TestSetupReferences]")
     {
       "id": "ref3",
       "origin": "ref2",
-      "translation": {
+      "pos": {
         "x": 1,
         "y": 0,
         "z": 0
       },
-      "rotation": {
+      "rot": {
         "yaw": -0.5,
         "pitch": 0.0,
         "roll": -0.5

@@ -51,7 +51,7 @@ namespace
 
 } // namespace
 
-std::unique_ptr<Setup> Setup::from_json(json const &js)
+std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const &js)
 {
     json setup_desc = js; // create a copy of the json object in order to decompose it
     auto const &metadata = json_get(setup_desc, "metadata");
@@ -61,7 +61,7 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
     std::map<std::string, double> variables;
     if (setup_desc.contains("variables"))
     {
-        for (auto [key, val] : setup_desc["variables"].items())
+        for (const auto& [key, val] : setup_desc["variables"].items())
         {
             if (val.is_string()) { variables[key] = factory::parse_double(val.get<std::string>(), variables); }
             else if (val.is_number()) { variables[key] = val.get<double>(); }
@@ -77,13 +77,13 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
     references.emplace_back("", nullptr, Vec3(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
     if (setup_desc.contains("references"))
     {
-        for (auto &reference_desc : json_get(setup_desc, "references")) { references.push_back(std::move(factory::make_reference(reference_desc, references, variables))); }
+        for (auto &reference_desc : json_get(setup_desc, "references")) { factory::make_reference(reference_desc, references, variables); }
     }
 
     std::list<std::unique_ptr<Radiator>> radiators;
     if (setup_desc.contains("radiators"))
     {
-        for (auto &radiator_desc : json_get(setup_desc, "radiators")) { radiators.push_back(std::move(factory::make_radiator(radiator_desc, references, variables))); }
+        for (auto &radiator_desc : json_get(setup_desc, "radiators")) { factory::make_radiator(radiator_desc, references, radiators, variables, false); }
     }
 
     std::list<std::pair<std::string, std::function<void()>>> tasks;
@@ -109,7 +109,7 @@ std::unique_ptr<Setup> Setup::from_json(json const &js)
                 Radiator const &sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
                 Reference &ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
                 Reference const &ref_stop = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_stop"));
-                double wavelength = factory::get_double(task_desc, "wavelength", &variables);
+                double wavelength = factory::get_double(task_desc, "wavelength", variables);
                 char distance_axis = factory::get_char(task_desc, "distance_axis");
                 task_name = std::format("{}.{}.{}", type, source.id, sink.id);
                 tasks.emplace_back(task_name, [dir_plot, &source, &sink, &ref_start, &ref_stop, wavelength, distance_axis]()
