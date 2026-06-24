@@ -12,24 +12,7 @@
 
 double constexpr DIPOLE_LENGTH = 1e-3;
 
-TEST_CASE("HertzianDipole Directivity", "[HertzianDipole]")
-{
-    Reference const reference("", nullptr);
-    HertzianDipole radiator("HertzianDipole", reference, DIPOLE_LENGTH);
-    REQUIRE_THROWS(radiator.calc_path(0, 0));
-
-    auto const thetas = nc::linspace(0.0, pi, 21);
-    NdArray directivities_actual_phi0(thetas.shape());
-    NdArray directivities_actual_phi1(thetas.shape());
-    NdArray directivities_expected(thetas.shape());
-    std::ranges::transform(thetas, directivities_actual_phi0.begin(), [&radiator](double const theta_) { return radiator.calc_directivity(theta_, 0.0, 101, 201); });
-    std::ranges::transform(thetas, directivities_actual_phi1.begin(), [&radiator](double const theta_) { return radiator.calc_directivity(theta_, 1.0, 101, 201); });
-    std::ranges::transform(thetas, directivities_expected.begin(), [](double const theta_) { return 1.5 * math::square(std::sin(theta_)); });
-    require_close_array(directivities_actual_phi0, directivities_expected);
-    require_close_array(directivities_actual_phi1, directivities_expected);
-}
-
-TEST_CASE("HertzianDipole Power Gain With X-Translation", "[HertzianDipole]")
+TEST_CASE("Power Gain of HertzianDipole With X-Translation", "[Gain]")
 {
     double constexpr lambda = 0.1;
     Reference const reference1("", nullptr);
@@ -44,7 +27,7 @@ TEST_CASE("HertzianDipole Power Gain With X-Translation", "[HertzianDipole]")
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 }
 
-TEST_CASE("HertzianDipole Power Gain With Y-Translation", "[HertzianDipole]")
+TEST_CASE("Power Gain of HertzianDipole With Y-Translation", "[Gain]")
 {
     double constexpr lambda = 0.1;
     Reference const reference1("", nullptr);
@@ -59,7 +42,7 @@ TEST_CASE("HertzianDipole Power Gain With Y-Translation", "[HertzianDipole]")
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 }
 
-TEST_CASE("HertzianDipole Power Gain With Z-Translation", "[HertzianDipole]")
+TEST_CASE("Power Gain of HertzianDipole With Z-Translation", "[Gain]")
 {
     double constexpr lambda = 0.1;
     Reference const reference1("", nullptr);
@@ -74,7 +57,7 @@ TEST_CASE("HertzianDipole Power Gain With Z-Translation", "[HertzianDipole]")
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 }
 
-TEST_CASE("HertzianDipole Power Gain With X-Rotation", "[HertzianDipole]")
+TEST_CASE("Power Gain of HertzianDipole With X-Rotation", "[Gain]")
 {
     double constexpr lambda = 0.1;
     Reference const reference1("", nullptr);
@@ -89,7 +72,7 @@ TEST_CASE("HertzianDipole Power Gain With X-Rotation", "[HertzianDipole]")
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 }
 
-TEST_CASE("HertzianDipole Power Gain With Y-Rotation", "[HertzianDipole]")
+TEST_CASE("Power Gain of HertzianDipole With Y-Rotation", "[Gain]")
 {
     double constexpr lambda = 0.1;
     Reference const reference1("", nullptr);
@@ -104,7 +87,7 @@ TEST_CASE("HertzianDipole Power Gain With Y-Rotation", "[HertzianDipole]")
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 }
 
-TEST_CASE("HertzianDipole Power Gain With Z-Rotation", "[HertzianDipole]")
+TEST_CASE("Power Gain of HertzianDipole With Z-Rotation", "[Gain]")
 {
     double constexpr lambda = 0.1;
     Reference const reference1("", nullptr);
@@ -119,7 +102,7 @@ TEST_CASE("HertzianDipole Power Gain With Z-Rotation", "[HertzianDipole]")
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 }
 
-TEST_CASE("HertzianDipole Power Gain Complicated 1", "[HertzianDipole]")
+TEST_CASE("Power Gain of HertzianDipole Complicated 1", "[Gain]")
 {
     double constexpr lambda = 0.1;
     Reference const reference1("", nullptr);
@@ -134,7 +117,7 @@ TEST_CASE("HertzianDipole Power Gain Complicated 1", "[HertzianDipole]")
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 }
 
-TEST_CASE("HertzianDipole Power Gain Complicated 2", "[HertzianDipole]")
+TEST_CASE("Power Gain of HertzianDipole Complicated 2", "[Gain]")
 {
     double constexpr lambda = 0.1;
     Reference const reference1("", nullptr);

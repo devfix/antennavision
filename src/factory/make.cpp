@@ -75,6 +75,7 @@ namespace factory
             auto dir = get_vec3(radiator_desc, "dir", variables);
             auto const rot = get_quaternion(radiator_desc, "rot", variables, true, true);
             auto const prototype_desc = radiator_desc.at("radiator");
+            radiator_desc.erase("radiator");
 
             if (dir.norm() < NUMERICAL_MARGIN) { throw std::runtime_error(std::format("Invalid direction for ULA '{}'", id)); }
             dir = dir.normalize();

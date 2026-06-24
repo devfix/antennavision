@@ -9,6 +9,11 @@ Reference::Reference(std::string_view const id, Reference const* origin, Vec3 co
 {
 }
 
+// Reference Reference::copy() const
+// {
+//     return {id, origin, pos, rotation};
+// }
+
 Vec3 Reference::local_from_global(Vec3 const &pos_global) const
 {
     return rotation.inverse().rotate((origin ? origin->local_from_global(pos_global) : pos_global) - this->pos);

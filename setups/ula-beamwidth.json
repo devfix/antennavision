@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "setup_name": "ula-breamwidth"
+  },
+  "variables": {
+    "wavelength": 0.1,
+    "distance": 100,
+    "dipole_length": 1e-3
+  },
+  "references": [
+    {
+      "id": "ref_ula",
+      "origin": ""
+    },
+    {
+      "id": "ref_rx_start",
+      "origin": "",
+      "pos": {
+        "x": 0,
+        "y": "distance",
+        "z": "-distance/2"
+      }
+    },
+    {
+      "id": "ref_rx_stop",
+      "origin": "",
+      "pos": {
+        "x": 0,
+        "y": "distance",
+        "z": "distance/2"
+      }
+    }
+  ],
+  "radiators": [
+    {
+      "type": "ULA",
+      "id": "ula1",
+      "ref": "ref_ula",
+      "dir": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "spacing": "wavelength * 0.5",
+      "count": 3,
+      "radiator": {
+        "type": "HertzianDipole",
+        "length": "dipole_length"
+      }
+    },
+    {
+      "id": "receiver",
+      "ref": "ref_rx_start",
+      "type": "HertzianDipole",
+      "length": "dipole_length"
+    }
+  ],
+  "tasks": [
+    {
+      "type": "builtin",
+      "key": "compare_beamwidth"
+    }
+  ]
+}

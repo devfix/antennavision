@@ -47,18 +47,21 @@ struct Radiator : Component
     Radiator &operator=(Radiator &&) = delete; // disable move assignment
 
     Reference const &origin;
-    EffLenFn const el_theta;
-    EffLenFn const el_phi;
+    EffLenFn el_theta;
+    EffLenFn el_phi;
 
     [[nodiscard]] virtual Vec3 calc_polar_effective_length(double theta, double phi) const = 0;
     [[nodiscard]] Vec3 calc_polar_effective_length(Vec3 const& pos_local) const;
     [[nodiscard]] virtual double calc_polar_effective_length_norm(double theta, double phi) const;
     [[nodiscard]] double calc_polar_effective_length_norm(Vec3 const& pos_local) const;
-    complex_t calc_path(std::size_t idx_input, std::size_t idx_output) override;
-    [[nodiscard]] virtual complex_t calc_radiation_gain(Vec3 const &pos, double freq) const = 0;
+    std::complex<double> calc_path(std::size_t idx_input, std::size_t idx_output) override;
+    [[nodiscard]] virtual std::complex<double> calc_radiation_gain(Vec3 const &pos, double freq) const = 0;
 
+    [[nodiscard]] double calc_radiation_resistance(std::size_t n_theta = 101, std::size_t n_phi = 201) const;
     [[nodiscard]] double calc_directivity(double theta, double phi, std::size_t n_theta = 101, std::size_t n_phi = 201) const;
     [[nodiscard]] double calc_directivity(Vec3 const& pos_local) const;
-    [[nodiscard]] complex_t calc_voltage_gain(Radiator const& radiator, double lambda, std::size_t n_theta = 101, std::size_t n_phi = 201) const;
+
+
+    [[nodiscard]] std::complex<double> calc_voltage_gain(Radiator const& radiator, double lambda, std::size_t n_theta = 101, std::size_t n_phi = 201) const;
     [[nodiscard]] double calc_power_gain(Radiator const& radiator, double lambda) const;
 };

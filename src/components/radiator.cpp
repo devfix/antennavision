@@ -11,7 +11,7 @@
 #include "math.hpp"
 #include "print.hpp"
 
-Radiator::Radiator(std::string_view const id, Reference const &origin) : Component(id, 1, 0), origin(origin), el_theta(std::move(el_theta)), el_phi(std::move(el_phi)) {}
+Radiator::Radiator(std::string_view const id, Reference const &origin) : Component(id, 1, 0), origin(origin) {}
 
 Vec3 Radiator::calc_polar_effective_length(Vec3 const &pos_local) const
 {
@@ -25,16 +25,21 @@ double Radiator::calc_polar_effective_length_norm(Vec3 const &pos_local) const {
 
 complex_t Radiator::calc_path(std::size_t idx_input, std::size_t idx_output) { throw std::runtime_error("calc_path() should not be called on a radiator"); }
 
+double Radiator::calc_radiation_resistance(std::size_t n_theta, std::size_t n_phi) const
+{
+
+}
+
 double Radiator::calc_directivity(double theta, double phi, std::size_t n_theta, std::size_t n_phi) const
 {
     double num = calc_polar_effective_length_norm(theta, phi);
     num *= num * 4 * pi;
     auto theta_edges = nc::linspace(0.0, pi, n_theta + 1);
     auto phi_edges = nc::linspace(0.0, 2.0 * pi, n_phi + 1);
-    auto d_theta = pi / n_theta;
-    auto d_phi = (2.0 * pi) / n_phi;
-    auto theta_mids = (theta_edges(theta_edges.rSlice(), nc::Slice(0, n_theta)) + theta_edges(theta_edges.rSlice(), nc::Slice(1, n_theta + 1))) / 2.0;
-    auto phi_mids = (phi_edges(phi_edges.rSlice(), nc::Slice(0, n_phi)) + phi_edges(phi_edges.rSlice(), nc::Slice(1, n_phi + 1))) / 2.0;
+    auto d_theta = pi / static_cast<double>(n_theta);
+    auto d_phi = (2.0 * pi) / static_cast<double>(n_phi);
+    auto theta_mids = (theta_edges(theta_edges.rSlice(), nc::Slice(0, static_cast<std::int32_t>(n_theta))) + theta_edges(theta_edges.rSlice(), nc::Slice(1, static_cast<std::int32_t>(n_theta) + 1))) / 2.0;
+    auto phi_mids = (phi_edges(phi_edges.rSlice(), nc::Slice(0, static_cast<std::int32_t>(n_phi))) + phi_edges(phi_edges.rSlice(), nc::Slice(1, static_cast<std::int32_t>(n_phi) + 1))) / 2.0;
 
     // 4. Create a 2D meshgrid of the coordinates
     auto [theta_grid, phi_grid] = nc::meshgrid(theta_mids, phi_mids);
@@ -88,10 +93,10 @@ complex_t Radiator::calc_voltage_gain(Radiator const &radiator, double lambda, s
     auto const num = - 2.0 * complex_t(0.0, 1.0) * lambda * g;
     auto theta_edges = nc::linspace(0.0, pi, n_theta + 1);
     auto phi_edges = nc::linspace(0.0, 2.0 * pi, n_phi + 1);
-    auto d_theta = pi / n_theta;
-    auto d_phi = (2.0 * pi) / n_phi;
-    auto theta_mids = (theta_edges(theta_edges.rSlice(), nc::Slice(0, n_theta)) + theta_edges(theta_edges.rSlice(), nc::Slice(1, n_theta + 1))) / 2.0;
-    auto phi_mids = (phi_edges(phi_edges.rSlice(), nc::Slice(0, n_phi)) + phi_edges(phi_edges.rSlice(), nc::Slice(1, n_phi + 1))) / 2.0;
+    auto d_theta = pi / static_cast<double>(n_theta);
+    auto d_phi = (2.0 * pi) / static_cast<double>(n_phi);
+    auto theta_mids = (theta_edges(theta_edges.rSlice(), nc::Slice(0, static_cast<std::int32_t>(n_theta))) + theta_edges(theta_edges.rSlice(), nc::Slice(1, static_cast<std::int32_t>(n_theta) + 1))) / 2.0;
+    auto phi_mids = (phi_edges(phi_edges.rSlice(), nc::Slice(0, static_cast<std::int32_t>(n_phi))) + phi_edges(phi_edges.rSlice(), nc::Slice(1, static_cast<std::int32_t>(n_phi) + 1))) / 2.0;
 
     // 4. Create a 2D meshgrid of the coordinates
     auto [theta_grid, phi_grid] = nc::meshgrid(theta_mids, phi_mids);

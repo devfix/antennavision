@@ -73,8 +73,7 @@ void plot::plot_directivity_over_theta(std::filesystem::path const &dir_plot, Ra
 
 void plot::plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiator const &source, Radiator const &sink, Reference &ref_start, Reference const &ref_stop, double wave_length, char distance_axis)
 {
-
-    std::string name = std::format("{}.{}.{}", __func__, source.id, sink.id);
+    std::string name = std::format("{}.{}.{}.{}", __func__, source.id, sink.id, distance_axis);
     std::println("Creating plot: {}", name);
 
     dplot::Figure fig{std::string(name), std::string("test-plot")};
@@ -123,7 +122,7 @@ void plot::plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiat
     Vec3 const pos_delta = ref_stop.pos - ref_start.pos;
     NdArray const rotation_delta = ref_stop.rotation.toNdArray() - ref_start.rotation.toNdArray();
     double const length = pos_delta.norm();
-    NdArray gians(n_points, 1);
+    NdArray gains(n_points, 1);
     NdArray distances(n_points, 1);
     double distance = 0;
 
@@ -143,13 +142,13 @@ void plot::plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiat
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         ref_start.pos = pos_start + pos_delta * f;
         ref_start.rotation = rotation_start + rotation_delta * f;
-        gians[k] = source.calc_power_gain(sink, wave_length);
+        gains[k] = source.calc_power_gain(sink, wave_length);
         distance = f * length;
         distances[k] = *distance_ptr;
     }
     ref_start.pos = pos_start;
     ref_start.rotation = rotation_start;
-    fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, distances.toStlVector(), gians.toStlVector())); //, std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / nc::constants::pi)));
+    fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, distances.toStlVector(), gains.toStlVector())); //, std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / nc::constants::pi)));
     fig.export_figure(dir_plot, {dplot::ExportType::PDF});
 }
 

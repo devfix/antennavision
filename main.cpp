@@ -5,6 +5,7 @@
 #include "print.hpp"
 
 #include "bitmap.hpp"
+#include "builtin.hpp"
 #include "components/hertziandipole.hpp"
 #include "include/setup.hpp"
 #include "manifest.hpp"
@@ -90,6 +91,18 @@ void compute_rect(array_t const &x_values, array_t const &y_values, std::vector<
 }
 */
 
+void run_builtin_task(Setup &setup, std::string_view key)
+{
+    if (key == "compare_beamwidth")
+    {
+        builtin::compare_beamwidth(setup);
+    }
+    else
+    {
+        throw std::runtime_error(std::format("Invalid builtin task key: {}", key));
+    }
+}
+
 int main(int argc, char *argv[])
 {
     std::cout << BANNER;
@@ -117,7 +130,7 @@ int main(int argc, char *argv[])
     for (auto const &setup : setups)
     {
         setup->export_to_three();
-        setup->run_tasks();
+        setup->run_tasks([&setup](std::string_view key) { run_builtin_task(*setup, key); });
     }
 
     return 0;

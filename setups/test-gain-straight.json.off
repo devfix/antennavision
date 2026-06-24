@@ -4,31 +4,39 @@
   },
   "references": [
     {
-      "id": "ref_rx_start",
+      "id": "ref_rx_x_start",
       "origin": "",
-      "translation": {
+      "pos": {
         "x": -1,
         "y": 1,
         "z": 0
-      },
-      "rotation": {
-        "yaw": 0.0,
-        "pitch": 0.0,
-        "roll": 0.0
       }
     },
     {
-      "id": "ref_rx_stop",
+      "id": "ref_rx_x_stop",
       "origin": "",
-      "translation": {
+      "pos": {
         "x": 1,
         "y": 1,
         "z": 0
-      },
-      "rotation": {
-        "yaw": 0.0,
-        "pitch": 0.0,
-        "roll": 0.0
+      }
+    },
+    {
+      "id": "ref_rx_z_start",
+      "origin": "",
+      "pos": {
+        "x": 0,
+        "y": 1,
+        "z": -1
+      }
+    },
+    {
+      "id": "ref_rx_z_stop",
+      "origin": "",
+      "pos": {
+        "x": 0,
+        "y": 1,
+        "z": 1
       }
     }
   ],
@@ -40,8 +48,14 @@
       "length": 1e-3
     },
     {
-      "id": "receiver",
-      "ref": "ref_rx_start",
+      "id": "receiver_x",
+      "ref": "ref_rx_x_start",
+      "type": "HertzianDipole",
+      "length": 1e-3
+    },
+    {
+      "id": "receiver_z",
+      "ref": "ref_rx_z_start",
       "type": "HertzianDipole",
       "length": 1e-3
     }
@@ -50,11 +64,20 @@
     {
       "type": "plot_gain_over_straight",
       "source": "transmitter",
-      "sink": "receiver",
-      "ref_start": "ref_rx_start",
-      "ref_stop": "ref_rx_stop",
+      "sink": "receiver_x",
+      "ref_start": "ref_rx_x_start",
+      "ref_stop": "ref_rx_x_stop",
       "wavelength": 0.1,
       "distance_axis": "x"
+    },
+    {
+      "type": "plot_gain_over_straight",
+      "source": "transmitter",
+      "sink": "receiver_z",
+      "ref_start": "ref_rx_z_start",
+      "ref_stop": "ref_rx_z_stop",
+      "wavelength": 0.1,
+      "distance_axis": "z"
     }
   ]
 }

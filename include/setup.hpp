@@ -24,10 +24,11 @@ struct Setup
     static std::unique_ptr<Setup> from_json(json const &js);
     static std::unique_ptr<Setup> from_file(std::filesystem::path const &p);
     void export_to_three() const;
-    void run_tasks();
+    void run_tasks(const std::function<void(std::string_view)>& builtin_handler);
 
     [[nodiscard]] Reference &get_reference_by_id(std::string_view id);
     [[nodiscard]] Radiator const &get_radiator_by_id(std::string_view id) const;
+    [[nodiscard]] std::vector<Radiator*> get_radiator_array(std::string_view id) const;
 
     std::string const name;
     std::map<std::string, double> const variables;
