@@ -13,6 +13,8 @@
 using complex_t = std::complex<double>;
 using NdArray = nc::NdArray<double>;
 using Vec3 = nc::Vec3;
+using pos_t = nc::Vec3;
+using vec_t = nc::NdArray<complex_t>;  /// should be of shape 3x1
 using Quaternion = nc::rotations::Quaternion;
 using json = nlohmann::ordered_json;
 constexpr double pi = std::numbers::pi;

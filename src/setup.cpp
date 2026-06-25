@@ -160,13 +160,13 @@ void Setup::export_to_three() const
     for (auto const &reference : references)
     {
         if (!reference.origin) { continue; } // we skip the dummy reference
-        auto const pos_center = reference.global_from_local({0, 0, 0});
-        auto const pos_origin = reference.origin->global_from_local({0, 0, 0});
+        auto const pos_center = reference.global_from_local_pos({0, 0, 0});
+        auto const pos_origin = reference.origin->global_from_local_pos({0, 0, 0});
         auto const distance = (pos_center - pos_origin).norm();
         auto const radius = distance * 1e-3;
         container.add(three::make_cylinder(pos_origin, pos_center, radius, radius, fmt::color::white));
-        container.add(three::create_coordinate_arrows(pos_center, reference.global_from_local({1, 0, 0}) - pos_center, reference.global_from_local({0, 1, 0}) - pos_center,
-                                                      reference.global_from_local({0, 0, 1}) - pos_center, distance * 1e-1));
+        container.add(three::create_coordinate_arrows(pos_center, reference.global_from_local_pos({1, 0, 0}) - pos_center, reference.global_from_local_pos({0, 1, 0}) - pos_center,
+                                                      reference.global_from_local_pos({0, 0, 1}) - pos_center, distance * 1e-1));
     }
     container.export_to_javascript(p);
 }

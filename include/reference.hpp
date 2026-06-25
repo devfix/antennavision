@@ -17,9 +17,11 @@ struct Reference
 
     // [[nodiscard]] Reference copy() const;
 
-    [[nodiscard]] Vec3 local_from_global(Vec3 const &pos_global) const;
-    [[nodiscard]] Vec3 global_from_local(Vec3 const &pos_local) const;
-    [[nodiscard]] Vec3 localize(Reference const& reference) const;
+    [[nodiscard]] pos_t local_from_global_pos(pos_t const &pos_global) const;
+    [[nodiscard]] pos_t global_from_local_pos(pos_t const &pos_local) const;
+    [[nodiscard]] vec_t local_from_global_vec(vec_t const &vec_global) const;
+    [[nodiscard]] vec_t global_from_local_vec(vec_t const &vec_local) const;
+    [[nodiscard]] pos_t localize(Reference const& reference) const;
 
     std::string const id;
     Reference const *origin;

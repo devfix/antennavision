@@ -5,8 +5,6 @@
 #include "factory/make.hpp"
 #include <locale>
 #include <nlohmann/json.hpp>
-#include "components/customradiator.hpp"
-#include "components/hertziandipole.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/parse.hpp"
@@ -52,20 +50,19 @@ namespace factory
         Reference const &origin = find_reference_by_id(references, origin_id);
         if (type == "HertzianDipole")
         {
-            double length = get_double(radiator_desc, "length", variables);
             assert_empty(radiator_desc);
-            radiators.push_back(std::make_unique<HertzianDipole>(id, origin, length));
+            radiators.push_back(std::unique_ptr<Radiator>(new Radiator(Radiator::HertzianDipole::create(id, origin)))); // NOLINT(*-make-unique)
             return;
         }
         if (type == "CustomRadiator")
         {
             auto const effective_length_defs = get_string_vec3(radiator_desc, "effective_length");
-            std::array<std::function<double(double, double)>, 3> effective_length_parts;
+            std::array<std::function<std::complex<double>(double, double, double)>, 3> effective_length_parts;
             std::ranges::transform(effective_length_defs, effective_length_parts.begin(), parse_theta_phi_function);
-            auto effective_length = [effective_length_parts](double const theta, double const phi) -> Vec3
-            { return {effective_length_parts[0](theta, phi), effective_length_parts[1](theta, phi), effective_length_parts[2](theta, phi)}; };
+            auto effective_length = [effective_length_parts](double const theta, double const phi, double const wavelength) -> nc::NdArray<std::complex<double>>
+            { return {effective_length_parts[0](theta, phi, wavelength), effective_length_parts[1](theta, phi, wavelength), effective_length_parts[2](theta, phi, wavelength)}; };
             assert_empty(radiator_desc);
-            radiators.push_back(std::make_unique<CustomRadiator>(id, origin, std::move(effective_length)));
+            radiators.push_back(std::make_unique<Radiator>(id, origin, std::move(effective_length)));
             return;
         }
         if (type == "ULA")

@@ -4,10 +4,24 @@
 
 #pragma once
 
+#include <sys/stat.h>
+
 #include "types.hpp"
 
 namespace math
 {
+    template <typename R, typename T>
+    nc::NdArray<R> constexpr vec(T a, T b, T c)
+    {
+        nc::NdArray<R> vec(3, 1);
+        vec(0, 0) = static_cast<R>(a);
+        vec(1, 0) = static_cast<R>(b);
+        vec(2, 0) = static_cast<R>(c);
+        return vec;
+    }
+
+    vec_t constexpr rotate(vec_t const &vec, nc::rotations::Quaternion const &quaternion) { return nc::dot(quaternion.toDCM(), vec); }
+
     double angle_between_vectors(Vec3 vec1, Vec3 vec2);
     Quaternion quaternion_from_directions(Vec3 dir_initial, Vec3 dir_target);
 
@@ -38,6 +52,10 @@ namespace math
     template <typename T>
     [[nodiscard]] T constexpr square(T x)
     { return x * x; }
+
+    template <typename T>
+    [[nodiscard]] double constexpr norm(nc::NdArray<T> array)
+    { return std::real(nc::norm(array).item()); }
 
     /**
      * Computes the spherical-to-Cartesian transformation matrix Omega(theta, phi).

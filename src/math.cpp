@@ -6,6 +6,7 @@
 #include <cmath>
 
 extern "C" {
+    // part of the Cephes library
     extern int sici ( double x, double *si, double *ci );
 }
 

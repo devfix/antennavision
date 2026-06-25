@@ -24,8 +24,8 @@ void require_close_array(NdArray const &actual, NdArray const &expected)
 
 void test_inverse_transformation(Reference const &reference, Vec3 const &pos)
 {
-    require_close_position(reference.local_from_global(reference.global_from_local(pos)), pos);
-    require_close_position(reference.global_from_local(reference.local_from_global(pos)), pos);
+    require_close_position(reference.local_from_global_pos(reference.global_from_local_pos(pos)), pos);
+    require_close_position(reference.global_from_local_pos(reference.local_from_global_pos(pos)), pos);
 }
 
 void test_basic_transformations(Reference const &reference)
@@ -34,12 +34,12 @@ void test_basic_transformations(Reference const &reference)
     test_inverse_transformation(reference, reference.pos);
     if (reference.origin)
     {
-        require_close_position(reference.local_from_global(reference.origin->global_from_local(reference.pos)), POS_ZERO);
-        require_close_position(reference.global_from_local(POS_ZERO), reference.origin->global_from_local(reference.pos));
+        require_close_position(reference.local_from_global_pos(reference.origin->global_from_local_pos(reference.pos)), POS_ZERO);
+        require_close_position(reference.global_from_local_pos(POS_ZERO), reference.origin->global_from_local_pos(reference.pos));
     }
     else
     {
-        require_close_position(reference.local_from_global(reference.pos), POS_ZERO);
-        require_close_position(reference.global_from_local(POS_ZERO), reference.pos);
+        require_close_position(reference.local_from_global_pos(reference.pos), POS_ZERO);
+        require_close_position(reference.global_from_local_pos(POS_ZERO), reference.pos);
     }
 }

@@ -39,8 +39,19 @@
 struct Radiator : Component
 {
     using EffLenFn = std::function<double(double, double)>;
-    using elv_t = std::function<nc::NdArray<complex_t>(double, double, double)>;  // ELV(theta, phi, wavelength)
-    Radiator(std::string_view id, Reference const &origin);
+    using elv_spherical_t = std::function<nc::NdArray<complex_t>(double polar, double azimuth, double wavelength)>; /// effective length vector in spherical coordinates
+    using msel_t = std::function<double(double wavelength)>;  /// mean-squared effective length
+    static double constexpr HERTZIAN_DIPOLE_LENGTH = 1e-3;
+
+    // Provide the elv and msel functions for the Hertzian dipole
+    struct HertzianDipole
+    {
+        [[nodiscard]] static Radiator create(std::string_view id, Reference const &origin);
+        [[nodiscard]] static elv_spherical_t::result_type elv_spherical(double polar, double azimuth, double wavelength);
+        [[nodiscard]] static msel_t::result_type msel(double wavelength);
+    };
+
+    Radiator(std::string_view id, Reference const &origin, elv_spherical_t  elv_spherical, msel_t  msel = nullptr);
 
     Radiator(Radiator const &) = delete; // disable copy constructor
     Radiator &operator=(Radiator const &) = delete; // disable copy assignment
@@ -48,23 +59,23 @@ struct Radiator : Component
     Radiator &operator=(Radiator &&) = delete; // disable move assignment
 
     Reference const &origin;
-    EffLenFn el_theta;
-    EffLenFn el_phi;
+    elv_spherical_t const elv_spherical; /// callback for effective length vector in spherical coordinates
+    msel_t const msel; /// callback for mean-squared effective length. Optional, can be nullptr
 
     [[nodiscard]] static nc::NdArray<complex_t> get_elv_spherical_standing_wave(double dipole_length, double wavelength, double polar, double phase_i);
-    [[nodiscard]] static double calc_mean_squared_effective_length(elv_t const& elv_spherical, double wavelength, std::size_t n_theta = 101, std::size_t n_phi = 201);
+    [[nodiscard]] static double calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, double wavelength, std::size_t n_theta = 101, std::size_t n_phi = 201);
 
-    [[nodiscard]] virtual Vec3 calc_polar_effective_length(double theta, double phi) const = 0;
-    [[nodiscard]] Vec3 calc_polar_effective_length(Vec3 const& pos_local) const;
-    [[nodiscard]] virtual double calc_polar_effective_length_norm(double theta, double phi) const;
-    [[nodiscard]] double calc_polar_effective_length_norm(Vec3 const& pos_local) const;
+    // [[nodiscard]] virtual Vec3 calc_polar_effective_length(double theta, double phi) const = 0;
+    [[nodiscard]] nc::NdArray<complex_t> calc_elv_spherical_from_cartesian(Vec3 const& pos_local, double wavelength) const;
+    // [[nodiscard]] virtual double calc_polar_effective_length_norm(double theta, double phi) const;
+    // [[nodiscard]] double calc_polar_effective_length_norm(Vec3 const& pos_local) const;
     std::complex<double> calc_path(std::size_t idx_input, std::size_t idx_output) override;
-    [[nodiscard]] virtual std::complex<double> calc_radiation_gain(Vec3 const &pos, double freq) const = 0;
+    // [[nodiscard]] virtual std::complex<double> calc_radiation_gain(Vec3 const &pos, double freq) const = 0;
     [[nodiscard]] double calc_radiation_resistance(std::size_t n_theta = 101, std::size_t n_phi = 201) const;
-    [[nodiscard]] double calc_directivity(double theta, double phi, std::size_t n_theta = 101, std::size_t n_phi = 201) const;
-    [[nodiscard]] double calc_directivity(Vec3 const& pos_local) const;
+    [[nodiscard]] double calc_directivity(double theta, double phi, double wavelength, std::size_t n_theta = 101, std::size_t n_phi = 201) const;
+    [[nodiscard]] double calc_directivity(Vec3 const& pos_local, double wavelength) const;
 
 
-    [[nodiscard]] std::complex<double> calc_voltage_gain(Radiator const& radiator, double lambda, std::size_t n_theta = 101, std::size_t n_phi = 201) const;
-    [[nodiscard]] double calc_power_gain(Radiator const& radiator, double lambda) const;
+    [[nodiscard]] std::complex<double> calc_voltage_gain(Radiator const& radiator, double wavelength, std::size_t n_theta = 101, std::size_t n_phi = 201) const;
+    [[nodiscard]] double calc_power_gain(Radiator const& radiator, double wavelength) const;
 };

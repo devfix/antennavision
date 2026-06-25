@@ -52,8 +52,7 @@ TEST_CASE("ULA setup", "[TestULA]")
       "spacing": "wavelength * 0.5",
       "count": 8,
       "radiator": {
-        "type": "HertzianDipole",
-        "length": 1e-3
+        "type": "HertzianDipole"
       }
     }
   ]
@@ -68,10 +67,10 @@ TEST_CASE("ULA setup", "[TestULA]")
         double const x = 0.0;
         double const y = 2.0 * wavelength;
         double const z = 2.0 * wavelength;
-        require_close_position(ref_ula.global_from_local(POS_ZERO), Vec3(x, y, z));
-        require_close_position(ref_ula.global_from_local(Vec3(wavelength, 0.0, 0.0)), Vec3(x, y, z - wavelength));
-        require_close_position(ref_ula.global_from_local(Vec3(0.0, wavelength, 0.0)), Vec3(x, y + wavelength, z));
-        require_close_position(ref_ula.global_from_local(Vec3(0.0, 0.0, wavelength)), Vec3(x + wavelength, y, z));
+        require_close_position(ref_ula.global_from_local_pos(POS_ZERO), Vec3(x, y, z));
+        require_close_position(ref_ula.global_from_local_pos(Vec3(wavelength, 0.0, 0.0)), Vec3(x, y, z - wavelength));
+        require_close_position(ref_ula.global_from_local_pos(Vec3(0.0, wavelength, 0.0)), Vec3(x, y + wavelength, z));
+        require_close_position(ref_ula.global_from_local_pos(Vec3(0.0, 0.0, wavelength)), Vec3(x + wavelength, y, z));
     }
 
     // check ULA element references
@@ -81,9 +80,9 @@ TEST_CASE("ULA setup", "[TestULA]")
         double const x = (static_cast<double>(i) - 3.5) * 0.5 * wavelength;
         double const y = 2.0 * wavelength;
         double const z = 2.0 * wavelength;
-        require_close_position(ref_element.global_from_local(POS_ZERO), Vec3(x, y, z));
-        require_close_position(ref_element.global_from_local(Vec3(wavelength, 0.0, 0.0)), Vec3(x, y + wavelength, z));
-        require_close_position(ref_element.global_from_local(Vec3(0.0, wavelength, 0.0)), Vec3(x, y, z + wavelength));
-        require_close_position(ref_element.global_from_local(Vec3(0.0, 0.0, wavelength)), Vec3(x + wavelength, y, z));
+        require_close_position(ref_element.global_from_local_pos(POS_ZERO), Vec3(x, y, z));
+        require_close_position(ref_element.global_from_local_pos(Vec3(wavelength, 0.0, 0.0)), Vec3(x, y + wavelength, z));
+        require_close_position(ref_element.global_from_local_pos(Vec3(0.0, wavelength, 0.0)), Vec3(x, y, z + wavelength));
+        require_close_position(ref_element.global_from_local_pos(Vec3(0.0, 0.0, wavelength)), Vec3(x + wavelength, y, z));
     }
 }
