@@ -44,15 +44,13 @@
       "spacing": "wavelength * 0.5",
       "count": 3,
       "radiator": {
-        "type": "HertzianDipole",
-        "length": "dipole_length"
+        "type": "HertzianDipole"
       }
     },
     {
       "id": "receiver",
       "ref": "ref_rx_start",
-      "type": "HertzianDipole",
-      "length": "dipole_length"
+      "type": "HertzianDipole"
     }
   ],
   "tasks": [

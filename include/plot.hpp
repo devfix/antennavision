@@ -12,7 +12,7 @@
 
 namespace plot
 {
-    void plot_directivity_over_azimuth(std::filesystem::path const& dir_plot, Radiator const& radiator, NdArray const& phis);
+    void plot_directivity_over_polar(std::filesystem::path const& dir_plot, Radiator const& radiator, NdArray const& polar_angles);
 
     void plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiator const& source, Radiator const& sink, Reference & ref_start, Reference const& ref_stop, double wave_length, char distance_axis);
 

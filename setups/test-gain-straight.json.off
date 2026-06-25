@@ -44,20 +44,17 @@
     {
       "id": "transmitter",
       "ref": "",
-      "type": "HertzianDipole",
-      "length": 1e-3
+      "type": "HertzianDipole"
     },
     {
       "id": "receiver_x",
       "ref": "ref_rx_x_start",
-      "type": "HertzianDipole",
-      "length": 1e-3
+      "type": "HertzianDipole"
     },
     {
       "id": "receiver_z",
       "ref": "ref_rx_z_start",
-      "type": "HertzianDipole",
-      "length": 1e-3
+      "type": "HertzianDipole"
     }
   ],
   "tasks": [

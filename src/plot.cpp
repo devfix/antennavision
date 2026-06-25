@@ -8,14 +8,14 @@
 
 #include "print.hpp"
 
-void plot::plot_directivity_over_azimuth(std::filesystem::path const &dir_plot, Radiator const &radiator, NdArray const &phis)
+void plot::plot_directivity_over_polar(std::filesystem::path const &dir_plot, Radiator const &radiator, NdArray const &polar_angles)
 {
     std::ostringstream phis_stream;
     phis_stream << std::fixed << std::setprecision(2);
-    for (NdArray::index_type k = 0; k < phis.size(); k++)
+    for (NdArray::index_type k = 0; k < polar_angles.size(); k++)
     {
-        phis_stream << std::format("{:.2f}", phis.at(k) / nc::constants::pi);
-        if (k < phis.size() - 1) { phis_stream << '_'; }
+        phis_stream << std::format("{:.2f}", polar_angles.at(k) / nc::constants::pi);
+        if (k < polar_angles.size() - 1) { phis_stream << '_'; }
     }
     std::string name = std::format("{}.{}.{}", __func__, radiator.id, phis_stream.str());
     std::println("Creating plot: {}", name);
@@ -62,7 +62,7 @@ void plot::plot_directivity_over_azimuth(std::filesystem::path const &dir_plot, 
 
     auto const thetas = nc::linspace(0.0, nc::constants::pi, 51);
     NdArray directivities(thetas.shape());
-    for (auto const phi : phis)
+    for (auto const phi : polar_angles)
     {
         std::ranges::transform(thetas, directivities.begin(), [&radiator, phi](double const theta) { return radiator.calc_directivity(theta, phi, 101, 201); });
         fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, (thetas / nc::constants::pi).toStlVector(), directivities.toStlVector(), std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / nc::constants::pi)));

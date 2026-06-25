@@ -6,7 +6,6 @@
 
 #include "bitmap.hpp"
 #include "builtin.hpp"
-#include "components/hertziandipole.hpp"
 #include "include/setup.hpp"
 #include "manifest.hpp"
 #include "plot.hpp"
