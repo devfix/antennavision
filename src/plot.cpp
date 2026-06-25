@@ -8,7 +8,7 @@
 
 #include "print.hpp"
 
-void plot::plot_directivity_over_theta(std::filesystem::path const &dir_plot, Radiator const &radiator, NdArray const &phis)
+void plot::plot_directivity_over_azimuth(std::filesystem::path const &dir_plot, Radiator const &radiator, NdArray const &phis)
 {
     std::ostringstream phis_stream;
     phis_stream << std::fixed << std::setprecision(2);

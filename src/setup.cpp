@@ -30,8 +30,8 @@ namespace
     //     if (!js.contains(key)) { throw std::runtime_error(std::format("Could not find key '{}' in json object\n{}", key, js.dump(2))); }
     //     if constexpr (std::is_same_v<T, NdArray>)
     //     {
-    //         auto const phis = js[key].get<std::vector<double>>();
-    //         return NdArray(phis.begin(), phis.end());
+    //         auto const polars = js[key].get<std::vector<double>>();
+    //         return NdArray(polars.begin(), polars.end());
     //     }
     //     else if constexpr (std::is_same_v<T, char>)
     //     {
@@ -109,12 +109,12 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const &js)
                 task_name = std::format("builtin.{}", key);
                 tasks.emplace_back(task_name, [] {});
             }
-            else if (type == "plot_directivity_over_theta")
+            else if (type == "plot_directivity_over_azimuth")
             {
-                auto const phis = factory::get_ndarray(task_desc, "phis") * nc::constants::pi;
+                auto const polars = factory::get_ndarray(task_desc, "polars") * nc::constants::pi;
                 Radiator const &radiator = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "radiator"));
                 task_name = std::format("{}.{}", type, radiator.id);
-                tasks.emplace_back(task_name, [dir_plot, &radiator, phis]() { plot::plot_directivity_over_theta(dir_plot, radiator, phis); });
+                tasks.emplace_back(task_name, [dir_plot, &radiator, polars]() { plot::plot_directivity_over_azimuth(dir_plot, radiator, polars); });
             }
             else if (type == "plot_gain_over_straight")
             {

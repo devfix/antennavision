@@ -41,10 +41,10 @@ namespace factory
     nc::NdArray<double> get_ndarray(nlohmann::ordered_json &js, std::string_view key, bool remove)
     {
         assert_key(js, key);
-        auto const phis = js.at(key).get<std::vector<double>>();
-        auto const val = nc::NdArray<double>(phis.begin(), phis.end());
+        auto const vect = js.at(key).get<std::vector<double>>();
+        auto const array = nc::NdArray<double>(vect.begin(), vect.end());
         if (remove) { js.erase(key); }
-        return val;
+        return array;
     }
 
     char get_char(nlohmann::ordered_json &js, std::string_view key, bool remove)
