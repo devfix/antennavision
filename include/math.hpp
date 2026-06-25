@@ -27,6 +27,8 @@ namespace math
 
     std::pair<double, double> sici(double x);
 
+    double q_function(double x);
+
     /**
      * polar to complex number
      * @param mag magnitude in Euler's plane

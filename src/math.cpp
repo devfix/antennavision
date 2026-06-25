@@ -54,4 +54,11 @@ namespace math
         ::sici(x, &si, &ci);
         return {si, ci};
     }
+
+    double q_function(double const x)
+    {
+        auto const [six, cix] = math::sici(x);
+        auto const [si2x, ci2x] = math::sici(2.0 * x);
+        return egamma + std::log(x) - cix + 0.5 * std::sin(x) * (si2x - 2.0 * six) + 0.5 * std::cos(x) * (egamma + std::log(0.5 * x) + ci2x - 2.0 * cix);
+    }
 } // namespace math
