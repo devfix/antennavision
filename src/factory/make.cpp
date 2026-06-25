@@ -59,8 +59,8 @@ namespace factory
             auto const effective_length_defs = get_string_vec3(radiator_desc, "effective_length");
             std::array<std::function<std::complex<double>(double, double, double)>, 3> effective_length_parts;
             std::ranges::transform(effective_length_defs, effective_length_parts.begin(), parse_polar_azimuth_function);
-            auto effective_length = [effective_length_parts](double const azimuth, double const polar, double const wavelength) -> nc::NdArray<std::complex<double>>
-            { return {effective_length_parts[0](azimuth, polar, wavelength), effective_length_parts[1](azimuth, polar, wavelength), effective_length_parts[2](azimuth, polar, wavelength)}; };
+            auto effective_length = [effective_length_parts](double const polar, double const azimuth, double const wavelength) -> nc::NdArray<std::complex<double>>
+            { return {effective_length_parts[0](polar, azimuth, wavelength), effective_length_parts[1](polar, azimuth, wavelength), effective_length_parts[2](polar, azimuth, wavelength)}; };
             assert_empty(radiator_desc);
             radiators.push_back(std::make_unique<Radiator>(id, origin, std::move(effective_length)));
             return;

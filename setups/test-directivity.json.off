@@ -21,12 +21,12 @@
     {
       "type": "plot_directivity_over_polar",
       "radiator": "HertzianDipole",
-      "polar_angles": [0.0, 1.0]
+      "azimuth_angles": [0.0, 1.0]
     },
     {
       "type": "plot_directivity_over_polar",
       "radiator": "CustomRadiator",
-      "polar_angles": [0.0, 0.5, 1.0]
+      "azimuth_angles": [0.0, 0.5, 1.0]
     }
   ]
 }

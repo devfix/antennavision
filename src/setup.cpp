@@ -111,10 +111,10 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const &js)
             }
             else if (type == "plot_directivity_over_polar")
             {
-                auto const polar_angles = factory::get_ndarray(task_desc, "polar_angles") * nc::constants::pi;
+                auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
                 Radiator const &radiator = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "radiator"));
                 task_name = std::format("{}.{}", type, radiator.id);
-                tasks.emplace_back(task_name, [dir_plot, &radiator, polar_angles]() { plot::plot_directivity_over_polar(dir_plot, radiator, polar_angles); });
+                tasks.emplace_back(task_name, [dir_plot, &radiator, azimuth_angles]() { plot::plot_directivity_over_polar(dir_plot, radiator, azimuth_angles); });
             }
             else if (type == "plot_gain_over_straight")
             {
