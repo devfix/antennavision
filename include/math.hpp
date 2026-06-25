@@ -11,6 +11,8 @@ namespace math
     double angle_between_vectors(Vec3 vec1, Vec3 vec2);
     Quaternion quaternion_from_directions(Vec3 dir_initial, Vec3 dir_target);
 
+    std::pair<double, double> sici(double x);
+
     /**
      * polar to complex number
      * @param mag magnitude in Euler's plane

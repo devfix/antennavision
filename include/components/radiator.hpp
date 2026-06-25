@@ -39,6 +39,7 @@
 struct Radiator : Component
 {
     using EffLenFn = std::function<double(double, double)>;
+    using elv_t = std::function<nc::NdArray<complex_t>(double, double, double)>;  // ELV(theta, phi, wavelength)
     Radiator(std::string_view id, Reference const &origin);
 
     Radiator(Radiator const &) = delete; // disable copy constructor
@@ -50,13 +51,15 @@ struct Radiator : Component
     EffLenFn el_theta;
     EffLenFn el_phi;
 
+    [[nodiscard]] static nc::NdArray<complex_t> get_elv_spherical_standing_wave(double dipole_length, double wavelength, double polar, double phase_i);
+    [[nodiscard]] static double calc_mean_squared_effective_length(elv_t const& elv_spherical, double wavelength, std::size_t n_theta = 101, std::size_t n_phi = 201);
+
     [[nodiscard]] virtual Vec3 calc_polar_effective_length(double theta, double phi) const = 0;
     [[nodiscard]] Vec3 calc_polar_effective_length(Vec3 const& pos_local) const;
     [[nodiscard]] virtual double calc_polar_effective_length_norm(double theta, double phi) const;
     [[nodiscard]] double calc_polar_effective_length_norm(Vec3 const& pos_local) const;
     std::complex<double> calc_path(std::size_t idx_input, std::size_t idx_output) override;
     [[nodiscard]] virtual std::complex<double> calc_radiation_gain(Vec3 const &pos, double freq) const = 0;
-
     [[nodiscard]] double calc_radiation_resistance(std::size_t n_theta = 101, std::size_t n_phi = 201) const;
     [[nodiscard]] double calc_directivity(double theta, double phi, std::size_t n_theta = 101, std::size_t n_phi = 201) const;
     [[nodiscard]] double calc_directivity(Vec3 const& pos_local) const;

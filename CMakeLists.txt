@@ -31,6 +31,30 @@ FetchContent_MakeAvailable(NumCpp)
 #########
 
 
+######### Cephes
+FetchContent_Declare(
+        Cephes
+        GIT_REPOSITORY https://github.com/jeremybarnes/cephes.git
+        GIT_TAG master
+)
+FetchContent_MakeAvailable(Cephes)
+add_library(CephesSiCi STATIC
+        ${cephes_SOURCE_DIR}/misc/sici.c
+        ${cephes_SOURCE_DIR}/cmath/polevl.c
+        ${cephes_SOURCE_DIR}/cmath/const.c
+)
+# Note: Cephes doesn't use an 'include/' directory; headers live right next to the source files
+#target_include_directories(CephesSiCi PUBLIC ${cephes_SOURCE_DIR}/misc)
+
+# Disable old compiler warnings for Cephes (since it's legacy C code)
+if(MSVC)
+    target_compile_options(CephesSiCi PRIVATE /w)
+else()
+    target_compile_options(CephesSiCi PRIVATE -w)
+endif()
+#########
+
+
 ######### FmtLib
 FetchContent_Declare(
         fmt
@@ -112,6 +136,7 @@ target_link_libraries(antennavision PRIVATE
         nlohmann_json::nlohmann_json
         dplotpp
         exprtk
+        CephesSiCi
 )
 
 # Add this in your CMakeLists.txt right after target_link_libraries
@@ -130,6 +155,7 @@ target_link_libraries(testrunner PRIVATE
         nlohmann_json::nlohmann_json
         dplotpp
         exprtk
+        CephesSiCi
         Catch2::Catch2WithMain
 )
 

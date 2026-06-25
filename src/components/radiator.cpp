@@ -13,6 +13,37 @@
 
 Radiator::Radiator(std::string_view const id, Reference const &origin) : Component(id, 1, 0), origin(origin) {}
 
+nc::NdArray<complex_t> Radiator::get_elv_spherical_standing_wave(double const dipole_length, double const wavelength, double const polar, double const phase_i)
+{
+    double const x = pi * dipole_length / wavelength;
+    complex_t polar_comp = - wavelength / (pi * std::sin(polar)) * ( std::cos(x * std::cos(polar)) - cos(x) ) * math::complex_from_polar(1.0, phase_i);
+    return {0.0, polar_comp, 0.0};
+}
+
+double Radiator::calc_mean_squared_effective_length(elv_t const &elv_spherical, double wavelength, std::size_t n_theta, std::size_t n_phi)
+{
+    auto const theta_edges = nc::linspace(0.0, pi, n_theta + 1);
+    auto const phi_edges = nc::linspace(0.0, 2.0 * pi, n_phi + 1);
+    auto const d_theta = pi / static_cast<double>(n_theta);
+    auto const d_phi = 2.0 * pi / static_cast<double>(n_phi);
+
+    auto const theta_mids = (theta_edges(theta_edges.rSlice(), nc::Slice(0, static_cast<std::int32_t>(n_theta))) + theta_edges(theta_edges.rSlice(), nc::Slice(1, static_cast<std::int32_t>(n_theta) + 1))) / 2.0;
+    auto const phi_mids = (phi_edges(phi_edges.rSlice(), nc::Slice(0, static_cast<std::int32_t>(n_phi))) + phi_edges(phi_edges.rSlice(), nc::Slice(1, static_cast<std::int32_t>(n_phi) + 1))) / 2.0;
+    auto const [theta_grid, phi_grid] = nc::meshgrid(theta_mids, phi_mids);
+
+    NdArray squared_norms(theta_grid.shape());
+    std::ranges::transform(theta_grid, phi_grid, squared_norms.begin(), [&elv_spherical, wavelength](double const theta, double const phi) -> double { return math::square(std::real(nc::norm(elv_spherical(theta, phi, wavelength)).item())); });
+
+    // Reshape squared_norms back to match the grid shape (num_phi x num_theta)
+    squared_norms = squared_norms.reshape(theta_grid.shape());
+
+    // 7. Compute the integrand: || l_e ||^2 * sin(theta)
+    auto integrand = squared_norms * nc::sin(theta_grid);
+
+    double integral = nc::sum(integrand).item() * d_theta * d_phi;
+    return integral / (4.0 * pi);
+}
+
 Vec3 Radiator::calc_polar_effective_length(Vec3 const &pos_local) const
 {
     auto const [r, theta, phi] = math::spherical_from_cartesian(pos_local);

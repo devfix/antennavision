@@ -5,6 +5,10 @@
 #include "math.hpp"
 #include <cmath>
 
+extern "C" {
+    extern int sici ( double x, double *si, double *ci );
+}
+
 namespace math
 {
     double angle_between_vectors(Vec3 vec1, Vec3 vec2)
@@ -42,4 +46,11 @@ namespace math
             return {dir_ort.normalize(), angle};
         }
     }
-}
+
+    std::pair<double, double> sici(double x)
+    {
+        double si, ci;
+        ::sici(x, &si, &ci);
+        return {si, ci};
+    }
+} // namespace math
