@@ -4,7 +4,7 @@
 
 #include "plot.hpp"
 #include <NumCpp/Functions/linspace.hpp>
-#include <dplot.hpp>
+#include <nlohmann/json.hpp>
 
 #include "print.hpp"
 
@@ -20,55 +20,66 @@ void plot::plot_directivity_over_polar(std::filesystem::path const &dir_plot, Ra
     std::string name = std::format("{}.{}.{}", __func__, radiator.id, azimuth_angles_stream.str());
     std::println("Creating plot: {}", name);
 
-    dplot::Figure fig{std::string(name), std::string("test-plot")};
-    fig.width = "10cm";
-    // fig.background_color = "gray!30";
-    fig.legend_setup.enable = true;
+    // dplot::Figure fig{std::string(name), std::string("test-plot")};
+    // fig.width = "10cm";
+    // // fig.background_color = "gray!30";
+    // fig.legend_setup.enable = true;
+    //
+    // {
+    //     dplot::TickSetup ts;
+    //     ts.enable = true;
+    //
+    //     dplot::AxisSetup as;
+    //     as.label = R"($\theta\ / \ \pi$)";
+    //     as.scale = 1.0;
+    //     as.tick = ts;
+    //     as.label_shift = "0.2cm";
+    //     as.grid.major_enable = true;
+    //     as.grid.major_color = "gray!30";
+    //     fig.axes['b'] = as;
+    // }
+    //
+    // {
+    //     dplot::TickSetup ts;
+    //     ts.enable = true;
+    //
+    //     dplot::AxisSetup as;
+    //     as.label = R"($D(\theta,\phi)$)";
+    //     as.scale = 1.0;
+    //     as.tick = ts;
+    //     as.padding = "1cm";
+    //     as.label_shift = "0.2cm";
+    //     as.grid.major_enable = true;
+    //     as.grid.major_color = "gray!30";
+    //     fig.axes['l'] = as;
+    // }
+    //
+    // {
+    //     dplot::AxisSetup as;
+    //     as.padding = "1cm";
+    //     fig.axes['r'] = as;
+    // }
 
-    {
-        dplot::TickSetup ts;
-        ts.enable = true;
-
-        dplot::AxisSetup as;
-        as.label = R"($\theta\ / \ \pi$)";
-        as.scale = 1.0;
-        as.tick = ts;
-        as.label_shift = "0.2cm";
-        as.grid.major_enable = true;
-        as.grid.major_color = "gray!30";
-        fig.axes['b'] = as;
-    }
-
-    {
-        dplot::TickSetup ts;
-        ts.enable = true;
-
-        dplot::AxisSetup as;
-        as.label = R"($D(\theta,\phi)$)";
-        as.scale = 1.0;
-        as.tick = ts;
-        as.padding = "1cm";
-        as.label_shift = "0.2cm";
-        as.grid.major_enable = true;
-        as.grid.major_color = "gray!30";
-        fig.axes['l'] = as;
-    }
-
-    {
-        dplot::AxisSetup as;
-        as.padding = "1cm";
-        fig.axes['r'] = as;
-    }
+    json js;
+    js["name"] = name;
+    std::vector<json> entries;
 
     auto const polar_angles = nc::linspace(0.0, nc::constants::pi, 51);
     NdArray directivities(polar_angles.shape());
     for (auto const azimuth : azimuth_angles)
     {
+        json js_entry;
         std::ranges::transform(polar_angles, directivities.begin(), [&radiator, azimuth](double const theta) { return radiator.calc_directivity(theta, azimuth, 101, 201); });
-        fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, (polar_angles / nc::constants::pi).toStlVector(), directivities.toStlVector(), std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", azimuth / nc::constants::pi)));
+        js_entry["azimuth"] = azimuth / nc::constants::pi;
+        js_entry["polars"] = (polar_angles / nc::constants::pi).toStlVector();
+        js_entry["directivities"] = directivities.toStlVector();
+        entries.push_back(std::move(js_entry));
     }
 
-    fig.export_figure(dir_plot, {dplot::ExportType::PDF});
+    std::ofstream ofs(std::format("{}.json", name));
+    ofs << js.dump(2) << '\n';
+
+    // fig.export_figure(dir_plot, {dplot::ExportType::PDF});
 }
 
 void plot::plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiator const &source, Radiator const &sink, Reference &ref_start, Reference const &ref_stop, double wave_length, char distance_axis)
@@ -76,45 +87,48 @@ void plot::plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiat
     std::string name = std::format("{}.{}.{}.{}", __func__, source.id, sink.id, distance_axis);
     std::println("Creating plot: {}", name);
 
-    dplot::Figure fig{std::string(name), std::string("test-plot")};
-    fig.width = "10cm";
-    // fig.background_color = "gray!30";
-    fig.legend_setup.enable = true;
+    // dplot::Figure fig{std::string(name), std::string("test-plot")};
+    // fig.width = "10cm";
+    // // fig.background_color = "gray!30";
+    // fig.legend_setup.enable = true;
+    //
+    // {
+    //     dplot::TickSetup ts;
+    //     ts.enable = true;
+    //
+    //     dplot::AxisSetup as;
+    //     as.label = std::format("${} \\ / \\ {}$", distance_axis, R"(\mathrm{m})");
+    //     as.scale = 1.0;
+    //     as.tick = ts;
+    //     as.label_shift = "0.2cm";
+    //     as.grid.major_enable = true;
+    //     as.grid.major_color = "gray!30";
+    //     fig.axes['b'] = as;
+    // }
+    //
+    // {
+    //     dplot::TickSetup ts;
+    //     ts.enable = true;
+    //
+    //     dplot::AxisSetup as;
+    //     as.label = R"($g$)";
+    //     as.scale = 1.0;
+    //     as.tick = ts;
+    //     as.padding = "1cm";
+    //     as.label_shift = "0.2cm";
+    //     as.grid.major_enable = true;
+    //     as.grid.major_color = "gray!30";
+    //     fig.axes['l'] = as;
+    // }
+    //
+    // {
+    //     dplot::AxisSetup as;
+    //     as.padding = "1cm";
+    //     fig.axes['r'] = as;
+    // }
 
-    {
-        dplot::TickSetup ts;
-        ts.enable = true;
-
-        dplot::AxisSetup as;
-        as.label = std::format("${} \\ / \\ {}$", distance_axis, R"(\mathrm{m})");
-        as.scale = 1.0;
-        as.tick = ts;
-        as.label_shift = "0.2cm";
-        as.grid.major_enable = true;
-        as.grid.major_color = "gray!30";
-        fig.axes['b'] = as;
-    }
-
-    {
-        dplot::TickSetup ts;
-        ts.enable = true;
-
-        dplot::AxisSetup as;
-        as.label = R"($g$)";
-        as.scale = 1.0;
-        as.tick = ts;
-        as.padding = "1cm";
-        as.label_shift = "0.2cm";
-        as.grid.major_enable = true;
-        as.grid.major_color = "gray!30";
-        fig.axes['l'] = as;
-    }
-
-    {
-        dplot::AxisSetup as;
-        as.padding = "1cm";
-        fig.axes['r'] = as;
-    }
+    json js;
+    js["name"] = name;
 
     constexpr std::size_t n_points = 101;
     Vec3 const pos_start = ref_start.pos;
@@ -148,8 +162,15 @@ void plot::plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiat
     }
     ref_start.pos = pos_start;
     ref_start.rotation = rotation_start;
-    fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, distances.toStlVector(), gains.toStlVector())); //, std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / nc::constants::pi)));
-    fig.export_figure(dir_plot, {dplot::ExportType::PDF});
+
+    js["distance_axis"] = distance_axis;
+    js["distances"] = distances.toStlVector();
+    js["gains"] = gains.toStlVector();
+    // fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, distances.toStlVector(), gains.toStlVector())); //, std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / nc::constants::pi)));
+    // fig.export_figure(dir_plot, {dplot::ExportType::PDF});
+
+    std::ofstream ofs(std::format("{}.json", name));
+    ofs << js.dump(2) << '\n';
 }
 
 // void plot::gain_over_phase(std::filesystem::path const &dir_plot, NdArray const &phases, std::vector<std::tuple<std::reference_wrapper<const NdArray>, std::string>> const &gains, std::string_view const name,
