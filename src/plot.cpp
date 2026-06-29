@@ -69,7 +69,7 @@ void plot::plot_directivity_over_polar(std::filesystem::path const &dir_plot, Ra
     for (auto const azimuth : azimuth_angles)
     {
         json js_entry;
-        std::ranges::transform(polar_angles, directivities.begin(), [&radiator, azimuth](double const theta) { return radiator.calc_directivity(theta, azimuth, 101, 201); });
+        std::ranges::transform(polar_angles, directivities.begin(), [&radiator, azimuth](double const theta) { return radiator.calc_directivity_from_spherical(theta, azimuth, 101, 201); });
         js_entry["azimuth"] = azimuth / nc::constants::pi;
         js_entry["polars"] = (polar_angles / nc::constants::pi).toStlVector();
         js_entry["directivities"] = directivities.toStlVector();

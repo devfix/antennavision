@@ -76,8 +76,8 @@ struct Radiator : Component
     [[nodiscard]] nc::NdArray<complex_t> calc_elv_spherical_from_cartesian(Vec3 const& pos_local, double wavelength) const;
     std::complex<double> calc_path(std::size_t idx_input, std::size_t idx_output) override;
     [[nodiscard]] double calc_radiation_resistance(std::size_t n_polar = 101, std::size_t n_azimuth = 201) const;
-    [[nodiscard]] double calc_directivity(double polar, double azimuth, double wavelength, std::size_t n_polar = 101, std::size_t n_azimuth = 201) const;
-    [[nodiscard]] double calc_directivity(Vec3 const& pos_local, double wavelength) const;
+    [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, double wavelength, std::size_t n_polar = 101, std::size_t n_azimuth = 201) const;
+    [[nodiscard]] double calc_directivity_from_cartesian(Vec3 const& pos_local, double wavelength) const;
 
 
     [[nodiscard]] std::complex<double> calc_voltage_gain(Radiator const& radiator, double wavelength, std::size_t n_polar = 101, std::size_t n_azimuth = 201) const;

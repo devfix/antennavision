@@ -60,8 +60,8 @@ TEST_CASE("HertzianDipole", "[Radiator]")
     NdArray directivities_actual_phi0(thetas.shape());
     NdArray directivities_actual_phi1(thetas.shape());
     NdArray directivities_expected(thetas.shape());
-    std::ranges::transform(thetas, directivities_actual_phi0.begin(), [&radiator](double const theta_) { return radiator.calc_directivity(theta_, 0.0, 101, 201); });
-    std::ranges::transform(thetas, directivities_actual_phi1.begin(), [&radiator](double const theta_) { return radiator.calc_directivity(theta_, 1.0, 101, 201); });
+    std::ranges::transform(thetas, directivities_actual_phi0.begin(), [&radiator](double const theta_) { return radiator.calc_directivity_from_spherical(theta_, 0.0, 101, 201); });
+    std::ranges::transform(thetas, directivities_actual_phi1.begin(), [&radiator](double const theta_) { return radiator.calc_directivity_from_spherical(theta_, 1.0, 101, 201); });
     std::ranges::transform(thetas, directivities_expected.begin(), [](double const theta_) { return 1.5 * math::square(std::sin(theta_)); });
     require_close_array(directivities_actual_phi0, directivities_expected);
     require_close_array(directivities_actual_phi1, directivities_expected);
@@ -74,7 +74,7 @@ TEST_CASE("HalfWaveDipole", "[Radiator]")
     auto radiator = Radiator::StandingWaveDipole::create("HalfWaveDipole", reference, 0.5 * wavelength);
     REQUIRE_THROWS(radiator.calc_path(0, 0));
 
-    auto const actual = radiator.calc_directivity(0.5 * pi, 0, wavelength);
+    auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, wavelength);
     REQUIRE(actual == Catch::Approx(1.640922388).margin(1e-3));
 }
 
@@ -85,7 +85,7 @@ TEST_CASE("FullWaveDipole", "[Radiator]")
     auto radiator = Radiator::StandingWaveDipole::create("FullWaveDipole", reference, 1.0 * wavelength);
     REQUIRE_THROWS(radiator.calc_path(0, 0));
 
-    auto const actual = radiator.calc_directivity(0.5 * pi, 0, wavelength);
+    auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, wavelength);
     REQUIRE(actual == Catch::Approx(2.4116035252).margin(1e-3));
 }
 
@@ -96,6 +96,6 @@ TEST_CASE("3/2-WaveDipole", "[Radiator]")
     auto radiator = Radiator::StandingWaveDipole::create("3/2-WaveDipole", reference, 1.5 * wavelength);
     REQUIRE_THROWS(radiator.calc_path(0, 0));
 
-    auto const actual = radiator.calc_directivity(0.5 * pi, 0, wavelength);
+    auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, wavelength);
     REQUIRE(actual == Catch::Approx(1.13750300493283).margin(1e-3));
 }

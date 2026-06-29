@@ -18,6 +18,7 @@ using vec_t = nc::NdArray<complex_t>;  /// should be of shape 3x1
 using Quaternion = nc::rotations::Quaternion;
 using json = nlohmann::ordered_json;
 constexpr double pi = std::numbers::pi;
+constexpr complex_t j = nc::constants::j;
 constexpr double egamma = std::numbers::egamma;
 constexpr auto sqrt2_2 = std::numbers::sqrt2 / 2.0;
 static constexpr auto POS_ZERO = Vec3(0, 0, 0);

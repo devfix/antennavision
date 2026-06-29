@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <sys/stat.h>
-
 #include "types.hpp"
 
 namespace math
@@ -69,7 +67,7 @@ namespace math
      * @param phi   Azimuthal angle (in radians) [cite: 227]
      * @return      A 3x3 matrix represented as NdArray
      */
-    [[nodiscard]] constexpr NdArray omega(double const theta, double const phi)
+    [[nodiscard]] constexpr NdArray get_rot_mat_from_spherical(double const theta, double const phi)
     {
         double const st = std::sin(theta);
         double const ct = std::cos(theta);
@@ -88,5 +86,11 @@ namespace math
         omega(2, 2) = 0.0;
 
         return omega;
+    }
+
+    [[nodiscard]] NdArray constexpr get_rot_mat_from_cartesian(pos_t const& pos_local)
+    {
+        auto const [r, polar, azimuth] = spherical_from_cartesian(pos_local);
+        return get_rot_mat_from_spherical(polar, azimuth);
     }
 } // namespace math
