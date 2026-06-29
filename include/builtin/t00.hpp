@@ -3,9 +3,9 @@
 //
 
 #pragma once
-#include "setup.hpp"
+#include "../setup.hpp"
 
 namespace builtin
 {
-    void compare_beamwidth(Setup &setup);
+    void t00_compare_beamwidth(Setup &setup);
 } // namespace builtin

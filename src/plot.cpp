@@ -75,8 +75,9 @@ void plot::plot_directivity_over_polar(std::filesystem::path const &dir_plot, Ra
         js_entry["directivities"] = directivities.toStlVector();
         entries.push_back(std::move(js_entry));
     }
+    js["curves"] = entries;
 
-    std::ofstream ofs(std::format("{}.json", name));
+    std::ofstream ofs(std::format("{}/{}.json", dir_plot.c_str(), name));
     ofs << js.dump(2) << '\n';
 
     // fig.export_figure(dir_plot, {dplot::ExportType::PDF});
@@ -163,13 +164,13 @@ void plot::plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiat
     ref_start.pos = pos_start;
     ref_start.rotation = rotation_start;
 
-    js["distance_axis"] = distance_axis;
+    js["distance_axis"] = std::string{distance_axis};
     js["distances"] = distances.toStlVector();
     js["gains"] = gains.toStlVector();
     // fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, distances.toStlVector(), gains.toStlVector())); //, std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / nc::constants::pi)));
     // fig.export_figure(dir_plot, {dplot::ExportType::PDF});
 
-    std::ofstream ofs(std::format("{}.json", name));
+    std::ofstream ofs(std::format("{}/{}.json", dir_plot.c_str(), name));
     ofs << js.dump(2) << '\n';
 }
 

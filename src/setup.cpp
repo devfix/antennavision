@@ -97,7 +97,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const &js)
     std::list<std::pair<std::string, std::function<void()>>> tasks;
     if (setup_desc.contains("tasks"))
     {
-        auto const dir_plot = std::filesystem::path(setup_name) / "plots";
+        auto const dir_plot = std::filesystem::path(setup_name);
         for (auto &task_desc : json_get(setup_desc, "tasks"))
         {
             auto const type = factory::get_string(task_desc, "type");

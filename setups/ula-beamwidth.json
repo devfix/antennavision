@@ -56,7 +56,7 @@
   "tasks": [
     {
       "type": "builtin",
-      "key": "compare_beamwidth"
+      "key": "t00_compare_beamwidth"
     }
   ]
 }

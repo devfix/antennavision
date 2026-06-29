@@ -2,8 +2,8 @@
 // Created by Tristan Krause on 2026-04-30.
 //
 
+#include "../include/bitmap.hpp"
 #include <fstream>
-#include "bitmap.hpp"
 
 Bitmap::Bitmap(std::uint16_t width, std::uint16_t height) :
     width_(width), height_(height), data{static_cast<std::size_t>(width) * static_cast<std::size_t>(height), {0,0,0}}

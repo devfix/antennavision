@@ -5,7 +5,7 @@
 #include "print.hpp"
 
 #include "bitmap.hpp"
-#include "builtin.hpp"
+#include "builtin/t00.hpp"
 #include "include/setup.hpp"
 #include "manifest.hpp"
 #include "plot.hpp"
@@ -92,9 +92,9 @@ void compute_rect(array_t const &x_values, array_t const &y_values, std::vector<
 
 void run_builtin_task(Setup &setup, std::string_view key)
 {
-    if (key == "compare_beamwidth")
+    if (key == "t00_compare_beamwidth")
     {
-        builtin::compare_beamwidth(setup);
+        builtin::t00_compare_beamwidth(setup);
     }
     else
     {

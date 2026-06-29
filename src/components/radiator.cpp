@@ -104,7 +104,7 @@ complex_t Radiator::calc_voltage_gain(Radiator const &radiator, double const wav
     double const r = (origin.global_from_local_pos(POS_ZERO) - radiator.origin.global_from_local_pos(POS_ZERO)).norm();
     if (r < wavelength / 10) { std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", id, radiator.id, r, r / wavelength); }
 
-    auto const pos_local_tx = origin.localize(radiator.origin);  // position of rx radiator in tx coordinate
+    auto const pos_local_tx = origin.localize(radiator.origin); // position of rx radiator in tx coordinate
     auto const pos_local_rx = radiator.origin.localize(origin); // position of tx radiator in rx coordinate
     auto const rot_mat_tx = math::get_rot_mat_from_cartesian(pos_local_tx);
     auto const rot_mat_rx = math::get_rot_mat_from_cartesian(pos_local_rx);
