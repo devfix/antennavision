@@ -5,10 +5,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
 
-#include "../include/setup->hpp"
+#include "setup.hpp"
 #include "components/radiator.hpp"
 #include "math.hpp"
-#include "setup.hpp"
 #include "testutil.hpp"
 
 TEST_CASE("ULA position and rotation", "[TestULA]")
@@ -99,7 +98,7 @@ TEST_CASE("ULA gain", "[TestULA]")
   },
   "variables": {
     "wavelength": 0.1,
-    "distance": 100,
+    "distance": 100
   },
   "references": [
     {
