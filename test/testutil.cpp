@@ -6,7 +6,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
-void require_close_position(Vec3 const &actual, Vec3 const &expected)
+void require_close_position(pos_t const &actual, pos_t const &expected)
 {
     REQUIRE(actual.toNdArray().at(0) == Catch::Approx(expected.toNdArray().at(0)).margin(TEST_MARGIN));
     REQUIRE(actual.toNdArray().at(1) == Catch::Approx(expected.toNdArray().at(1)).margin(TEST_MARGIN));
@@ -22,7 +22,7 @@ void require_close_array(NdArray const &actual, NdArray const &expected)
     }
 }
 
-void test_inverse_transformation(Reference const &reference, Vec3 const &pos)
+void test_inverse_transformation(Reference const &reference, pos_t const &pos)
 {
     require_close_position(reference.local_from_global_pos(reference.global_from_local_pos(pos)), pos);
     require_close_position(reference.global_from_local_pos(reference.local_from_global_pos(pos)), pos);

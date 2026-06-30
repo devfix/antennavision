@@ -14,8 +14,9 @@ struct Reference
         ~StateGuard();
 
         Reference & reference;
-        pos_t pos;
-        Quaternion rotation;
+        pos_t const pos;
+        Quaternion const rotation;
+        NdArray const rotation_array;
     };
 
     Reference(std::string_view id, Reference * origin, pos_t const& translation = {}, Quaternion const& rotation = {});

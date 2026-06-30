@@ -6,7 +6,7 @@
 
 #include "math.hpp"
 
-Reference::StateGuard::StateGuard(Reference& reference) : reference(reference), pos(reference.pos), rotation(reference.rotation)
+Reference::StateGuard::StateGuard(Reference& reference) : reference(reference), pos(reference.pos), rotation(reference.rotation), rotation_array(reference.rotation.toNdArray())
 {}
 
 Reference::StateGuard::~StateGuard()

@@ -6,10 +6,11 @@
 
 #include <NumCpp/NdArray/NdArrayCore.hpp>
 #include <NumCpp/Rotations/Quaternion.hpp>
-#include <NumCpp/Vector/Vec3.hpp>
 #include <array>
 #include <cstdint>
 #include <nlohmann/json_fwd.hpp>
+
+#include "types.hpp"
 
 namespace factory
 {
@@ -22,7 +23,7 @@ namespace factory
     char get_char(nlohmann::ordered_json& js, std::string_view key, bool remove = true);
     double get_double(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove = true, bool default_ok = false);
     std::uint32_t get_uint(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove = true, bool default_ok = false);
-    nc::Vec3 get_vec3(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove = true, bool default_ok = false);
+    pos_t get_pos(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove = true, bool default_ok = false);
     nc::rotations::Quaternion get_quaternion(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove = true, bool default_ok = false);
     std::array<std::string, 3> get_string_vec3(nlohmann::ordered_json& js, std::string_view key, bool remove = true);
 } // namespace factory

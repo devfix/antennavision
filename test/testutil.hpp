@@ -16,10 +16,10 @@ bool isclose(T a, T b)
     return nc::isclose(nc::NdArray<T>{a}, nc::NdArray<T>{b})[0];
 }
 
-void require_close_position(Vec3 const &actual, Vec3 const &expected);
+void require_close_position(pos_t const &actual, pos_t const &expected);
 
 void require_close_array(NdArray const& actual, NdArray const& expected);
 
-void test_inverse_transformation(Reference const &reference, Vec3 const &pos);
+void test_inverse_transformation(Reference const &reference, pos_t const &pos);
 
 void test_basic_transformations(Reference const &reference);

@@ -70,10 +70,10 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
         double const x = 0.0;
         double const y = 2.0 * wavelength;
         double const z = 2.0 * wavelength;
-        require_close_position(ref_ula.global_from_local_pos(POS_ZERO), Vec3(x, y, z));
-        require_close_position(ref_ula.global_from_local_pos(Vec3(wavelength, 0.0, 0.0)), Vec3(x, y, z - wavelength));
-        require_close_position(ref_ula.global_from_local_pos(Vec3(0.0, wavelength, 0.0)), Vec3(x, y + wavelength, z));
-        require_close_position(ref_ula.global_from_local_pos(Vec3(0.0, 0.0, wavelength)), Vec3(x + wavelength, y, z));
+        require_close_position(ref_ula.global_from_local_pos(POS_ZERO), pos_t(x, y, z));
+        require_close_position(ref_ula.global_from_local_pos(pos_t(wavelength, 0.0, 0.0)), pos_t(x, y, z - wavelength));
+        require_close_position(ref_ula.global_from_local_pos(pos_t(0.0, wavelength, 0.0)), pos_t(x, y + wavelength, z));
+        require_close_position(ref_ula.global_from_local_pos(pos_t(0.0, 0.0, wavelength)), pos_t(x + wavelength, y, z));
     }
 
     // check ULA element references
@@ -83,10 +83,10 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
         double const x = (static_cast<double>(i) - 3.5) * 0.5 * wavelength;
         double const y = 2.0 * wavelength;
         double const z = 2.0 * wavelength;
-        require_close_position(ref_element.global_from_local_pos(POS_ZERO), Vec3(x, y, z));
-        require_close_position(ref_element.global_from_local_pos(Vec3(wavelength, 0.0, 0.0)), Vec3(x, y + wavelength, z));
-        require_close_position(ref_element.global_from_local_pos(Vec3(0.0, wavelength, 0.0)), Vec3(x, y, z + wavelength));
-        require_close_position(ref_element.global_from_local_pos(Vec3(0.0, 0.0, wavelength)), Vec3(x + wavelength, y, z));
+        require_close_position(ref_element.global_from_local_pos(POS_ZERO), pos_t(x, y, z));
+        require_close_position(ref_element.global_from_local_pos(pos_t(wavelength, 0.0, 0.0)), pos_t(x, y + wavelength, z));
+        require_close_position(ref_element.global_from_local_pos(pos_t(0.0, wavelength, 0.0)), pos_t(x, y, z + wavelength));
+        require_close_position(ref_element.global_from_local_pos(pos_t(0.0, 0.0, wavelength)), pos_t(x + wavelength, y, z));
     }
 }
 
@@ -161,10 +161,10 @@ TEST_CASE("ULA gain", "[TestULA]")
     auto const& rx = setup->get_radiator_by_id("receiver");
     Reference& ref_start = setup->get_reference_by_id("ref_rx_start");
     Reference const& ref_stop = setup->get_reference_by_id("ref_rx_stop");
-    Reference::StateGuard state_guard(ref_start);
+    Reference::StateGuard start(ref_start);
 
     constexpr std::size_t n_points = 11;
-    Vec3 const pos_delta = ref_stop.pos - ref_start.pos;
+    pos_t const pos_delta = ref_stop.pos - start.pos;
     NdArray const rotation_delta = ref_stop.rotation.toNdArray() - ref_start.rotation.toNdArray();
     double const length = pos_delta.norm();
 
@@ -175,8 +175,8 @@ TEST_CASE("ULA gain", "[TestULA]")
     for (NdArray::index_type k = 0; k < n_points; k++)
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
-        ref_start.pos = state_guard.pos + pos_delta * f;
-        ref_start.rotation = state_guard.rotation.toNdArray() + rotation_delta * f;
+        ref_start.pos = start.pos + pos_delta * f;
+        ref_start.rotation = start.rotation.toNdArray() + rotation_delta * f;
         gains.at(k) = Setup::calc_voltage_gain(tx, rx, wavelength, {});
         distances.at(k) = *distance_ptr;
     }

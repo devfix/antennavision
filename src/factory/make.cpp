@@ -32,7 +32,7 @@ namespace factory
         auto const id = get_string(reference_desc, "id");
         assert_valid_id(id);
         auto const origin_id = get_string(reference_desc, "origin");
-        auto const pos = get_vec3(reference_desc, "pos", variables, true, true);
+        auto const pos = get_pos(reference_desc, "pos", variables, true, true);
         auto const rotation = get_quaternion(reference_desc, "rot", variables, true, true);
         std::println("Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]", id, origin_id, pos.x, pos.y, pos.z,
                      rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi);
@@ -71,7 +71,7 @@ namespace factory
         {
             auto const spacing = get_double(radiator_desc, "spacing", variables);
             auto const count = get_uint(radiator_desc, "count", variables);
-            auto dir = get_vec3(radiator_desc, "dir", variables);
+            auto dir = get_pos(radiator_desc, "dir", variables);
             auto const rot = get_quaternion(radiator_desc, "rot", variables, true, true);
             auto const prototype_desc = radiator_desc.at("radiator");
             radiator_desc.erase("radiator");
@@ -85,7 +85,7 @@ namespace factory
             for (std::remove_const_t<decltype(count)> i = 0; i < count; i++)
             {
                 double const f = static_cast<double>(i) / static_cast<double>(count - 1);
-                Vec3 const pos = dir * (f - 0.5) * length;
+                pos_t const pos = dir * (f - 0.5) * length;
                 auto& ref = references.emplace_back(std::format("{}:ref:{}", id, i), &origin, pos, rot);
                 array_references.push_back(std::ref(ref));
 

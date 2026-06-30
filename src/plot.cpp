@@ -136,10 +136,9 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
     js["name"] = name;
 
     constexpr std::size_t n_points = 101;
-    Vec3 const pos_start = ref_start.pos;
-    NdArray const rotation_start = ref_start.rotation.toNdArray();
-    Vec3 const pos_delta = ref_stop.pos - ref_start.pos;
-    NdArray const rotation_delta = ref_stop.rotation.toNdArray() - ref_start.rotation.toNdArray();
+    Reference::StateGuard start(ref_start);
+    pos_t const pos_delta = ref_stop.pos - start.pos;
+    NdArray const rotation_delta = ref_stop.rotation.toNdArray() - start.rotation_array;
     double const length = pos_delta.norm();
     NdArray gains(n_points, 1);
     NdArray distances(n_points, 1);
@@ -157,14 +156,12 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
     for (NdArray::index_type k = 0; k < n_points; k++)
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
-        ref_start.pos = pos_start + pos_delta * f;
-        ref_start.rotation = rotation_start + rotation_delta * f;
+        ref_start.pos = start.pos + pos_delta * f;
+        ref_start.rotation = start.rotation_array + rotation_delta * f;
         gains[k] = Setup::calc_power_gain(source, sink, wave_length, {});
         distance = f * length;
         distances[k] = *distance_ptr;
     }
-    ref_start.pos = pos_start;
-    ref_start.rotation = rotation_start;
 
     js["distance_axis"] = std::string{distance_axis};
     js["distances"] = distances.toStlVector();

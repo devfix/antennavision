@@ -24,13 +24,12 @@ namespace builtin
         std::vector<json> entries;
 
         Reference& ref_start = setup.get_reference_by_id("ref_rx_start");
-        Vec3 const pos_start = ref_start.pos;
+        Reference::StateGuard start(ref_start);
         Reference const& ref_stop = setup.get_reference_by_id("ref_rx_stop");
 
         constexpr std::size_t n_points = 101;
-        NdArray const rotation_start = ref_start.rotation.toNdArray();
-        Vec3 const pos_delta = ref_stop.pos - ref_start.pos;
-        NdArray const rotation_delta = ref_stop.rotation.toNdArray() - ref_start.rotation.toNdArray();
+        pos_t const pos_delta = ref_stop.pos - start.pos;
+        NdArray const rotation_delta = ref_stop.rotation.toNdArray() - start.rotation_array;
         double const length = pos_delta.norm();
 
         std::vector<double> gains(n_points, 0.0);
@@ -45,14 +44,12 @@ namespace builtin
         for (NdArray::index_type k = 0; k < n_points; k++)
         {
             double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
-            ref_start.pos = pos_start + pos_delta * f;
-            ref_start.rotation = rotation_start + rotation_delta * f;
+            ref_start.pos = start.pos + pos_delta * f;
+            ref_start.rotation = start.rotation_array + rotation_delta * f;
             gains.at(k) = Setup::calc_power_gain(tx, rx, wavelength, {});
             distance = f * length;
             distances.at(k) = *distance_ptr;
         }
-        ref_start.pos = pos_start;
-        ref_start.rotation = rotation_start;
 
         js["distances"] = distances;
         js["gains"] = gains;

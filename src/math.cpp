@@ -12,7 +12,7 @@ extern int sici(double x, double* si, double* ci);
 
 namespace math
 {
-    double angle_between_vectors(Vec3 vec1, Vec3 vec2)
+    double angle_between_vectors(pos_t vec1, pos_t vec2)
     {
         double const norm1 = vec1.norm();
         double const norm2 = vec2.norm();
@@ -22,7 +22,7 @@ namespace math
         return std::atan2(vec1.cross(vec2).norm(), vec1.dot(vec2));
     }
 
-    Quaternion quaternion_from_directions(Vec3 dir_initial, Vec3 dir_target)
+    Quaternion quaternion_from_directions(pos_t dir_initial, pos_t dir_target)
     {
         double const angle = angle_between_vectors(dir_initial, dir_target);
         if (std::abs(angle) < NUMERICAL_MARGIN) { return {}; } // identity quaternion
@@ -33,10 +33,10 @@ namespace math
             dir_initial = dir_initial.normalize();
 
             // We "search" for a viable orthogonal direction
-            std::array<std::tuple<Vec3, double>, 3> dir_orts{{{dir_initial.cross(Vec3(1, 0, 0)), 0}, {dir_initial.cross(Vec3(0, 1, 0)), 0}, {dir_initial.cross(Vec3(0, 0, 1)), 0}}};
+            std::array<std::tuple<pos_t, double>, 3> dir_orts{{{dir_initial.cross(pos_t(1, 0, 0)), 0}, {dir_initial.cross(pos_t(0, 1, 0)), 0}, {dir_initial.cross(pos_t(0, 0, 1)), 0}}};
             for (auto& [dir, len] : dir_orts) { len = dir.norm(); }
             auto const dir_ort_best =
-                std::get<0>(*std::max_element(dir_orts.begin(), dir_orts.end(), [](std::tuple<Vec3, double> const& a, std::tuple<Vec3, double> const& b) { return std::get<1>(a) < std::get<1>(b); }));
+                std::get<0>(*std::max_element(dir_orts.begin(), dir_orts.end(), [](std::tuple<pos_t, double> const& a, std::tuple<pos_t, double> const& b) { return std::get<1>(a) < std::get<1>(b); }));
             return {dir_ort_best.normalize(), nc::constants::pi};
         }
         else

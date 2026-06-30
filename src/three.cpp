@@ -44,7 +44,7 @@ namespace three
         ofs << "];\n";
     }
 
-    json make_sphere(Vec3 const& pos, double const radius, fmt::color const color, std::uint16_t const segments_width, std::uint16_t const segments_height)
+    json make_sphere(pos_t const& pos, double const radius, fmt::color const color, std::uint16_t const segments_width, std::uint16_t const segments_height)
     {
         json js;
         js["type"] = "sphere";
@@ -58,7 +58,7 @@ namespace three
         return js;
     }
 
-    json make_cylinder(Vec3 const& pos_start, Vec3 const& pos_end, double const radius_start, double const radius_end, fmt::color const color, std::uint16_t segments_radial)
+    json make_cylinder(pos_t const& pos_start, pos_t const& pos_end, double const radius_start, double const radius_end, fmt::color const color, std::uint16_t segments_radial)
     {
         json js;
         js["type"] = "cylinder";
@@ -71,13 +71,13 @@ namespace three
         js["pos"] = pos_center.toNdArray().toStlVector();
 
         // default orientation of a cylinder in THREE is (0,1,0)
-        auto const quat = math::quaternion_from_directions(Vec3(0.0, 1.0, 0.0), direction);
+        auto const quat = math::quaternion_from_directions(pos_t(0.0, 1.0, 0.0), direction);
         js["quat"] = {quat.i(), quat.j(), quat.k(), quat.s()};
         js["radial_segments"] = segments_radial;
         return js;
     }
 
-    json make_cone(Vec3 const& pos_start, Vec3 const& pos_end, double const radius, fmt::color const color, std::uint16_t segments_radial)
+    json make_cone(pos_t const& pos_start, pos_t const& pos_end, double const radius, fmt::color const color, std::uint16_t segments_radial)
     {
         json js;
         js["type"] = "cone";
@@ -89,13 +89,13 @@ namespace three
         js["pos"] = pos_center.toNdArray().toStlVector();
 
         // default orientation of a cone in THREE is (0,1,0)
-        auto const quat = math::quaternion_from_directions(Vec3(0.0, 1.0, 0.0), direction);
+        auto const quat = math::quaternion_from_directions(pos_t(0.0, 1.0, 0.0), direction);
         js["quat"] = {quat.i(), quat.j(), quat.k(), quat.s()};
         js["radial_segments"] = segments_radial;
         return js;
     }
 
-    json make_plane(Vec3 const& pos, Vec3 const& dir_target, double const width, double const height, double const angle, fmt::color const color)
+    json make_plane(pos_t const& pos, pos_t const& dir_target, double const width, double const height, double const angle, fmt::color const color)
     {
         json js;
         js["type"] = "plane";
@@ -105,18 +105,18 @@ namespace three
         js["pos"] = pos.toNdArray().toStlVector();
 
         // default orientation of a plane in THREE is (0,0,1)
-        auto const quat = Quaternion(dir_target, angle) * math::quaternion_from_directions(Vec3(0.0, 0.0, 1.0), dir_target);
+        auto const quat = Quaternion(dir_target, angle) * math::quaternion_from_directions(pos_t(0.0, 0.0, 1.0), dir_target);
         js["quat"] = {quat.i(), quat.j(), quat.k(), quat.s()};
         return js;
     }
 
-    std::vector<json> create_arrow(Vec3 const& pos_start, Vec3 const& pos_end, double const len_head, double const radius_line, double const radius_head, fmt::color const color)
+    std::vector<json> create_arrow(pos_t const& pos_start, pos_t const& pos_end, double const len_head, double const radius_line, double const radius_head, fmt::color const color)
     {
         auto const pos_contact = pos_end + (pos_start - pos_end).normalize() * len_head;
         return {make_cylinder(pos_start, pos_contact, radius_line, radius_line, color), make_cone(pos_contact, pos_end, radius_head, color)};
     }
 
-    std::vector<json> create_coordinate_arrows(Vec3 const& pos_center, Vec3 const& dir_x, Vec3 const& dir_y, Vec3 const& dir_z, double const len_arrow)
+    std::vector<json> create_coordinate_arrows(pos_t const& pos_center, pos_t const& dir_x, pos_t const& dir_y, pos_t const& dir_z, double const len_arrow)
     {
         auto objects_x = create_arrow(pos_center, pos_center + len_arrow * dir_x.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, fmt::color::red);
         auto const objects_y = create_arrow(pos_center, pos_center + len_arrow * dir_y.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, fmt::color::green);

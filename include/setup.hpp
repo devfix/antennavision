@@ -18,7 +18,7 @@ struct Setup
     struct RadiatorSetup
     {
         std::string type;
-        Vec3 position;
+        pos_t position;
         double magnitude;
         double phase;
     };

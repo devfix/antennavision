@@ -74,7 +74,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js)
     }
 
     std::list<Reference> references;
-    references.emplace_back("", nullptr, Vec3(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
+    references.emplace_back("", nullptr, pos_t(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
     if (setup_desc.contains("references"))
     {
         for (auto& reference_desc : json_get(setup_desc, "references"))
