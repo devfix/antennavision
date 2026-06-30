@@ -53,7 +53,7 @@ namespace builtin
             complex_t gain = 0;
             for (Radiator* source : sources)
             {
-                gain += source->calc_voltage_gain(sink, wavelength);
+                gain += Radiator::calc_voltage_gain(*source, sink, wavelength);
             }
             gains[k] = math::square(std::abs(gain));
 

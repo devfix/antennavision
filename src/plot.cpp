@@ -157,7 +157,7 @@ void plot::plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiat
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         ref_start.pos = pos_start + pos_delta * f;
         ref_start.rotation = rotation_start + rotation_delta * f;
-        gains[k] = source.calc_power_gain(sink, wave_length);
+        gains[k] = Radiator::calc_power_gain(source, sink, wave_length);
         distance = f * length;
         distances[k] = *distance_ptr;
     }

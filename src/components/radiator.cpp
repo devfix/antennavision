@@ -99,34 +99,29 @@ double Radiator::calc_directivity_from_cartesian(Vec3 const &pos_local, double c
     return calc_directivity_from_spherical(polar, azimuth, wavelength);
 }
 
-complex_t Radiator::calc_voltage_gain(Radiator const &radiator, double const wavelength, std::size_t const n_polar, std::size_t const n_azimuth) const
+complex_t Radiator::calc_voltage_gain(Radiator const &radiator_tx, Radiator const &radiator_rx, double const wavelength, std::size_t const n_polar, std::size_t const n_azimuth)
 {
-    double const r = (origin.global_from_local_pos(POS_ZERO) - radiator.origin.global_from_local_pos(POS_ZERO)).norm();
-    if (r < wavelength / 10) { std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", id, radiator.id, r, r / wavelength); }
+    double const r = (radiator_tx.origin.global_from_local_pos(POS_ZERO) - radiator_rx.origin.global_from_local_pos(POS_ZERO)).norm();
+    if (r < wavelength / 10) { std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", radiator_tx.id, radiator_rx.id, r, r / wavelength); }
 
-    auto const pos_local_tx = origin.localize(radiator.origin); // position of rx radiator in tx coordinate
-    auto const pos_local_rx = radiator.origin.localize(origin); // position of tx radiator in rx coordinate
+    auto const pos_local_tx = radiator_tx.origin.localize(radiator_rx.origin); // position of rx radiator in tx coordinate
+    auto const pos_local_rx = radiator_rx.origin.localize(radiator_tx.origin); // position of tx radiator in rx coordinate
     auto const rot_mat_tx = math::get_rot_mat_from_cartesian(pos_local_tx);
     auto const rot_mat_rx = math::get_rot_mat_from_cartesian(pos_local_rx);
-    auto const elv_spherical_tx = calc_elv_spherical_from_cartesian(pos_local_tx, wavelength);
-    auto const elv_spherical_rx = radiator.calc_elv_spherical_from_cartesian(pos_local_rx, wavelength);
+    auto const elv_spherical_tx = radiator_tx.calc_elv_spherical_from_cartesian(pos_local_tx, wavelength);
+    auto const elv_spherical_rx = radiator_rx.calc_elv_spherical_from_cartesian(pos_local_rx, wavelength);
     auto const elv_cartesian_tx = nc::dot(rot_mat_tx, elv_spherical_tx);
     auto const elv_cartesian_rx = nc::dot(rot_mat_rx, elv_spherical_rx);
-    auto const elv_global_tx = origin.global_from_local_vec(elv_cartesian_tx);
-    auto const elv_global_rx = radiator.origin.global_from_local_vec(elv_cartesian_rx);
+    auto const elv_global_tx = radiator_tx.origin.global_from_local_vec(elv_cartesian_tx);
+    auto const elv_global_rx = radiator_rx.origin.global_from_local_vec(elv_cartesian_rx);
     auto const g = elv_global_tx.dot(elv_global_rx).item();
     auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * wavelength / (4.0 * pi * r);
-    auto const leffmean_tx = calc_mean_squared_effective_length(elv_spherical, wavelength, n_polar, n_azimuth);
-    auto const leffmean_rx = calc_mean_squared_effective_length(radiator.elv_spherical, wavelength, n_polar, n_azimuth);
+    auto const leffmean_tx = calc_mean_squared_effective_length(radiator_tx.elv_spherical, wavelength, n_polar, n_azimuth);
+    auto const leffmean_rx = calc_mean_squared_effective_length(radiator_rx.elv_spherical, wavelength, n_polar, n_azimuth);
     return -j * g / std::sqrt(leffmean_tx * leffmean_rx) * propagation;
 }
 
-double Radiator::calc_power_gain(Radiator const &radiator, double const wavelength) const
+double Radiator::calc_power_gain(Radiator const &radiator_tx, Radiator const &radiator_rx, double const wavelength)
 {
-    return math::square(std::abs(calc_voltage_gain(radiator, wavelength)));
+    return math::square(std::abs(calc_voltage_gain(radiator_tx, radiator_rx, wavelength)));
 }
-
-// complex_t Radiator::calc_radiation_gain(position_t const &pos, double freq) const
-// {
-//     return get_relative_gain(get_relative_position(pos), freq);
-// }

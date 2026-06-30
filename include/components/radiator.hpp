@@ -80,6 +80,6 @@ struct Radiator : Component
     [[nodiscard]] double calc_directivity_from_cartesian(Vec3 const& pos_local, double wavelength) const;
 
 
-    [[nodiscard]] std::complex<double> calc_voltage_gain(Radiator const& radiator, double wavelength, std::size_t n_polar = 101, std::size_t n_azimuth = 201) const;
-    [[nodiscard]] double calc_power_gain(Radiator const& radiator, double wavelength) const;
+    [[nodiscard]] static std::complex<double> calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, std::size_t n_polar = 101, std::size_t n_azimuth = 201);
+    [[nodiscard]] static double calc_power_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength);
 };
