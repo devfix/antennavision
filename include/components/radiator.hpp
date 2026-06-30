@@ -5,7 +5,9 @@
 #pragma once
 
 #include <functional>
+
 #include "components/component.hpp"
+#include "math.hpp"
 #include "reference.hpp"
 
 // Coordinate System
@@ -70,15 +72,17 @@ struct Radiator : Component
     elv_spherical_t const elv_spherical; /// callback for effective length vector in spherical coordinates
     msel_t const msel; /// callback for mean-squared effective length. Optional, can be nullptr
 
+
     [[nodiscard]] static nc::NdArray<complex_t> get_elv_spherical_standing_wave(double dipole_length, double wavelength, double azimuth);
-    [[nodiscard]] static double calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, double wavelength, std::size_t n_polar = 101, std::size_t n_azimuth = 201);
+    [[nodiscard]] static double calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, double wavelength, math::NumParams const& num_params);
 
-    [[nodiscard]] nc::NdArray<complex_t> calc_elv_spherical_from_cartesian(Vec3 const& pos_local, double wavelength) const;
+    [[nodiscard]] nc::NdArray<complex_t> get_elv_spherical_from_cartesian(Vec3 const& pos_local, double wavelength) const;
+
+    [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, double wavelength, math::NumParams const& num_params) const;
+    [[nodiscard]] double calc_directivity_from_cartesian(Vec3 const& pos_local, double wavelength, math::NumParams const& num_params) const;
+
+    [[nodiscard]] static std::complex<double> calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
+    [[nodiscard]] static double calc_power_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
+
     std::complex<double> calc_path(std::size_t idx_input, std::size_t idx_output) override;
-    [[nodiscard]] double calc_radiation_resistance(std::size_t n_polar = 101, std::size_t n_azimuth = 201) const;
-    [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, double wavelength, std::size_t n_polar = 101, std::size_t n_azimuth = 201) const;
-    [[nodiscard]] double calc_directivity_from_cartesian(Vec3 const& pos_local, double wavelength) const;
-
-    [[nodiscard]] static std::complex<double> calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, std::size_t n_polar = 101, std::size_t n_azimuth = 201);
-    [[nodiscard]] static double calc_power_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength);
 };

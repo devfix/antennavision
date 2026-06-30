@@ -64,12 +64,14 @@ void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Ra
     js["name"] = name;
     std::vector<json> entries;
 
+    double const wavelength = 0.1;
+
     auto const polar_angles = nc::linspace(0.0, nc::constants::pi, 51);
     NdArray directivities(polar_angles.shape());
     for (auto const azimuth : azimuth_angles)
     {
         json js_entry;
-        std::ranges::transform(polar_angles, directivities.begin(), [&radiator, azimuth](double const theta) { return radiator.calc_directivity_from_spherical(theta, azimuth, 101, 201); });
+        std::ranges::transform(polar_angles, directivities.begin(), [&radiator, azimuth, wavelength](double const theta) { return radiator.calc_directivity_from_spherical(theta, azimuth, wavelength, {}); });
         js_entry["azimuth"] = azimuth / nc::constants::pi;
         js_entry["polars"] = (polar_angles / nc::constants::pi).toStlVector();
         js_entry["directivities"] = directivities.toStlVector();
@@ -156,7 +158,7 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         ref_start.pos = pos_start + pos_delta * f;
         ref_start.rotation = rotation_start + rotation_delta * f;
-        gains[k] = Radiator::calc_power_gain(source, sink, wave_length);
+        gains[k] = Radiator::calc_power_gain(source, sink, wave_length, {});
         distance = f * length;
         distances[k] = *distance_ptr;
     }

@@ -3,8 +3,8 @@
 //
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 #include <nlohmann/json.hpp>
-#include "catch2/catch_approx.hpp"
 #include "components/radiator.hpp"
 #include "math.hpp"
 #include "print.hpp"
@@ -182,7 +182,7 @@ TEST_CASE("ULA gain", "[TestULA]")
         ref_start.pos = pos_start + pos_delta * f;
         ref_start.rotation = rotation_start + rotation_delta * f;
 
-        for (Radiator const* source : sources) { gains[k] += Radiator::calc_voltage_gain(*source, sink, wavelength); }
+        for (Radiator const* source : sources) { gains[k] += Radiator::calc_voltage_gain(*source, sink, wavelength, {}); }
 
         distance = f * length;
         distances[k] = *distance_ptr;

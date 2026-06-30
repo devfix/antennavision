@@ -8,6 +8,12 @@
 
 namespace math
 {
+    struct NumParams
+    {
+        std::size_t n_polar = 101;
+        std::size_t n_azimuth = 201;
+    };
+
     template <typename R, typename T>
     nc::NdArray<R> constexpr vec(T a, T b, T c)
     {

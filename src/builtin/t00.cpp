@@ -7,7 +7,6 @@
 #include <print.hpp>
 
 #include "NumCpp/Functions/linspace.hpp"
-#include "dplot.hpp"
 #include "math.hpp"
 
 namespace builtin
@@ -51,7 +50,7 @@ namespace builtin
 
             gains[k] = 0;
             complex_t gain = 0;
-            for (Radiator* source : sources) { gain += Radiator::calc_voltage_gain(*source, sink, wavelength); }
+            for (Radiator* source : sources) { gain += Radiator::calc_voltage_gain(*source, sink, wavelength, {}); }
             gains[k] = math::square(std::abs(gain));
 
             distance = f * length;

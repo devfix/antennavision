@@ -131,10 +131,8 @@ target_compile_definitions(antennavision PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(antennavision PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(antennavision PRIVATE
         NumCpp::NumCpp
-        matplot
         fmt::fmt
         nlohmann_json::nlohmann_json
-        dplotpp
         exprtk
         CephesSiCi
 )
@@ -150,10 +148,8 @@ target_compile_definitions(testrunner PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(testrunner PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(testrunner PRIVATE
         NumCpp::NumCpp
-        matplot
         fmt::fmt
         nlohmann_json::nlohmann_json
-        dplotpp
         exprtk
         CephesSiCi
         Catch2::Catch2WithMain
