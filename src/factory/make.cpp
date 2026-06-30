@@ -10,6 +10,8 @@
 #include "factory/parse.hpp"
 #include "print.hpp"
 
+struct RadiatorArray;
+
 namespace factory
 {
     namespace
@@ -34,25 +36,25 @@ namespace factory
         auto const rotation = get_quaternion(reference_desc, "rot", variables, true, true);
         std::println("Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]", id, origin_id, pos.x, pos.y, pos.z,
                      rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi);
-        Reference const& origin = find_reference_by_id(references, origin_id);
+        Reference & origin = find_reference_by_id(references, origin_id);
         assert_empty(reference_desc);
         return references.emplace_back(id, &origin, pos, rotation);
     }
 
-    void make_radiator(nlohmann::ordered_json& radiator_desc, std::list<Reference>& references, std::list<std::unique_ptr<Radiator>>& radiators, std::map<std::string, double> const& variables,
-                       bool generate)
+    std::vector<std::reference_wrapper<Radiator>> make_radiator(nlohmann::ordered_json& radiator_desc, std::list<Reference>& references, std::list<std::unique_ptr<Radiator>>& radiators,
+                                                                std::map<std::string, double> const& variables, std::map<std::string, RadiatorArray>& radiator_arrays, bool const generate)
     {
         auto const id = get_string(radiator_desc, "id");
         if (!generate) { assert_valid_id(id); }
         auto const origin_id = get_string(radiator_desc, "ref", true, true);
         auto const type = get_string(radiator_desc, "type");
         std::println("Creating radiator [id: '{}', origin: '{}', type: '{}']", id, origin_id, type);
-        Reference const& origin = find_reference_by_id(references, origin_id);
+        Reference & origin = find_reference_by_id(references, origin_id);
         if (type == "HertzianDipole")
         {
             assert_empty(radiator_desc);
             radiators.push_back(std::unique_ptr<Radiator>(new Radiator(Radiator::HertzianDipole::create(id, origin)))); // NOLINT(*-make-unique)
-            return;
+            return {std::ref(*radiators.back())};
         }
         if (type == "CustomRadiator")
         {
@@ -63,7 +65,7 @@ namespace factory
             { return {effective_length_parts[0](polar, azimuth, wavelength), effective_length_parts[1](polar, azimuth, wavelength), effective_length_parts[2](polar, azimuth, wavelength)}; };
             assert_empty(radiator_desc);
             radiators.push_back(std::make_unique<Radiator>(id, origin, std::move(effective_length)));
-            return;
+            return {std::ref(*radiators.back())};
         }
         if (type == "ULA")
         {
@@ -78,19 +80,28 @@ namespace factory
             dir = dir.normalize();
 
             double const length = spacing * (count - 1);
+            std::vector<std::reference_wrapper<Reference>> array_references;
+            std::vector<std::reference_wrapper<Radiator>> array_radiators;
             for (std::remove_const_t<decltype(count)> i = 0; i < count; i++)
             {
                 double const f = static_cast<double>(i) / static_cast<double>(count - 1);
                 Vec3 const pos = dir * (f - 0.5) * length;
-                auto const& ref = references.emplace_back(std::format("{}:ref:{}", id, i), &origin, pos, rot);
+                auto& ref = references.emplace_back(std::format("{}:ref:{}", id, i), &origin, pos, rot);
+                array_references.push_back(std::ref(ref));
 
                 // We make a copy of the "backup" description and adapt it for the current element of the ULA
                 nlohmann::ordered_json ula_element_desc = prototype_desc;
                 ula_element_desc["id"] = std::format("{}:radiator:{}", id, i);
                 ula_element_desc["ref"] = ref.id;
-                make_radiator(ula_element_desc, references, radiators, variables, true);
+
+                // call the make function recursively and append the Radiators to array_radiators
+                std::ranges::move(make_radiator(ula_element_desc, references, radiators, variables, radiator_arrays, true), std::back_inserter(array_radiators));
             }
-            return;
+            if (auto [_, success] = radiator_arrays.try_emplace(id, id, array_radiators); !success)
+            {
+                throw std::runtime_error(std::format("Could not create radiator array, id '{}' already exists", id));
+            }
+            return std::move(array_radiators);
         }
         throw std::runtime_error(std::format("Unknown radiator type '{}'", type));
     }

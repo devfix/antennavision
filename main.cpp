@@ -1,5 +1,4 @@
 #include <NumCpp.hpp>
-#include <dplot.hpp>
 #include <execution>
 #include <ranges>
 #include "print.hpp"

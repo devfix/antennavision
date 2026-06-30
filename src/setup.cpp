@@ -85,11 +85,12 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js)
     }
 
     std::list<std::unique_ptr<Radiator>> radiators;
+    std::map<std::string, RadiatorArray> radiator_arrays;
     if (setup_desc.contains("radiators"))
     {
         for (auto& radiator_desc : json_get(setup_desc, "radiators"))
         {
-            factory::make_radiator(radiator_desc, references, radiators, variables, false);
+            factory::make_radiator(radiator_desc, references, radiators, variables, radiator_arrays, false);
             factory::assert_empty(radiator_desc);
         }
     }
@@ -138,7 +139,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js)
     }
 
     // ReSharper disable once CppDFAMemoryLeak
-    return std::unique_ptr<Setup>(new Setup(setup_name, std::move(variables), std::move(references), std::move(radiators), std::move(tasks)));
+    return std::unique_ptr<Setup>(new Setup(setup_name, std::move(variables), std::move(references), std::move(radiators), std::move(radiator_arrays), std::move(tasks)));
 }
 
 std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const& p)
@@ -193,18 +194,55 @@ Reference& Setup::get_reference_by_id(std::string_view const id) { return factor
 
 Radiator const& Setup::get_radiator_by_id(std::string_view const id) const { return factory::find_radiator_by_id(radiators, id); }
 
-std::vector<Radiator*> Setup::get_radiator_array(std::string_view id) const
+// std::vector<std::reference_wrapper<Radiator>> Setup::get_radiator_array(std::string_view id) const
+// {
+//     std::vector<std::reference_wrapper<Radiator>> radiator_array;
+//     std::string const id_prefix = std::format("{}:radiator:", id);
+//     for (auto& radiator : radiators)
+//     {
+//         if (radiator->id.starts_with(id_prefix)) { radiator_array.push_back(std::ref(*radiator)); }
+//     }
+//     return radiator_array;
+// }
+
+complex_t Setup::calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double const wavelength, math::NumParams const& num_params)
 {
-    std::vector<Radiator*> radiator_array;
-    std::string const id_prefix = std::format("{}:radiator:", id);
-    for (auto& radiator : radiators)
-    {
-        if (radiator->id.starts_with(id_prefix)) { radiator_array.push_back(radiator.get()); }
-    }
-    return radiator_array;
+    double const r = (radiator_tx.origin.global_from_local_pos(POS_ZERO) - radiator_rx.origin.global_from_local_pos(POS_ZERO)).norm();
+    if (r < wavelength / 10) { std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", radiator_tx.id, radiator_rx.id, r, r / wavelength); }
+
+    auto const pos_local_tx = radiator_tx.origin.localize(radiator_rx.origin); // position of rx radiator in tx coordinate
+    auto const pos_local_rx = radiator_rx.origin.localize(radiator_tx.origin); // position of tx radiator in rx coordinate
+    auto const rot_mat_tx = math::get_rot_mat_from_cartesian(pos_local_tx);
+    auto const rot_mat_rx = math::get_rot_mat_from_cartesian(pos_local_rx);
+    auto const elv_spherical_tx = radiator_tx.get_elv_spherical_from_cartesian(pos_local_tx, wavelength);
+    auto const elv_spherical_rx = radiator_rx.get_elv_spherical_from_cartesian(pos_local_rx, wavelength);
+    auto const elv_cartesian_tx = nc::dot(rot_mat_tx, elv_spherical_tx);
+    auto const elv_cartesian_rx = nc::dot(rot_mat_rx, elv_spherical_rx);
+    auto const elv_global_tx = radiator_tx.origin.global_from_local_vec(elv_cartesian_tx);
+    auto const elv_global_rx = radiator_rx.origin.global_from_local_vec(elv_cartesian_rx);
+    auto const g = elv_global_tx.dot(elv_global_rx).item();
+    auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * wavelength / (4.0 * pi * r);
+    auto const mean_squared_elv_tx =
+        radiator_tx.mean_squared_elv ? radiator_tx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(radiator_tx.elv_spherical, wavelength, num_params);
+    auto const mean_squared_elv_rx =
+        radiator_rx.mean_squared_elv ? radiator_rx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(radiator_rx.elv_spherical, wavelength, num_params);
+    return -j * g / std::sqrt(mean_squared_elv_tx * mean_squared_elv_rx) * propagation;
 }
 
+complex_t Setup::calc_voltage_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params)
+{
+    complex_t gain = 0;
+    for (auto const& radiator_tx : radiator_array_tx.elements) { gain += calc_voltage_gain(radiator_tx, radiator_rx, wavelength, num_params); }
+    return gain;
+}
+
+double Setup::calc_power_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double const wavelength, math::NumParams const& num_params)
+{ return math::square(std::abs(calc_voltage_gain(radiator_tx, radiator_rx, wavelength, num_params))); }
+
+double Setup::calc_power_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params)
+{ return math::square(std::abs(calc_voltage_gain(radiator_array_tx, radiator_rx, wavelength, num_params))); }
+
 Setup::Setup(std::string_view const name, std::map<std::string, double>&& variables, std::list<Reference>&& references, std::list<std::unique_ptr<Radiator>>&& radiators,
-             std::list<std::pair<std::string, std::function<void()>>>&& tasks) :
-    name(name), variables(std::move(variables)), references(std::move(references)), radiators(std::move(radiators)), tasks(std::move(tasks))
+             std::map<std::string, RadiatorArray>&& radiator_arrays, std::list<std::pair<std::string, std::function<void()>>>&& tasks) :
+    name(name), variables(std::move(variables)), references(std::move(references)), radiators(std::move(radiators)), radiator_arrays(std::move(radiator_arrays)), tasks(std::move(tasks))
 {}

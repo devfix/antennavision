@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 
 #include "print.hpp"
+#include "setup.hpp"
 
 void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Radiator const& radiator, NdArray const& azimuth_angles)
 {
@@ -158,7 +159,7 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         ref_start.pos = pos_start + pos_delta * f;
         ref_start.rotation = rotation_start + rotation_delta * f;
-        gains[k] = Radiator::calc_power_gain(source, sink, wave_length, {});
+        gains[k] = Setup::calc_power_gain(source, sink, wave_length, {});
         distance = f * length;
         distances[k] = *distance_ptr;
     }

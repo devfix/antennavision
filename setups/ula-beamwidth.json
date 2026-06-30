@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "setup_name": "ula-breamwidth"
+    "setup_name": "ula-beamwidth"
   },
   "variables": {
     "wavelength": 0.1,

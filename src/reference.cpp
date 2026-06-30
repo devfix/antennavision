@@ -6,7 +6,16 @@
 
 #include "math.hpp"
 
-Reference::Reference(std::string_view const id, Reference const* origin, Vec3 const& translation, Quaternion const& rotation) : id(id), origin(origin), pos(translation), rotation(rotation) {}
+Reference::StateGuard::StateGuard(Reference& reference) : reference(reference), pos(reference.pos), rotation(reference.rotation)
+{}
+
+Reference::StateGuard::~StateGuard()
+{
+    reference.pos = pos;
+    reference.rotation = rotation;
+}
+
+Reference::Reference(std::string_view const id, Reference *const origin, pos_t const& translation, Quaternion const& rotation) : id(id), origin(origin), pos(translation), rotation(rotation) {}
 
 pos_t Reference::local_from_global_pos(pos_t const& pos_global) const { return rotation.inverse().rotate((origin ? origin->local_from_global_pos(pos_global) : pos_global) - this->pos); }
 

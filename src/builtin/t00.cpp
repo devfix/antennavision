@@ -36,25 +36,20 @@ namespace builtin
         std::vector<double> gains(n_points, 0.0);
         std::vector<double> distances(n_points, 0.0);
 
-        Radiator const& sink = setup.get_radiator_by_id("receiver");
+        Radiator const& rx = setup.get_radiator_by_id("receiver");
         double const wavelength = setup.variables.at("wavelength");
+        auto tx = setup.radiator_arrays.at("ula1");
         double distance = 0;
 
         double* distance_ptr = &ref_start.pos.z;
-        auto const sources = setup.get_radiator_array("ula1");
         for (NdArray::index_type k = 0; k < n_points; k++)
         {
             double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
             ref_start.pos = pos_start + pos_delta * f;
             ref_start.rotation = rotation_start + rotation_delta * f;
-
-            gains[k] = 0;
-            complex_t gain = 0;
-            for (Radiator* source : sources) { gain += Radiator::calc_voltage_gain(*source, sink, wavelength, {}); }
-            gains[k] = math::square(std::abs(gain));
-
+            gains.at(k) = Setup::calc_power_gain(tx, rx, wavelength, {});
             distance = f * length;
-            distances[k] = *distance_ptr;
+            distances.at(k) = *distance_ptr;
         }
         ref_start.pos = pos_start;
         ref_start.rotation = rotation_start;

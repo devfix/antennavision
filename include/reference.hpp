@@ -8,7 +8,17 @@
 
 struct Reference
 {
-    Reference(std::string_view id, Reference const* origin, Vec3 const& translation = {}, Quaternion const& rotation = {});
+    struct StateGuard
+    {
+        explicit StateGuard(Reference & reference);
+        ~StateGuard();
+
+        Reference & reference;
+        pos_t pos;
+        Quaternion rotation;
+    };
+
+    Reference(std::string_view id, Reference * origin, pos_t const& translation = {}, Quaternion const& rotation = {});
 
     Reference(Reference const&) = delete; // disable copy constructor
     Reference& operator=(Reference const&) = delete; // disable copy assignment
@@ -24,7 +34,7 @@ struct Reference
     [[nodiscard]] pos_t localize(Reference const& reference) const;
 
     std::string const id;
-    Reference const* origin;
-    Vec3 pos;
+    Reference *const origin;
+    pos_t pos;
     Quaternion rotation;
 };

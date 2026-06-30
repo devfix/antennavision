@@ -52,7 +52,7 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
 
 TEST_CASE("HertzianDipole", "[Radiator]")
 {
-    Reference const reference("", nullptr);
+    Reference reference("", nullptr);
     auto radiator = Radiator::HertzianDipole::create("HertzianDipole", reference);
     REQUIRE_THROWS(radiator.calc_path(0, 0));
 
@@ -70,7 +70,7 @@ TEST_CASE("HertzianDipole", "[Radiator]")
 TEST_CASE("HalfWaveDipole", "[Radiator]")
 {
     double constexpr wavelength = 0.1;
-    Reference const reference("", nullptr);
+    Reference reference("", nullptr);
     auto radiator = Radiator::StandingWaveDipole::create("HalfWaveDipole", reference, 0.5 * wavelength);
     REQUIRE_THROWS(radiator.calc_path(0, 0));
 
@@ -81,7 +81,7 @@ TEST_CASE("HalfWaveDipole", "[Radiator]")
 TEST_CASE("FullWaveDipole", "[Radiator]")
 {
     double constexpr wavelength = 0.1;
-    Reference const reference("", nullptr);
+    Reference reference("", nullptr);
     auto radiator = Radiator::StandingWaveDipole::create("FullWaveDipole", reference, 1.0 * wavelength);
     REQUIRE_THROWS(radiator.calc_path(0, 0));
 
@@ -92,7 +92,7 @@ TEST_CASE("FullWaveDipole", "[Radiator]")
 TEST_CASE("3/2-WaveDipole", "[Radiator]")
 {
     double constexpr wavelength = 0.1;
-    Reference const reference("", nullptr);
+    Reference reference("", nullptr);
     auto radiator = Radiator::StandingWaveDipole::create("3/2-WaveDipole", reference, 1.5 * wavelength);
     REQUIRE_THROWS(radiator.calc_path(0, 0));
 
