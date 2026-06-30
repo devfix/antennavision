@@ -14,13 +14,13 @@
 #include "math.hpp"
 #include "print.hpp"
 
-Radiator Radiator::HertzianDipole::create(std::string_view id, Reference const &origin) { return {id, origin, elv_spherical, msel}; }
+Radiator Radiator::HertzianDipole::create(std::string_view id, Reference const& origin) { return {id, origin, elv_spherical, msel}; }
 
 Radiator::elv_spherical_t::result_type Radiator::HertzianDipole::elv_spherical(double const polar, double, double) { return math::vec<complex_t>(0.0, -HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0.0); }
 
 Radiator::msel_t::result_type Radiator::HertzianDipole::msel(double) { return 2.0 / 3.0 * math::square(HERTZIAN_DIPOLE_LENGTH); }
 
-Radiator Radiator::StandingWaveDipole::create(std::string_view id, Reference const &origin, double const dipole_length)
+Radiator Radiator::StandingWaveDipole::create(std::string_view id, Reference const& origin, double const dipole_length)
 {
     return {id, origin, [dipole_length](double const polar, double const azimuth, double const wavelength) -> elv_spherical_t::result_type
             { return elv_spherical(polar, azimuth, wavelength, dipole_length); }, [dipole_length](double wavelength) -> msel_t::result_type { return msel(wavelength, dipole_length); }};
@@ -39,7 +39,7 @@ Radiator::msel_t::result_type Radiator::StandingWaveDipole::msel(double waveleng
     return 0.5 * math::square(wavelength / pi) * math::q_function(x);
 }
 
-Radiator::Radiator(std::string_view const id, Reference const &origin, elv_spherical_t elv_spherical, msel_t msel) :
+Radiator::Radiator(std::string_view const id, Reference const& origin, elv_spherical_t elv_spherical, msel_t msel) :
     Component(id, 1, 0), origin(origin), elv_spherical(std::move(elv_spherical)), msel(std::move(msel))
 {}
 
@@ -50,7 +50,7 @@ nc::NdArray<complex_t> Radiator::get_elv_spherical_standing_wave(double const di
     return {0.0, polar_comp, 0.0};
 }
 
-double Radiator::calc_mean_squared_effective_length(elv_spherical_t const &elv_spherical, double wavelength, std::size_t n_polar, std::size_t n_azimuth)
+double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, double wavelength, std::size_t n_polar, std::size_t n_azimuth)
 {
     auto const polar_edges = nc::linspace(0.0, pi, n_polar + 1);
     auto const azimuth_edges = nc::linspace(0.0, 2.0 * pi, n_azimuth + 1);
@@ -78,7 +78,7 @@ double Radiator::calc_mean_squared_effective_length(elv_spherical_t const &elv_s
     return integral / (4.0 * pi);
 }
 
-nc::NdArray<complex_t> Radiator::calc_elv_spherical_from_cartesian(Vec3 const &pos_local, double const wavelength) const
+nc::NdArray<complex_t> Radiator::calc_elv_spherical_from_cartesian(Vec3 const& pos_local, double const wavelength) const
 {
     auto const [r, polar, azimuth] = math::spherical_from_cartesian(pos_local);
     return elv_spherical(polar, azimuth, wavelength);
@@ -89,17 +89,15 @@ complex_t Radiator::calc_path(std::size_t idx_input, std::size_t idx_output) { t
 double Radiator::calc_radiation_resistance(std::size_t n_polar, std::size_t n_azimuth) const {}
 
 double Radiator::calc_directivity_from_spherical(double polar, double azimuth, double const wavelength, std::size_t n_polar, std::size_t n_azimuth) const
-{
-    return math::square(math::norm(elv_spherical(polar, azimuth, wavelength))) / calc_mean_squared_effective_length(elv_spherical, wavelength, n_polar, n_azimuth);
-}
+{ return math::square(math::norm(elv_spherical(polar, azimuth, wavelength))) / calc_mean_squared_effective_length(elv_spherical, wavelength, n_polar, n_azimuth); }
 
-double Radiator::calc_directivity_from_cartesian(Vec3 const &pos_local, double const wavelength) const
+double Radiator::calc_directivity_from_cartesian(Vec3 const& pos_local, double const wavelength) const
 {
     auto const [r, polar, azimuth] = math::spherical_from_cartesian(pos_local);
     return calc_directivity_from_spherical(polar, azimuth, wavelength);
 }
 
-complex_t Radiator::calc_voltage_gain(Radiator const &radiator_tx, Radiator const &radiator_rx, double const wavelength, std::size_t const n_polar, std::size_t const n_azimuth)
+complex_t Radiator::calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double const wavelength, std::size_t const n_polar, std::size_t const n_azimuth)
 {
     double const r = (radiator_tx.origin.global_from_local_pos(POS_ZERO) - radiator_rx.origin.global_from_local_pos(POS_ZERO)).norm();
     if (r < wavelength / 10) { std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", radiator_tx.id, radiator_rx.id, r, r / wavelength); }
@@ -121,7 +119,5 @@ complex_t Radiator::calc_voltage_gain(Radiator const &radiator_tx, Radiator cons
     return -j * g / std::sqrt(leffmean_tx * leffmean_rx) * propagation;
 }
 
-double Radiator::calc_power_gain(Radiator const &radiator_tx, Radiator const &radiator_rx, double const wavelength)
-{
-    return math::square(std::abs(calc_voltage_gain(radiator_tx, radiator_rx, wavelength)));
-}
+double Radiator::calc_power_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double const wavelength)
+{ return math::square(std::abs(calc_voltage_gain(radiator_tx, radiator_rx, wavelength))); }

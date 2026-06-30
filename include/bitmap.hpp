@@ -2,20 +2,19 @@
 // Created by Tristan Krause on 2026-04-30.
 //
 
-
 #pragma once
 
-#include <cstdint>
-#include <cmath>
-#include <vector>
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <filesystem>
-
+#include <vector>
 
 struct Bitmap
 {
 
 #pragma pack(push, 1)
+
     struct FileHeader
     {
         std::uint16_t file_type{0x4D42}; // "BM"
@@ -39,13 +38,14 @@ struct Bitmap
         std::uint32_t colors_used{0};
         std::uint32_t colors_important{0};
     };
+
 #pragma pack(pop)
 
     using bgr_t = std::tuple<double, double, double>;
 
     Bitmap(std::uint16_t width, std::uint16_t height);
-    bgr_t &operator[](std::uint16_t x, std::uint16_t y);
-    const bgr_t &operator[](std::uint16_t x, std::uint16_t y) const;
+    bgr_t& operator[](std::uint16_t x, std::uint16_t y);
+    const bgr_t& operator[](std::uint16_t x, std::uint16_t y) const;
     void write(const std::filesystem::path& path);
     bgr_t get_min() const;
     bgr_t get_max() const;
@@ -55,7 +55,7 @@ struct Bitmap
     std::vector<bgr_t> data;
 
 private:
-    template<std::size_t n>
+    template <std::size_t n>
     [[nodiscard]] constexpr char encode_value(Bitmap::bgr_t bgr) const
     {
         float val = std::round(std::get<n>(bgr));

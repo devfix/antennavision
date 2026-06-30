@@ -40,13 +40,13 @@ struct Radiator : Component
 {
     using EffLenFn = std::function<double(double, double)>;
     using elv_spherical_t = std::function<nc::NdArray<complex_t>(double polar, double azimuth, double wavelength)>; /// effective length vector in spherical coordinates
-    using msel_t = std::function<double(double wavelength)>;  /// mean-squared effective length
+    using msel_t = std::function<double(double wavelength)>; /// mean-squared effective length
     static double constexpr HERTZIAN_DIPOLE_LENGTH = 1e-3;
 
     // Provide the elv and msel functions for the Hertzian dipole
     struct HertzianDipole
     {
-        [[nodiscard]] static Radiator create(std::string_view id, Reference const &origin);
+        [[nodiscard]] static Radiator create(std::string_view id, Reference const& origin);
         [[nodiscard]] static elv_spherical_t::result_type elv_spherical(double polar, double azimuth, double wavelength);
         [[nodiscard]] static msel_t::result_type msel(double wavelength);
     };
@@ -54,19 +54,19 @@ struct Radiator : Component
     // Provide the elv and msel functions for the standing wave dipoles
     struct StandingWaveDipole
     {
-        [[nodiscard]] static Radiator create(std::string_view id, Reference const &origin, double const dipole_length);
+        [[nodiscard]] static Radiator create(std::string_view id, Reference const& origin, double const dipole_length);
         [[nodiscard]] static elv_spherical_t::result_type elv_spherical(double polar, double azimuth, double wavelength, double dipole_length);
         [[nodiscard]] static msel_t::result_type msel(double wavelength, double dipole_length);
     };
 
-    Radiator(std::string_view id, Reference const &origin, elv_spherical_t  elv_spherical, msel_t  msel = nullptr);
+    Radiator(std::string_view id, Reference const& origin, elv_spherical_t elv_spherical, msel_t msel = nullptr);
 
-    Radiator(Radiator const &) = delete; // disable copy constructor
-    Radiator &operator=(Radiator const &) = delete; // disable copy assignment
-    Radiator(Radiator &&) = delete; // disable move constructor
-    Radiator &operator=(Radiator &&) = delete; // disable move assignment
+    Radiator(Radiator const&) = delete; // disable copy constructor
+    Radiator& operator=(Radiator const&) = delete; // disable copy assignment
+    Radiator(Radiator&&) = delete; // disable move constructor
+    Radiator& operator=(Radiator&&) = delete; // disable move assignment
 
-    Reference const &origin;
+    Reference const& origin;
     elv_spherical_t const elv_spherical; /// callback for effective length vector in spherical coordinates
     msel_t const msel; /// callback for mean-squared effective length. Optional, can be nullptr
 
@@ -78,7 +78,6 @@ struct Radiator : Component
     [[nodiscard]] double calc_radiation_resistance(std::size_t n_polar = 101, std::size_t n_azimuth = 201) const;
     [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, double wavelength, std::size_t n_polar = 101, std::size_t n_azimuth = 201) const;
     [[nodiscard]] double calc_directivity_from_cartesian(Vec3 const& pos_local, double wavelength) const;
-
 
     [[nodiscard]] static std::complex<double> calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, std::size_t n_polar = 101, std::size_t n_azimuth = 201);
     [[nodiscard]] static double calc_power_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength);

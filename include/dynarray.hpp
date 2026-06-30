@@ -19,22 +19,22 @@ public:
     explicit DynArray(std::size_t const size) : data_(std::make_unique<T[]>(size)), size_(size) {}
 
     // Enforce that the array itself cannot be copied (preventing accidental duplicates)
-    DynArray(const DynArray &) = delete;
-    DynArray &operator=(const DynArray &) = delete;
+    DynArray(const DynArray&) = delete;
+    DynArray& operator=(const DynArray&) = delete;
 
     // Allow moving the container ownership
-    DynArray(DynArray &&) noexcept = default;
-    DynArray &operator=(DynArray &&) noexcept = default;
+    DynArray(DynArray&&) noexcept = default;
+    DynArray& operator=(DynArray&&) noexcept = default;
 
     [[nodiscard]] std::size_t size() const { return size_; }
 
-    T &operator[](std::size_t index) { return data_[index]; }
+    T& operator[](std::size_t index) { return data_[index]; }
 
-    const T &operator[](std::size_t index) const { return data_[index]; }
+    const T& operator[](std::size_t index) const { return data_[index]; }
 
-    T *data() { return data_.get(); }
+    T* data() { return data_.get(); }
 
-    const T *data() const { return data_.get(); }
+    const T* data() const { return data_.get(); }
 
     // --- SPAN & ITERATION SUPPORT ---
 

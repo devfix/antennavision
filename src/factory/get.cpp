@@ -9,15 +9,15 @@
 
 namespace factory
 {
-    void assert_key(nlohmann::ordered_json const &js, std::string_view key, bool null_ok)
+    void assert_key(nlohmann::ordered_json const& js, std::string_view key, bool null_ok)
     {
         if (!js.contains(key)) { throw std::runtime_error(std::format("Error: Could not find key '{}' in json object\n{}", key, js.dump(2))); }
         if (!null_ok && js.at(key).is_null()) { throw std::runtime_error(std::format("Error: Value to key '{}' is null in json object\n{}", key, js.dump(2))); }
     }
 
-    bool key_exists(nlohmann::ordered_json const &js, std::string_view key) { return js.contains(key); }
+    bool key_exists(nlohmann::ordered_json const& js, std::string_view key) { return js.contains(key); }
 
-    void assert_empty(nlohmann::ordered_json const &js)
+    void assert_empty(nlohmann::ordered_json const& js)
     {
         if (js.empty()) { return; }
         std::string bad_keys("Invalid keys found: ");
@@ -29,7 +29,7 @@ namespace factory
         throw std::runtime_error(bad_keys);
     }
 
-    std::string get_string(nlohmann::ordered_json &js, std::string_view key, bool remove, bool default_ok)
+    std::string get_string(nlohmann::ordered_json& js, std::string_view key, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return {}; }
         assert_key(js, key);
@@ -38,7 +38,7 @@ namespace factory
         return val;
     }
 
-    nc::NdArray<double> get_ndarray(nlohmann::ordered_json &js, std::string_view key, bool remove)
+    nc::NdArray<double> get_ndarray(nlohmann::ordered_json& js, std::string_view key, bool remove)
     {
         assert_key(js, key);
         auto const vect = js.at(key).get<std::vector<double>>();
@@ -47,7 +47,7 @@ namespace factory
         return array;
     }
 
-    char get_char(nlohmann::ordered_json &js, std::string_view key, bool remove)
+    char get_char(nlohmann::ordered_json& js, std::string_view key, bool remove)
     {
         assert_key(js, key);
         std::string_view const str = js.at(key).get<std::string_view>();
@@ -57,15 +57,15 @@ namespace factory
         return c;
     }
 
-    double get_double(nlohmann::ordered_json &js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
+    double get_double(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return 0.0; }
         assert_key(js, key);
         if (js.at(key).is_string())
         {
-                auto const val = parse_double(js.at(key).get<std::string>(), variables);
-                if (remove) { js.erase(key); }
-                return val;
+            auto const val = parse_double(js.at(key).get<std::string>(), variables);
+            if (remove) { js.erase(key); }
+            return val;
         }
         if (js.at(key).is_number())
         {
@@ -76,15 +76,15 @@ namespace factory
         throw std::runtime_error(std::format("Invalid type '{}' of entry '{}'", js.at(key).type_name(), key));
     }
 
-    std::uint32_t get_uint(nlohmann::ordered_json &js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
+    std::uint32_t get_uint(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return 0.0; }
         assert_key(js, key);
         if (js.at(key).is_string())
         {
-                auto const val = static_cast<std::uint32_t>(std::round(variables.at(js.at(key).get<std::string>())));
-                if (remove) { js.erase(key); }
-                return val;
+            auto const val = static_cast<std::uint32_t>(std::round(variables.at(js.at(key).get<std::string>())));
+            if (remove) { js.erase(key); }
+            return val;
         }
         if (js.at(key).is_number_integer())
         {
@@ -95,7 +95,7 @@ namespace factory
         throw std::runtime_error(std::format("Invalid type '{}' of entry '{}'", js.at(key).type_name(), key));
     }
 
-    nc::Vec3 get_vec3(nlohmann::ordered_json &js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
+    nc::Vec3 get_vec3(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return {}; }
         assert_key(js, key);
@@ -105,7 +105,7 @@ namespace factory
         return val;
     }
 
-    nc::rotations::Quaternion get_quaternion(nlohmann::ordered_json &js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
+    nc::rotations::Quaternion get_quaternion(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return {}; }
         assert_key(js, key);
@@ -116,7 +116,7 @@ namespace factory
         return val;
     }
 
-    std::array<std::string, 3> get_string_vec3(nlohmann::ordered_json &js, std::string_view key, bool remove)
+    std::array<std::string, 3> get_string_vec3(nlohmann::ordered_json& js, std::string_view key, bool remove)
     {
         assert_key(js, key);
         auto const val = js.at(key).get<std::array<std::string, 3>>();

@@ -2,9 +2,9 @@
 // Created by core on 21.06.26.
 //
 
+#include "../../include/builtin/t00.hpp"
 #include <nlohmann/json.hpp>
 #include <print.hpp>
-#include "../../include/builtin/t00.hpp"
 
 #include "NumCpp/Functions/linspace.hpp"
 #include "dplot.hpp"
@@ -13,7 +13,7 @@
 namespace builtin
 {
 
-    void t00_compare_beamwidth(Setup &setup)
+    void t00_compare_beamwidth(Setup& setup)
     {
         std::filesystem::path const dir_plot = std::filesystem::path(setup.name);
 
@@ -24,7 +24,7 @@ namespace builtin
         js["name"] = name;
         std::vector<json> entries;
 
-        Reference &ref_start = setup.get_reference_by_id("ref_rx_start");
+        Reference& ref_start = setup.get_reference_by_id("ref_rx_start");
         Vec3 const pos_start = ref_start.pos;
         Reference const& ref_stop = setup.get_reference_by_id("ref_rx_stop");
 
@@ -41,7 +41,7 @@ namespace builtin
         double const wavelength = setup.variables.at("wavelength");
         double distance = 0;
 
-        double *distance_ptr = &ref_start.pos.z;
+        double* distance_ptr = &ref_start.pos.z;
         auto const sources = setup.get_radiator_array("ula1");
         for (NdArray::index_type k = 0; k < n_points; k++)
         {
@@ -51,10 +51,7 @@ namespace builtin
 
             gains[k] = 0;
             complex_t gain = 0;
-            for (Radiator* source : sources)
-            {
-                gain += Radiator::calc_voltage_gain(*source, sink, wavelength);
-            }
+            for (Radiator* source : sources) { gain += Radiator::calc_voltage_gain(*source, sink, wavelength); }
             gains[k] = math::square(std::abs(gain));
 
             distance = f * length;

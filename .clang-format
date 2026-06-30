@@ -57,9 +57,11 @@ SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 TabWidth: 4
 
+# devfix changes:
 AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLoopsOnASingleLine: true
 AllowShortLambdasOnASingleLine: All
 SeparateDefinitionBlocks: Always
+PointerAlignment: Left
 
 ...

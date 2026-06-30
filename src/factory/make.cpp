@@ -25,7 +25,7 @@ namespace factory
 
     } // namespace
 
-    Reference &make_reference(nlohmann::ordered_json &reference_desc, std::list<Reference> &references, std::map<std::string, double> const &variables)
+    Reference& make_reference(nlohmann::ordered_json& reference_desc, std::list<Reference>& references, std::map<std::string, double> const& variables)
     {
         auto const id = get_string(reference_desc, "id");
         assert_valid_id(id);
@@ -34,12 +34,12 @@ namespace factory
         auto const rotation = get_quaternion(reference_desc, "rot", variables, true, true);
         std::println("Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]", id, origin_id, pos.x, pos.y, pos.z,
                      rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi);
-        Reference const &origin = find_reference_by_id(references, origin_id);
+        Reference const& origin = find_reference_by_id(references, origin_id);
         assert_empty(reference_desc);
         return references.emplace_back(id, &origin, pos, rotation);
     }
 
-    void make_radiator(nlohmann::ordered_json &radiator_desc, std::list<Reference> &references, std::list<std::unique_ptr<Radiator>> &radiators, std::map<std::string, double> const &variables,
+    void make_radiator(nlohmann::ordered_json& radiator_desc, std::list<Reference>& references, std::list<std::unique_ptr<Radiator>>& radiators, std::map<std::string, double> const& variables,
                        bool generate)
     {
         auto const id = get_string(radiator_desc, "id");
@@ -47,7 +47,7 @@ namespace factory
         auto const origin_id = get_string(radiator_desc, "ref", true, true);
         auto const type = get_string(radiator_desc, "type");
         std::println("Creating radiator [id: '{}', origin: '{}', type: '{}']", id, origin_id, type);
-        Reference const &origin = find_reference_by_id(references, origin_id);
+        Reference const& origin = find_reference_by_id(references, origin_id);
         if (type == "HertzianDipole")
         {
             assert_empty(radiator_desc);
@@ -82,7 +82,7 @@ namespace factory
             {
                 double const f = static_cast<double>(i) / static_cast<double>(count - 1);
                 Vec3 const pos = dir * (f - 0.5) * length;
-                auto const &ref = references.emplace_back(std::format("{}:ref:{}", id, i), &origin, pos, rot);
+                auto const& ref = references.emplace_back(std::format("{}:ref:{}", id, i), &origin, pos, rot);
 
                 // We make a copy of the "backup" description and adapt it for the current element of the ULA
                 nlohmann::ordered_json ula_element_desc = prototype_desc;

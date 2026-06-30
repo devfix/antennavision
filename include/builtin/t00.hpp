@@ -7,5 +7,5 @@
 
 namespace builtin
 {
-    void t00_compare_beamwidth(Setup &setup);
+    void t00_compare_beamwidth(Setup& setup);
 } // namespace builtin

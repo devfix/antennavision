@@ -8,7 +8,7 @@
 
 #include "print.hpp"
 
-void plot::plot_directivity_over_polar(std::filesystem::path const &dir_plot, Radiator const &radiator, NdArray const &azimuth_angles)
+void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Radiator const& radiator, NdArray const& azimuth_angles)
 {
     std::ostringstream azimuth_angles_stream;
     azimuth_angles_stream << std::fixed << std::setprecision(2);
@@ -83,7 +83,8 @@ void plot::plot_directivity_over_polar(std::filesystem::path const &dir_plot, Ra
     // fig.export_figure(dir_plot, {dplot::ExportType::PDF});
 }
 
-void plot::plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiator const &source, Radiator const &sink, Reference &ref_start, Reference const &ref_stop, double wave_length, char distance_axis)
+void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiator const& source, Radiator const& sink, Reference& ref_start, Reference const& ref_stop, double wave_length,
+                                   char distance_axis)
 {
     std::string name = std::format("{}.{}.{}.{}", __func__, source.id, sink.id, distance_axis);
     std::println("Creating plot: {}", name);
@@ -141,16 +142,14 @@ void plot::plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiat
     NdArray distances(n_points, 1);
     double distance = 0;
 
-    double *distance_ptr = &distance;
+    double* distance_ptr = &distance;
     switch (distance_axis)
     {
         case 'x': distance_ptr = &ref_start.pos.x; break;
         case 'y': distance_ptr = &ref_start.pos.y; break;
         case 'z': distance_ptr = &ref_start.pos.z; break;
-        case 'd':
-            break; // already set
-        default:
-            throw std::runtime_error(std::format("Error in {}: Unknown distance_axis '{}'", __func__, distance_axis));
+        case 'd': break; // already set
+        default: throw std::runtime_error(std::format("Error in {}: Unknown distance_axis '{}'", __func__, distance_axis));
     }
     for (NdArray::index_type k = 0; k < n_points; k++)
     {
@@ -174,7 +173,8 @@ void plot::plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiat
     ofs << js.dump(2) << '\n';
 }
 
-// void plot::gain_over_phase(std::filesystem::path const &dir_plot, NdArray const &phases, std::vector<std::tuple<std::reference_wrapper<const NdArray>, std::string>> const &gains, std::string_view const name,
+// void plot::gain_over_phase(std::filesystem::path const &dir_plot, NdArray const &phases, std::vector<std::tuple<std::reference_wrapper<const NdArray>, std::string>> const &gains, std::string_view
+// const name,
 //                            std::string_view const title)
 // {
 //     dplot::Figure fig{std::string(name), std::string(title)};

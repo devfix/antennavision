@@ -14,8 +14,10 @@ namespace plot
 {
     void plot_directivity_over_polar(std::filesystem::path const& dir_plot, Radiator const& radiator, NdArray const& azimuth_angles);
 
-    void plot_gain_over_straight(std::filesystem::path const &dir_plot, Radiator const& source, Radiator const& sink, Reference & ref_start, Reference const& ref_stop, double wave_length, char distance_axis);
+    void plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiator const& source, Radiator const& sink, Reference& ref_start, Reference const& ref_stop, double wave_length,
+                                 char distance_axis);
 
-    void gain_over_phase(std::filesystem::path const& dir_plot, NdArray const& phases, std::vector<std::tuple<std::reference_wrapper<const NdArray>, std::string>> const& gains, std::string_view name, std::string_view title);
+    void gain_over_phase(std::filesystem::path const& dir_plot, NdArray const& phases, std::vector<std::tuple<std::reference_wrapper<const NdArray>, std::string>> const& gains, std::string_view name,
+                         std::string_view title);
 
 } // namespace plot

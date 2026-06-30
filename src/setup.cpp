@@ -18,7 +18,7 @@
 namespace
 {
     template <typename ContainerType>
-    ContainerType &json_get(ContainerType &js, std::string_view key)
+    ContainerType& json_get(ContainerType& js, std::string_view key)
     {
         factory::assert_key(js, key);
         return js[key];
@@ -51,17 +51,17 @@ namespace
 
 } // namespace
 
-std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const &js)
+std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js)
 {
     json setup_desc = js; // create a copy of the json object in order to decompose it
-    auto const &metadata = json_get(setup_desc, "metadata");
+    auto const& metadata = json_get(setup_desc, "metadata");
     std::string_view const setup_name = json_get(metadata, "setup_name").get<std::string_view>();
     std::println("Setup name: {}", setup_name);
 
     std::map<std::string, double> variables;
     if (setup_desc.contains("variables"))
     {
-        for (const auto &[key, val] : setup_desc["variables"].items())
+        for (const auto& [key, val] : setup_desc["variables"].items())
         {
             if (val.is_string()) { variables[key] = factory::parse_double(val.get<std::string>(), variables); }
             else if (val.is_number()) { variables[key] = val.get<double>(); }
@@ -77,7 +77,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const &js)
     references.emplace_back("", nullptr, Vec3(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
     if (setup_desc.contains("references"))
     {
-        for (auto &reference_desc : json_get(setup_desc, "references"))
+        for (auto& reference_desc : json_get(setup_desc, "references"))
         {
             factory::make_reference(reference_desc, references, variables);
             factory::assert_empty(reference_desc);
@@ -87,7 +87,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const &js)
     std::list<std::unique_ptr<Radiator>> radiators;
     if (setup_desc.contains("radiators"))
     {
-        for (auto &radiator_desc : json_get(setup_desc, "radiators"))
+        for (auto& radiator_desc : json_get(setup_desc, "radiators"))
         {
             factory::make_radiator(radiator_desc, references, radiators, variables, false);
             factory::assert_empty(radiator_desc);
@@ -98,7 +98,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const &js)
     if (setup_desc.contains("tasks"))
     {
         auto const dir_plot = std::filesystem::path(setup_name);
-        for (auto &task_desc : json_get(setup_desc, "tasks"))
+        for (auto& task_desc : json_get(setup_desc, "tasks"))
         {
             auto const type = factory::get_string(task_desc, "type");
             std::println("Found task of type '{}'", type);
@@ -112,16 +112,16 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const &js)
             else if (type == "plot_directivity_over_polar")
             {
                 auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
-                Radiator const &radiator = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "radiator"));
+                Radiator const& radiator = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "radiator"));
                 task_name = std::format("{}.{}", type, radiator.id);
                 tasks.emplace_back(task_name, [dir_plot, &radiator, azimuth_angles]() { plot::plot_directivity_over_polar(dir_plot, radiator, azimuth_angles); });
             }
             else if (type == "plot_gain_over_straight")
             {
-                Radiator const &source = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "source"));
-                Radiator const &sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
-                Reference &ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
-                Reference const &ref_stop = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_stop"));
+                Radiator const& source = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "source"));
+                Radiator const& sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
+                Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
+                Reference const& ref_stop = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_stop"));
                 double wavelength = factory::get_double(task_desc, "wavelength", variables);
                 char distance_axis = factory::get_char(task_desc, "distance_axis");
                 task_name = std::format("{}.{}.{}", type, source.id, sink.id);
@@ -141,7 +141,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const &js)
     return std::unique_ptr<Setup>(new Setup(setup_name, std::move(variables), std::move(references), std::move(radiators), std::move(tasks)));
 }
 
-std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const &p)
+std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const& p)
 {
     std::println("Loading setup file '{}'", p.string());
     std::ifstream file(p);
@@ -157,7 +157,7 @@ void Setup::export_to_three() const
     std::filesystem::create_directories(dir);
     std::filesystem::path const p = dir / "objects.js";
     three::Container container;
-    for (auto const &reference : references)
+    for (auto const& reference : references)
     {
         if (!reference.origin) { continue; } // we skip the dummy reference
         auto const pos_center = reference.global_from_local_pos({0, 0, 0});
@@ -171,9 +171,9 @@ void Setup::export_to_three() const
     container.export_to_javascript(p);
 }
 
-void Setup::run_tasks(const std::function<void(std::string_view)> &builtin_handler)
+void Setup::run_tasks(const std::function<void(std::string_view)>& builtin_handler)
 {
-    for (auto &[task_name, task] : tasks)
+    for (auto& [task_name, task] : tasks)
     {
         if (task_name.starts_with("builtin."))
         {
@@ -189,22 +189,22 @@ void Setup::run_tasks(const std::function<void(std::string_view)> &builtin_handl
     std::println("All tasks completed.");
 }
 
-Reference &Setup::get_reference_by_id(std::string_view const id) { return factory::find_reference_by_id(references, id); }
+Reference& Setup::get_reference_by_id(std::string_view const id) { return factory::find_reference_by_id(references, id); }
 
-Radiator const &Setup::get_radiator_by_id(std::string_view const id) const { return factory::find_radiator_by_id(radiators, id); }
+Radiator const& Setup::get_radiator_by_id(std::string_view const id) const { return factory::find_radiator_by_id(radiators, id); }
 
-std::vector<Radiator *> Setup::get_radiator_array(std::string_view id) const
+std::vector<Radiator*> Setup::get_radiator_array(std::string_view id) const
 {
-    std::vector<Radiator *> radiator_array;
+    std::vector<Radiator*> radiator_array;
     std::string const id_prefix = std::format("{}:radiator:", id);
-    for (auto &radiator : radiators)
+    for (auto& radiator : radiators)
     {
         if (radiator->id.starts_with(id_prefix)) { radiator_array.push_back(radiator.get()); }
     }
     return radiator_array;
 }
 
-Setup::Setup(std::string_view const name, std::map<std::string, double> &&variables, std::list<Reference> &&references, std::list<std::unique_ptr<Radiator>> &&radiators,
-             std::list<std::pair<std::string, std::function<void()>>> &&tasks) :
+Setup::Setup(std::string_view const name, std::map<std::string, double>&& variables, std::list<Reference>&& references, std::list<std::unique_ptr<Radiator>>&& radiators,
+             std::list<std::pair<std::string, std::function<void()>>>&& tasks) :
     name(name), variables(std::move(variables)), references(std::move(references)), radiators(std::move(radiators)), tasks(std::move(tasks))
 {}

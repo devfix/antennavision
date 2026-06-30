@@ -6,8 +6,8 @@
 #include <cmath>
 
 extern "C" {
-    // part of the Cephes library
-    extern int sici ( double x, double *si, double *ci );
+// part of the Cephes library
+extern int sici(double x, double* si, double* ci);
 }
 
 namespace math
@@ -33,12 +33,10 @@ namespace math
             dir_initial = dir_initial.normalize();
 
             // We "search" for a viable orthogonal direction
-            std::array<std::tuple<Vec3, double>, 3> dir_orts{
-                    {{dir_initial.cross(Vec3(1, 0, 0)), 0}, {dir_initial.cross(Vec3(0, 1, 0)), 0}, {dir_initial.cross(Vec3(0, 0, 1)), 0}}};
-            for (auto &[dir, len] : dir_orts) { len = dir.norm(); }
+            std::array<std::tuple<Vec3, double>, 3> dir_orts{{{dir_initial.cross(Vec3(1, 0, 0)), 0}, {dir_initial.cross(Vec3(0, 1, 0)), 0}, {dir_initial.cross(Vec3(0, 0, 1)), 0}}};
+            for (auto& [dir, len] : dir_orts) { len = dir.norm(); }
             auto const dir_ort_best =
-                std::get<0>(*std::max_element(dir_orts.begin(), dir_orts.end(), [](std::tuple<Vec3, double> const &a, std::tuple<Vec3, double> const &b)
-                                              { return std::get<1>(a) < std::get<1>(b); }));
+                std::get<0>(*std::max_element(dir_orts.begin(), dir_orts.end(), [](std::tuple<Vec3, double> const& a, std::tuple<Vec3, double> const& b) { return std::get<1>(a) < std::get<1>(b); }));
             return {dir_ort_best.normalize(), nc::constants::pi};
         }
         else

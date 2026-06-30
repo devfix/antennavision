@@ -18,7 +18,7 @@ namespace math
         return vec;
     }
 
-    vec_t constexpr rotate(vec_t const &vec, nc::rotations::Quaternion const &quaternion) { return nc::dot(quaternion.toDCM(), vec); }
+    vec_t constexpr rotate(vec_t const& vec, nc::rotations::Quaternion const& quaternion) { return nc::dot(quaternion.toDCM(), vec); }
 
     double angle_between_vectors(Vec3 vec1, Vec3 vec2);
     Quaternion quaternion_from_directions(Vec3 dir_initial, Vec3 dir_target);
@@ -35,7 +35,7 @@ namespace math
      */
     [[nodiscard]] complex_t constexpr complex_from_polar(double const mag, double const phi) { return {mag * std::cos(phi), mag * std::sin(phi)}; }
 
-    [[nodiscard]] std::tuple<double, double, double> constexpr spherical_from_cartesian(Vec3 const &pos)
+    [[nodiscard]] std::tuple<double, double, double> constexpr spherical_from_cartesian(Vec3 const& pos)
     {
         double const r = std::hypot(pos.x, pos.y, pos.z);
         if (r < NUMERICAL_MARGIN) { return {0, 0, 0}; }

@@ -3,13 +3,13 @@
 //
 
 #include "factory/parse.hpp"
+#include <complex>
 #include <exprtk.hpp>
 #include <memory>
-#include <complex>
 
 namespace factory
 {
-    std::function<std::complex<double>(double polar, double azimuth, double wavelength)> parse_polar_azimuth_function(std::string const &expr)
+    std::function<std::complex<double>(double polar, double azimuth, double wavelength)> parse_polar_azimuth_function(std::string const& expr)
     {
         // Struct to hold all ExprTk internal state variables safely on the heap
         struct ExpressionContext
@@ -46,7 +46,7 @@ namespace factory
         };
     }
 
-    double parse_double(std::string const &expr, std::map<std::string, double> const &variables)
+    double parse_double(std::string const& expr, std::map<std::string, double> const& variables)
     {
         exprtk::symbol_table<double> symbol_table;
         exprtk::expression<double> expression;

@@ -2,14 +2,14 @@
 // Created by Tristan Krause on 2026-05-26.
 //
 
-
 #pragma once
 #include <string>
 #include <string_view>
 #include <vector>
 #include "types.hpp"
 
-struct Component {
+struct Component
+{
     virtual ~Component() = default;
     std::string id;
     std::vector<Component*> input_components;
@@ -19,5 +19,5 @@ struct Component {
 
 protected:
     // protected constructor, only derived classes can instantiate it
-    Component(std::string_view id,std::size_t num_inputs, std::size_t num_outputs);
+    Component(std::string_view id, std::size_t num_inputs, std::size_t num_outputs);
 };
