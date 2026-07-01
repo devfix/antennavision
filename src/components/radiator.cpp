@@ -13,6 +13,7 @@
 #include "factory/make.hpp"
 #include "math.hpp"
 #include "print.hpp"
+#include "simulationerror.hpp"
 
 Radiator Radiator::HertzianDipole::create(std::string_view id, Reference & origin) { return {id, origin, elv_spherical, ms_elv}; }
 
@@ -94,4 +95,4 @@ double Radiator::calc_directivity_from_cartesian(pos_t const& pos_local, double 
     return calc_directivity_from_spherical(polar, azimuth, wavelength, num_params);
 }
 
-complex_t Radiator::calc_path(std::size_t idx_input, std::size_t idx_output) { throw std::runtime_error("calc_path() should not be called on a radiator"); }
+complex_t Radiator::calc_path(std::size_t idx_input, std::size_t idx_output) { throw SimulationError("{} should not be called on a radiator", __func__); }

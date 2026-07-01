@@ -8,6 +8,7 @@
 #include "include/setup.hpp"
 #include "manifest.hpp"
 #include "plot.hpp"
+#include "simulationerror.hpp"
 #include "types.hpp"
 
 // #include "ula.hpp"
@@ -105,7 +106,7 @@ void run_builtin_task(Setup &setup, std::string_view key)
     }
     else
     {
-        throw std::runtime_error(std::format("Invalid builtin task key: {}", key));
+        throw SimulationError("Invalid builtin task key: {}", key);
     }
 }
 

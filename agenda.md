@@ -4,7 +4,7 @@
 - [x] look for setup files in a directory, loop over all setups
 - [x] implement plot_gain_over_straight
 - [x] implement ULA
-- [ ] check setup timestamp -> update only if new
+- [x] check setup timestamp -> update only if new
 - [ ] fix cylinder width in three: pass center wavelength
 - [ ] add spdlog
 - [ ] add StandingWaveDipole to factory::make_radiator

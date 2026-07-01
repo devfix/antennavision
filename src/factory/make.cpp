@@ -9,6 +9,7 @@
 #include "factory/get.hpp"
 #include "factory/parse.hpp"
 #include "print.hpp"
+#include "simulationerror.hpp"
 
 struct RadiatorArray;
 
@@ -20,7 +21,7 @@ namespace factory
         {
             for (char c : id)
             {
-                if (!std::isalnum(c, std::locale::classic()) and c != '_' and c != '-') { throw std::runtime_error(std::format("Invalid id '{}', bad character: '{}'", id, c)); }
+                if (!std::isalnum(c, std::locale::classic()) and c != '_' and c != '-') { throw SimulationError("Invalid id '{}', bad character: '{}'", id, c); }
             }
             return true;
         }
@@ -76,7 +77,7 @@ namespace factory
             auto const prototype_desc = radiator_desc.at("radiator");
             radiator_desc.erase("radiator");
 
-            if (dir.norm() < NUMERICAL_MARGIN) { throw std::runtime_error(std::format("Invalid direction for ULA '{}'", id)); }
+            if (dir.norm() < NUMERICAL_MARGIN) { throw SimulationError("Invalid direction for ULA '{}'", id); }
             dir = dir.normalize();
 
             double const length = spacing * (count - 1);
@@ -99,10 +100,10 @@ namespace factory
             }
             if (auto [_, success] = radiator_arrays.try_emplace(id, id, array_radiators); !success)
             {
-                throw std::runtime_error(std::format("Could not create radiator array, id '{}' already exists", id));
+                throw SimulationError("Could not create radiator array, id '{}' already exists", id);
             }
             return std::move(array_radiators);
         }
-        throw std::runtime_error(std::format("Unknown radiator type '{}'", type));
+        throw SimulationError("Unknown radiator type '{}'", type);
     }
 } // namespace factory

@@ -8,6 +8,7 @@
 #include "jsonutil.hpp"
 #include "print.hpp"
 #include "setup.hpp"
+#include "simulationerror.hpp"
 
 void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Radiator const& radiator, NdArray const& azimuth_angles)
 {
@@ -152,7 +153,7 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
         case 'y': distance_ptr = &ref_start.pos.y; break;
         case 'z': distance_ptr = &ref_start.pos.z; break;
         case 'd': break; // already set
-        default: throw std::runtime_error(std::format("Error in {}: Unknown distance_axis '{}'", __func__, distance_axis));
+        default: throw SimulationError("Error in {}: Unknown distance_axis '{}'", __func__, distance_axis);
     }
     for (NdArray::index_type k = 0; k < n_points; k++)
     {

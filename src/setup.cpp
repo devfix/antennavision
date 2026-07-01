@@ -44,7 +44,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
             else if (val.is_number()) { variables[key] = val.get<double>(); }
             else
             {
-                throw std::runtime_error(std::format("Invalid type '{}' of variable '{}'", val.type_name(), key));
+                throw SimulationError("Invalid type '{}' of variable '{}'", val.type_name(), key);
             }
             std::println("Define variable {}={:.15g}", key, variables[key]);
         }
@@ -125,7 +125,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
             }
             else
             {
-                throw std::runtime_error(std::format("Unknown task type \"{}\"", type));
+                throw SimulationError("Unknown task type \"{}\"", type);
             }
             std::println("Created task: {}", task_name);
             factory::assert_empty(task_desc);
@@ -140,7 +140,7 @@ std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const& p)
 {
     std::println("Loading setup file '{}'", p.string());
     std::ifstream file(p);
-    if (!file.is_open()) { throw std::runtime_error(std::format("Could not open setup file '{}'", p.string())); }
+    if (!file.is_open()) { throw SimulationError("Could not open setup file '{}'", p.string()); }
     auto const js = nlohmann::ordered_json::parse(file);
     file.close();
     return from_json(js, timeutil::get_of_file(p));

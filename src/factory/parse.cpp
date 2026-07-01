@@ -7,6 +7,8 @@
 #include <exprtk.hpp>
 #include <memory>
 
+#include "simulationerror.hpp"
+
 namespace factory
 {
     std::function<std::complex<double>(double polar, double azimuth, double wavelength)> parse_polar_azimuth_function(std::string const& expr)
@@ -33,7 +35,7 @@ namespace factory
         ctx->expression.register_symbol_table(ctx->symbol_table);
 
         // Compile the string
-        if (exprtk::parser<double> parser; !parser.compile(expr, ctx->expression)) { throw std::runtime_error("ExprTk compilation failed: " + parser.error()); }
+        if (exprtk::parser<double> parser; !parser.compile(expr, ctx->expression)) { throw SimulationError("ExprTk compilation failed: {}", parser.error()); }
 
         // Return the callable lambda.
         // Capturing 'ctx' by value extends the lifetime of the underlying ExprTk objects.
@@ -53,7 +55,7 @@ namespace factory
         for (const auto& [key, val] : variables) { symbol_table.add_constant(key, val); }
         symbol_table.add_constants();
         expression.register_symbol_table(symbol_table);
-        if (exprtk::parser<double> parser; !parser.compile(expr, expression)) { throw std::runtime_error("ExprTk compilation failed: " + parser.error()); }
+        if (exprtk::parser<double> parser; !parser.compile(expr, expression)) { throw SimulationError("ExprTk compilation failed: {}", parser.error()); }
         return expression.value();
     }
 } // namespace factory

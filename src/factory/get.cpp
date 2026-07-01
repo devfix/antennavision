@@ -6,13 +6,14 @@
 #include <format>
 #include <nlohmann/json.hpp>
 #include "factory/parse.hpp"
+#include "simulationerror.hpp"
 
 namespace factory
 {
     void assert_key(nlohmann::ordered_json const& js, std::string_view key, bool null_ok)
     {
-        if (!js.contains(key)) { throw std::runtime_error(std::format("Error: Could not find key '{}' in json object\n{}", key, js.dump(2))); }
-        if (!null_ok && js.at(key).is_null()) { throw std::runtime_error(std::format("Error: Value to key '{}' is null in json object\n{}", key, js.dump(2))); }
+        if (!js.contains(key)) { throw SimulationError("Error: Could not find key '{}' in json object\n{}", key, js.dump(2)); }
+        if (!null_ok && js.at(key).is_null()) { throw SimulationError("Error: Value to key '{}' is null in json object\n{}", key, js.dump(2)); }
     }
 
     bool key_exists(nlohmann::ordered_json const& js, std::string_view key) { return js.contains(key); }
@@ -20,13 +21,13 @@ namespace factory
     void assert_empty(nlohmann::ordered_json const& js)
     {
         if (js.empty()) { return; }
-        std::string bad_keys("Invalid keys found: ");
+        std::string bad_keys;
         for (auto it = js.begin(); it != js.end();)
         {
             bad_keys.append(std::format("'{}'", it.key()));
             if (++it != js.end()) { bad_keys.append(", "); }
         }
-        throw std::runtime_error(bad_keys);
+        throw SimulationError("Invalid keys found: {}", bad_keys);
     }
 
     std::string get_string(nlohmann::ordered_json& js, std::string_view key, bool remove, bool default_ok)
@@ -51,7 +52,7 @@ namespace factory
     {
         assert_key(js, key);
         std::string_view const str = js.at(key).get<std::string_view>();
-        if (str.length() != 1) { throw std::runtime_error(std::format("Invalid character entry '{}', expected string of unity length.", str)); }
+        if (str.length() != 1) { throw SimulationError("Invalid character entry '{}', expected string of unity length.", str); }
         auto const c = str.at(0);
         if (remove) { js.erase(key); }
         return c;
@@ -73,7 +74,7 @@ namespace factory
             if (remove) { js.erase(key); }
             return val;
         }
-        throw std::runtime_error(std::format("Invalid type '{}' of entry '{}'", js.at(key).type_name(), key));
+        throw SimulationError("Invalid type '{}' of entry '{}'", js.at(key).type_name(), key);
     }
 
     std::uint32_t get_uint(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
@@ -92,7 +93,7 @@ namespace factory
             if (remove) { js.erase(key); }
             return val;
         }
-        throw std::runtime_error(std::format("Invalid type '{}' of entry '{}'", js.at(key).type_name(), key));
+        throw SimulationError("Invalid type '{}' of entry '{}'", js.at(key).type_name(), key);
     }
 
     pos_t get_pos(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
