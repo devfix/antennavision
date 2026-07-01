@@ -55,16 +55,6 @@ endif()
 #########
 
 
-######### FmtLib
-FetchContent_Declare(
-        fmt
-        URL https://github.com/fmtlib/fmt/archive/refs/tags/12.1.0.tar.gz
-        URL_HASH SHA256=ea7de4299689e12b6dddd392f9896f08fb0777ac7168897a244a6d6085043fea
-)
-FetchContent_MakeAvailable(fmt)
-#########
-
-
 ######### nlohmann/json
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_FastTests OFF CACHE INTERNAL "")
@@ -131,7 +121,6 @@ target_compile_definitions(antennavision PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(antennavision PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(antennavision PRIVATE
         NumCpp::NumCpp
-        fmt::fmt
         nlohmann_json::nlohmann_json
         exprtk
         CephesSiCi
@@ -148,7 +137,6 @@ target_compile_definitions(testrunner PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(testrunner PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(testrunner PRIVATE
         NumCpp::NumCpp
-        fmt::fmt
         nlohmann_json::nlohmann_json
         exprtk
         CephesSiCi

@@ -62,7 +62,6 @@ TEST_CASE("setup without rotation", "[TestSetupReferences]")
 }
 )");
     auto const su = Setup::from_json(js);
-    su->export_to_three();
     auto const& ref1 = su->get_reference_by_id("ref1");
     auto const& ref2 = su->get_reference_by_id("ref2");
     auto const& ref3 = su->get_reference_by_id("ref3");
@@ -127,7 +126,6 @@ TEST_CASE("setup with rotation", "[TestSetupReferences]")
 }
 )");
     auto const su = Setup::from_json(js);
-    su->export_to_three();
     auto const &ref1 = su->get_reference_by_id("ref1");
     auto const &ref2 = su->get_reference_by_id("ref2");
     auto const &ref3 = su->get_reference_by_id("ref3");

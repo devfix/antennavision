@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "setup_name": "ula-plane"
+  },
+  "variables": {
+    "wavelength": 0.1,
+    "distance": 100,
+    "dipole_length": 1e-3
+  },
+  "references": [
+    {
+      "id": "origin",
+      "origin": "",
+      "pos": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rot": {
+        "yaw": 0.0,
+        "pitch": 0.0,
+        "roll": 0.25
+      }
+    },
+    {
+      "id": "ref_rx_start",
+      "origin": "",
+      "pos": {
+        "x": 0,
+        "y": 0,
+        "z": "-distance/2"
+      }
+    },
+    {
+      "id": "ref_axis1_max",
+      "origin": "",
+      "pos": {
+        "x": 0,
+        "y": 0,
+        "z": "distance/2"
+      }
+    },
+    {
+      "id": "ref_axis2_max",
+      "origin": "",
+      "pos": {
+        "x": 0,
+        "y": "distance",
+        "z": "-distance/2"
+      }
+    }
+  ],
+  "radiators": [
+    {
+      "type": "ULA",
+      "id": "ula1",
+      "ref": "origin",
+      "dir": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "spacing": "wavelength * 0.5",
+      "count": 32,
+      "radiator": {
+        "type": "HertzianDipole"
+      }
+    },
+    {
+      "id": "receiver",
+      "ref": "ref_rx_start",
+      "type": "HertzianDipole"
+    }
+  ],
+  "tasks": [
+    {
+      "type": "plot_gain_over_plane",
+      "source": "ula1",
+      "sink": "receiver",
+      "ref_start": "ref_rx_start",
+      "ref_axis1_max": "ref_axis1_max",
+      "ref_axis2_max": "ref_axis2_max",
+      "wavelength": "wavelength",
+      "n_points_axis1": 201,
+      "n_points_axis2": 201,
+      "label_axis1": "z",
+      "label_axis2": "y"
+    }
+  ]
+}

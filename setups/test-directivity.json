@@ -1,0 +1,32 @@
+{
+  "metadata": {
+    "setup_name": "test-directivity"
+  },
+  "radiators": [
+    {
+      "id": "HertzianDipole",
+      "type": "HertzianDipole"
+    },
+    {
+      "id": "CustomRadiator",
+      "type": "CustomRadiator",
+      "effective_length": [
+        "0",
+        "cos(pi/2*cos(theta))/sin(theta+1e-12)",
+        "sin(phi/2)^3"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "type": "plot_directivity_over_polar",
+      "radiator": "HertzianDipole",
+      "azimuth_angles": [0.0, 1.0]
+    },
+    {
+      "type": "plot_directivity_over_polar",
+      "radiator": "CustomRadiator",
+      "azimuth_angles": [0.0, 0.5, 1.0]
+    }
+  ]
+}

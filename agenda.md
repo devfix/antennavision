@@ -3,7 +3,13 @@
 ## Software
 - [x] look for setup files in a directory, loop over all setups
 - [x] implement plot_gain_over_straight
-- [ ] implement ULA
+- [x] implement ULA
+- [ ] check setup timestamp -> update only if new
+- [ ] fix cylinder width in three: pass center wavelength
+- [ ] add spdlog
+- [ ] add StandingWaveDipole to factory::make_radiator
+- [ ] check angle between axis1 and axis2 at plane definiton -> error if not 90 deg
+- [ ] implement beamwidth measure function
 - [ ] implement PS
 - [ ] implement connections between components
 - [ ] pre compute radiation resistance for gain and directivtiy

@@ -89,6 +89,14 @@ void compute_rect(array_t const &x_values, array_t const &y_values, std::vector<
 }
 */
 
+namespace {
+#ifndef NDEBUG
+    constexpr bool DEBUG_MODE = true;
+#else
+    constexpr bool DEBUG_MODE = false;
+#endif
+}
+
 void run_builtin_task(Setup &setup, std::string_view key)
 {
     if (key == "t00_compare_beamwidth")
@@ -105,6 +113,11 @@ int main(int argc, char *argv[])
 {
     std::cout << BANNER;
     std::cout << APPLICATION_NAME << " v." << APPLICATION_VERSION << "\n\n";
+
+    if (DEBUG_MODE)
+    {
+        std::cout << "Warning: Compiled in debug mode. This will severely increase the computation time!\n\n";
+    }
 
     if (argc == 1)
     {
@@ -127,8 +140,23 @@ int main(int argc, char *argv[])
     std::ranges::transform(paths_setup, std::back_inserter(setups), Setup::from_file);
     for (auto const &setup : setups)
     {
-        setup->export_to_three();
-        setup->run_tasks([&setup](std::string_view key) { run_builtin_task(*setup, key); });
+        std::filesystem::path directory(std::format("../results/{}", setup->name));
+        std::filesystem::create_directories(directory);
+        auto path_timestamp = directory / "timestamp";
+        timeutil::timestamp_t timestamp = std::filesystem::exists(path_timestamp) ? timeutil::load_from_file(path_timestamp) : 0;
+
+        // we skip if the timestamps match and are non-zero
+        // zero timestamps are used by the testing framework to force setup's tasks execution
+        if (timestamp && timestamp == setup->timestamp)
+        {
+            std::println("Setup '{}' is unchanged since {}, skipping", setup->name, timeutil::format(timestamp));
+        } else
+        {
+            std::println("Setup '{}' is new or updated, running", setup->name);
+            setup->export_to_three(directory);
+            setup->run_tasks(directory, [&setup](std::string_view const key) { run_builtin_task(*setup, key); });
+            timeutil::store_to_file(path_timestamp, setup->timestamp);
+        }
     }
 
     return 0;

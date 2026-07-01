@@ -5,7 +5,9 @@
 #pragma once
 
 #include <functional>
+#include <variant>
 #include "components/radiator.hpp"
+
 
 struct RadiatorArray
 {
@@ -14,3 +16,5 @@ struct RadiatorArray
     std::string id;
     std::vector<std::reference_wrapper<Radiator>> elements;
 };
+
+using radiator_t = std::variant<std::reference_wrapper<Radiator>,std::reference_wrapper<RadiatorArray>>;

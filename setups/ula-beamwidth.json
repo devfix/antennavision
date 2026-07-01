@@ -9,15 +9,11 @@
   },
   "references": [
     {
-      "id": "ref_ula",
-      "origin": ""
-    },
-    {
       "id": "ref_rx_start",
       "origin": "",
       "pos": {
         "x": 0,
-        "y": "distance",
+        "y": "50",
         "z": "-distance/2"
       }
     },
@@ -26,7 +22,7 @@
       "origin": "",
       "pos": {
         "x": 0,
-        "y": "distance",
+        "y": "50",
         "z": "distance/2"
       }
     }
@@ -35,14 +31,14 @@
     {
       "type": "ULA",
       "id": "ula1",
-      "ref": "ref_ula",
+      "ref": "",
       "dir": {
         "x": 0,
         "y": 0,
         "z": 1
       },
       "spacing": "wavelength * 0.5",
-      "count": 3,
+      "count": 9,
       "radiator": {
         "type": "HertzianDipole"
       }

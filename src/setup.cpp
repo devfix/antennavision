@@ -13,6 +13,7 @@
 #include "factory/parse.hpp"
 #include "plot.hpp"
 #include "print.hpp"
+#include "simulationerror.hpp"
 #include "three.hpp"
 
 namespace
@@ -24,34 +25,10 @@ namespace
         return js[key];
     }
 
-    // template <typename T>
-    //     auto json_get_as(json const &js, std::string_view const key)
-    // {
-    //     if (!js.contains(key)) { throw std::runtime_error(std::format("Could not find key '{}' in json object\n{}", key, js.dump(2))); }
-    //     if constexpr (std::is_same_v<T, NdArray>)
-    //     {
-    //         auto const polars = js[key].get<std::vector<double>>();
-    //         return NdArray(polars.begin(), polars.end());
-    //     }
-    //     else if constexpr (std::is_same_v<T, char>)
-    //     {
-    //         std::string_view const str = js[key].get<std::string_view>();
-    //         if (str.length() != 1) { throw std::runtime_error(std::format("Invalid character entry '{}', expected string of unity length.", str)); }
-    //         return str.at(0);
-    //     }
-    //     else
-    //     {
-    //         return js[key].get<T>();
-    //     }
-    // }
-
-    // template <typename T>
-    // std::optional<T> optional_from_json(json const &j)
-    // { return j.is_null() ? std::nullopt : std::optional<T>{j.get<T>()}; }
 
 } // namespace
 
-std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js)
+std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeutil::timestamp_t const timestamp)
 {
     json setup_desc = js; // create a copy of the json object in order to decompose it
     auto const& metadata = json_get(setup_desc, "metadata");
@@ -95,10 +72,9 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js)
         }
     }
 
-    std::list<std::pair<std::string, std::function<void()>>> tasks;
+    std::list<std::pair<std::string, task_t>> tasks;
     if (setup_desc.contains("tasks"))
     {
-        auto const dir_plot = std::filesystem::path(setup_name);
         for (auto& task_desc : json_get(setup_desc, "tasks"))
         {
             auto const type = factory::get_string(task_desc, "type");
@@ -108,14 +84,14 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js)
             {
                 auto const key = factory::get_string(task_desc, "key");
                 task_name = std::format("builtin.{}", key);
-                tasks.emplace_back(task_name, [] {});
+                tasks.emplace_back(task_name, nullptr);
             }
             else if (type == "plot_directivity_over_polar")
             {
                 auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
                 Radiator const& radiator = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "radiator"));
                 task_name = std::format("{}.{}", type, radiator.id);
-                tasks.emplace_back(task_name, [dir_plot, &radiator, azimuth_angles]() { plot::plot_directivity_over_polar(dir_plot, radiator, azimuth_angles); });
+                tasks.emplace_back(task_name, [&radiator, azimuth_angles](std::filesystem::path const& directory) { plot::plot_directivity_over_polar(directory, radiator, azimuth_angles); });
             }
             else if (type == "plot_gain_over_straight")
             {
@@ -126,8 +102,26 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js)
                 double wavelength = factory::get_double(task_desc, "wavelength", variables);
                 char distance_axis = factory::get_char(task_desc, "distance_axis");
                 task_name = std::format("{}.{}.{}", type, source.id, sink.id);
-                tasks.emplace_back(task_name, [dir_plot, &source, &sink, &ref_start, &ref_stop, wavelength, distance_axis]()
-                                   { plot::plot_gain_over_straight(dir_plot, source, sink, ref_start, ref_stop, wavelength, distance_axis); });
+                tasks.emplace_back(task_name, [&source, &sink, &ref_start, &ref_stop, wavelength, distance_axis](std::filesystem::path const& directory)
+                                   { plot::plot_gain_over_straight(directory, source, sink, ref_start, ref_stop, wavelength, distance_axis); });
+            }
+            else if (type == "plot_gain_over_plane")
+            {
+                auto const source_id =factory::get_string(task_desc, "source");
+                radiator_t source = radiator_arrays.contains(source_id) ? radiator_t{radiator_arrays.at(source_id)} : radiator_t{factory::find_radiator_by_id(radiators, source_id)};
+                Radiator const& sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
+                Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
+                Reference const& ref_axis1_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis1_max"));
+                Reference const& ref_axis2_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis2_max"));
+                double wavelength = factory::get_double(task_desc, "wavelength", variables);
+                std::uint32_t n_points_axis1 = factory::get_uint(task_desc, "n_points_axis1", variables);
+                std::uint32_t n_points_axis2 = factory::get_uint(task_desc, "n_points_axis2", variables);
+                auto label_axis1 = factory::get_string(task_desc, "label_axis1");
+                auto label_axis2 = factory::get_string(task_desc, "label_axis2");
+                task_name = std::format("{}.{}.{}", type, source_id, sink.id);
+                tasks.emplace_back(
+                    task_name, [source, &sink, &ref_start, &ref_axis1_max, &ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1, label_axis2](std::filesystem::path const& directory)
+                    { plot::plot_gain_over_plane(directory, source, sink, ref_start, ref_axis1_max, ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1, label_axis2); });
             }
             else
             {
@@ -139,7 +133,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js)
     }
 
     // ReSharper disable once CppDFAMemoryLeak
-    return std::unique_ptr<Setup>(new Setup(setup_name, std::move(variables), std::move(references), std::move(radiators), std::move(radiator_arrays), std::move(tasks)));
+    return std::unique_ptr<Setup>(new Setup(setup_name, timestamp, std::move(variables), std::move(references), std::move(radiators), std::move(radiator_arrays), std::move(tasks)));
 }
 
 std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const& p)
@@ -149,14 +143,12 @@ std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const& p)
     if (!file.is_open()) { throw std::runtime_error(std::format("Could not open setup file '{}'", p.string())); }
     auto const js = nlohmann::ordered_json::parse(file);
     file.close();
-    return from_json(js);
+    return from_json(js, timeutil::get_of_file(p));
 }
 
-void Setup::export_to_three() const
+void Setup::export_to_three(std::filesystem::path const& directory) const
 {
-    std::filesystem::path const dir(name);
-    std::filesystem::create_directories(dir);
-    std::filesystem::path const p = dir / "objects.js";
+    std::filesystem::path const p = directory / "objects.js";
     three::Container container;
     for (auto const& reference : references)
     {
@@ -172,7 +164,7 @@ void Setup::export_to_three() const
     container.export_to_javascript(p);
 }
 
-void Setup::run_tasks(const std::function<void(std::string_view)>& builtin_handler)
+void Setup::run_tasks(std::filesystem::path const& directory, std::function<void(std::string_view)> const& builtin_handler)
 {
     for (auto& [task_name, task] : tasks)
     {
@@ -184,7 +176,7 @@ void Setup::run_tasks(const std::function<void(std::string_view)>& builtin_handl
         else
         {
             std::println("Running task: {}", task_name);
-            task();
+            task(directory);
         }
     }
     std::println("All tasks completed.");
@@ -242,7 +234,7 @@ double Setup::calc_power_gain(Radiator const& radiator_tx, Radiator const& radia
 double Setup::calc_power_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params)
 { return math::square(std::abs(calc_voltage_gain(radiator_array_tx, radiator_rx, wavelength, num_params))); }
 
-Setup::Setup(std::string_view const name, std::map<std::string, double>&& variables, std::list<Reference>&& references, std::list<std::unique_ptr<Radiator>>&& radiators,
-             std::map<std::string, RadiatorArray>&& radiator_arrays, std::list<std::pair<std::string, std::function<void()>>>&& tasks) :
-    name(name), variables(std::move(variables)), references(std::move(references)), radiators(std::move(radiators)), radiator_arrays(std::move(radiator_arrays)), tasks(std::move(tasks))
+Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, std::map<std::string, double>&& variables, std::list<Reference>&& references, std::list<std::unique_ptr<Radiator>>&& radiators,
+             std::map<std::string, RadiatorArray>&& radiator_arrays, std::list<std::pair<std::string, task_t>>&& tasks) :
+    name(name), timestamp(timestamp), variables(std::move(variables)), references(std::move(references)), radiators(std::move(radiators)), radiator_arrays(std::move(radiator_arrays)), tasks(std::move(tasks))
 {}

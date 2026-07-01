@@ -3,9 +3,9 @@
 //
 
 #include "plot.hpp"
-#include <NumCpp/Functions/linspace.hpp>
-#include <nlohmann/json.hpp>
-
+#include <variant>
+#include "NumCpp/Functions/linspace.hpp"
+#include "jsonutil.hpp"
 #include "print.hpp"
 #include "setup.hpp"
 
@@ -72,7 +72,8 @@ void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Ra
     for (auto const azimuth : azimuth_angles)
     {
         json js_entry;
-        std::ranges::transform(polar_angles, directivities.begin(), [&radiator, azimuth, wavelength](double const theta) { return radiator.calc_directivity_from_spherical(theta, azimuth, wavelength, {}); });
+        std::ranges::transform(polar_angles, directivities.begin(),
+                               [&radiator, azimuth, wavelength](double const theta) { return radiator.calc_directivity_from_spherical(theta, azimuth, wavelength, {}); });
         js_entry["azimuth"] = azimuth / nc::constants::pi;
         js_entry["polars"] = (polar_angles / nc::constants::pi).toStlVector();
         js_entry["directivities"] = directivities.toStlVector();
@@ -166,6 +167,57 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
     js["distance_axis"] = std::string{distance_axis};
     js["distances"] = distances.toStlVector();
     js["gains"] = gains.toStlVector();
+    // fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, distances.toStlVector(), gains.toStlVector())); //, std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / nc::constants::pi)));
+    // fig.export_figure(dir_plot, {dplot::ExportType::PDF});
+
+    std::ofstream ofs(std::format("{}/{}.json", dir_plot.c_str(), name));
+    ofs << js.dump(2) << '\n';
+}
+
+void plot::plot_gain_over_plane(std::filesystem::path const& dir_plot, radiator_t const& source, Radiator const& sink, Reference& ref_zero, Reference const& ref_axis1_max,
+                                Reference const& ref_axis2_max, double wavelength, std::uint32_t n_points_axis1, std::uint32_t n_points_axis2, std::string const& label_axis1,
+                                std::string const& label_axis2)
+{
+    std::string const& source_id = std::visit([](auto const& source) { return source.get().id; }, source);
+    std::string name = std::format("{}.{}.{}.{}.{}.{}.{}", __func__, source_id, sink.id, n_points_axis1, n_points_axis2, label_axis1, label_axis2);
+    std::println("Creating plot: {}", name);
+
+    json js;
+    js["name"] = name;
+
+    Reference::StateGuard zero(ref_zero);
+
+    pos_t const pos_delta_axis1 = ref_axis1_max.pos - zero.pos;
+    NdArray const rotation_delta_axis1 = ref_axis1_max.rotation.toNdArray() - zero.rotation_array;
+    double const length_axis1 = pos_delta_axis1.norm();
+
+    pos_t const pos_delta_axis2 = ref_axis2_max.pos - zero.pos;
+    NdArray const rotation_delta_axis2 = ref_axis2_max.rotation.toNdArray() - zero.rotation_array;
+    double const length_axis2 = pos_delta_axis2.norm();
+
+    nc::NdArray<complex_t> gains(n_points_axis2, n_points_axis1);
+    nc::NdArray<pos_t> positions(n_points_axis2, n_points_axis1);
+    for (NdArray::index_type k_ax2 = 0; k_ax2 < n_points_axis2; k_ax2++)
+    {
+        std::print("k_ax2 = {:04d} / {:04d}\n", k_ax2, n_points_axis2);
+        double const f_ax2 = static_cast<double>(k_ax2) / static_cast<double>(n_points_axis2 - 1);
+        for (NdArray::index_type k_ax1 = 0; k_ax1 < n_points_axis1; k_ax1++)
+        {
+            double const f_ax1 = static_cast<double>(k_ax1) / static_cast<double>(n_points_axis1 - 1);
+            ref_zero.pos = zero.pos + pos_delta_axis1 * f_ax1 + pos_delta_axis2 * f_ax2;
+            ref_zero.rotation = zero.rotation_array + rotation_delta_axis1 * f_ax2;
+            gains(k_ax2, k_ax1) = std::visit([&sink, &wavelength](auto&& source) -> complex_t { return Setup::calc_voltage_gain(source, sink, wavelength, {}); }, source);
+            positions(k_ax2, k_ax1) = ref_zero.pos;
+        }
+    }
+
+    js["label_axis1"] = label_axis1;
+    js["label_axis2"] = label_axis2;
+    js["n_points_axis1"] = n_points_axis1;
+    js["n_points_axis2"] = n_points_axis2;
+    js["gains"] = gains;
+    js["positions"] = positions;
+
     // fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, distances.toStlVector(), gains.toStlVector())); //, std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / nc::constants::pi)));
     // fig.export_figure(dir_plot, {dplot::ExportType::PDF});
 
