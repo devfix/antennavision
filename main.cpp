@@ -1,15 +1,18 @@
 #include <NumCpp.hpp>
 #include <execution>
 #include <ranges>
-#include "print.hpp"
-
+#include <ansi_color.hpp>
 #include "bitmap.hpp"
 #include "builtin/t00.hpp"
 #include "include/setup.hpp"
 #include "manifest.hpp"
 #include "plot.hpp"
+#include "print.hpp"
 #include "simulationerror.hpp"
 #include "types.hpp"
+
+
+using namespace ansi_color;
 
 // #include "ula.hpp"
 
@@ -90,35 +93,30 @@ void compute_rect(array_t const &x_values, array_t const &y_values, std::vector<
 }
 */
 
-namespace {
+namespace
+{
 #ifndef NDEBUG
     constexpr bool DEBUG_MODE = true;
 #else
     constexpr bool DEBUG_MODE = false;
 #endif
-}
+} // namespace
 
-void run_builtin_task(Setup &setup, std::string_view key)
+void run_builtin_task(Setup& setup, std::string_view key)
 {
-    if (key == "t00_compare_beamwidth")
-    {
-        builtin::t00_compare_beamwidth(setup);
-    }
+    if (key == "t00_compare_beamwidth") { builtin::t00_compare_beamwidth(setup); }
     else
     {
         throw SimulationError("Invalid builtin task key: {}", key);
     }
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    std::cout << BANNER;
-    std::cout << APPLICATION_NAME << " v." << APPLICATION_VERSION << "\n\n";
+    enable_windows_ansi();
+    std::println("{}{}{} v.{}{}\n", fg4::cyan, BANNER, APPLICATION_NAME, APPLICATION_VERSION, reset);
 
-    if (DEBUG_MODE)
-    {
-        std::cout << "Warning: Compiled in debug mode. This will severely increase the computation time!\n\n";
-    }
+    if (DEBUG_MODE) { std::println("{}Warning: Compiled in debug mode. This will severely increase the computation time!{}\n", fg4::bright_yellow, reset); }
 
     if (argc == 1)
     {
@@ -131,7 +129,7 @@ int main(int argc, char *argv[])
     std::filesystem::path const path_setups_dir(std::filesystem::weakly_canonical(std::filesystem::path(argv[1])));
     std::filesystem::create_directories(path_setups_dir);
     std::vector<std::filesystem::path> paths_setup;
-    for (const auto &path_setup : std::filesystem::directory_iterator(path_setups_dir))
+    for (const auto& path_setup : std::filesystem::directory_iterator(path_setups_dir))
     {
         if (path_setup.path().extension() == ".json") { paths_setup.push_back(path_setup.path()); }
     }
@@ -139,7 +137,7 @@ int main(int argc, char *argv[])
     std::println("Found {} setup files", paths_setup.size());
     std::vector<std::unique_ptr<Setup>> setups;
     std::ranges::transform(paths_setup, std::back_inserter(setups), Setup::from_file);
-    for (auto const &setup : setups)
+    for (auto const& setup : setups)
     {
         std::filesystem::path directory(std::format("../results/{}", setup->name));
         std::filesystem::create_directories(directory);
@@ -148,10 +146,8 @@ int main(int argc, char *argv[])
 
         // we skip if the timestamps match and are non-zero
         // zero timestamps are used by the testing framework to force setup's tasks execution
-        if (timestamp && timestamp == setup->timestamp)
-        {
-            std::println("Setup '{}' is unchanged since {}, skipping", setup->name, timeutil::format(timestamp));
-        } else
+        if (timestamp && timestamp == setup->timestamp) { std::println("Setup '{}' is unchanged since {}, skipping", setup->name, timeutil::format(timestamp)); }
+        else
         {
             std::println("Setup '{}' is new or updated, running", setup->name);
             setup->export_to_three(directory);

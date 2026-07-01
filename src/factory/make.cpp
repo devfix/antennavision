@@ -3,6 +3,7 @@
 //
 
 #include "factory/make.hpp"
+#include <ansi_color.hpp>
 #include <locale>
 #include <nlohmann/json.hpp>
 #include "factory/find.hpp"
@@ -11,7 +12,7 @@
 #include "print.hpp"
 #include "simulationerror.hpp"
 
-struct RadiatorArray;
+using namespace ansi_color;
 
 namespace factory
 {
@@ -35,9 +36,9 @@ namespace factory
         auto const origin_id = get_string(reference_desc, "origin");
         auto const pos = get_pos(reference_desc, "pos", variables, true, true);
         auto const rotation = get_quaternion(reference_desc, "rot", variables, true, true);
-        std::println("Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]", id, origin_id, pos.x, pos.y, pos.z,
-                     rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi);
-        Reference & origin = find_reference_by_id(references, origin_id);
+        std::println("{}Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]{}", fg4::bright_black, id, origin_id,
+                     pos.x, pos.y, pos.z, rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi, reset);
+        Reference& origin = find_reference_by_id(references, origin_id);
         assert_empty(reference_desc);
         return references.emplace_back(id, &origin, pos, rotation);
     }
@@ -49,8 +50,8 @@ namespace factory
         if (!generate) { assert_valid_id(id); }
         auto const origin_id = get_string(radiator_desc, "ref", true, true);
         auto const type = get_string(radiator_desc, "type");
-        std::println("Creating radiator [id: '{}', origin: '{}', type: '{}']", id, origin_id, type);
-        Reference & origin = find_reference_by_id(references, origin_id);
+        std::println("{}Creating radiator [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
+        Reference& origin = find_reference_by_id(references, origin_id);
         if (type == "HertzianDipole")
         {
             assert_empty(radiator_desc);
@@ -98,10 +99,7 @@ namespace factory
                 // call the make function recursively and append the Radiators to array_radiators
                 std::ranges::move(make_radiator(ula_element_desc, references, radiators, variables, radiator_arrays, true), std::back_inserter(array_radiators));
             }
-            if (auto [_, success] = radiator_arrays.try_emplace(id, id, array_radiators); !success)
-            {
-                throw SimulationError("Could not create radiator array, id '{}' already exists", id);
-            }
+            if (auto [_, success] = radiator_arrays.try_emplace(id, id, array_radiators); !success) { throw SimulationError("Could not create radiator array, id '{}' already exists", id); }
             return std::move(array_radiators);
         }
         throw SimulationError("Unknown radiator type '{}'", type);

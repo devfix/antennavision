@@ -4,6 +4,7 @@
 
 #include "setup.hpp"
 #include <algorithm>
+#include <ansi_color.hpp>
 #include <fstream>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -16,6 +17,8 @@
 #include "simulationerror.hpp"
 #include "three.hpp"
 
+using namespace ansi_color;
+
 namespace
 {
     template <typename ContainerType>
@@ -24,7 +27,6 @@ namespace
         factory::assert_key(js, key);
         return js[key];
     }
-
 
 } // namespace
 
@@ -107,7 +109,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
             }
             else if (type == "plot_gain_over_plane")
             {
-                auto const source_id =factory::get_string(task_desc, "source");
+                auto const source_id = factory::get_string(task_desc, "source");
                 radiator_t source = radiator_arrays.contains(source_id) ? radiator_t{radiator_arrays.at(source_id)} : radiator_t{factory::find_radiator_by_id(radiators, source_id)};
                 Radiator const& sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
                 Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
@@ -179,7 +181,7 @@ void Setup::run_tasks(std::filesystem::path const& directory, std::function<void
             task(directory);
         }
     }
-    std::println("All tasks completed.");
+    std::println("{}All tasks completed.{}", fg4::cyan, reset);
 }
 
 Reference& Setup::get_reference_by_id(std::string_view const id) { return factory::find_reference_by_id(references, id); }
@@ -234,7 +236,8 @@ double Setup::calc_power_gain(Radiator const& radiator_tx, Radiator const& radia
 double Setup::calc_power_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params)
 { return math::square(std::abs(calc_voltage_gain(radiator_array_tx, radiator_rx, wavelength, num_params))); }
 
-Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, std::map<std::string, double>&& variables, std::list<Reference>&& references, std::list<std::unique_ptr<Radiator>>&& radiators,
-             std::map<std::string, RadiatorArray>&& radiator_arrays, std::list<std::pair<std::string, task_t>>&& tasks) :
-    name(name), timestamp(timestamp), variables(std::move(variables)), references(std::move(references)), radiators(std::move(radiators)), radiator_arrays(std::move(radiator_arrays)), tasks(std::move(tasks))
+Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, std::map<std::string, double>&& variables, std::list<Reference>&& references,
+             std::list<std::unique_ptr<Radiator>>&& radiators, std::map<std::string, RadiatorArray>&& radiator_arrays, std::list<std::pair<std::string, task_t>>&& tasks) :
+    name(name), timestamp(timestamp), variables(std::move(variables)), references(std::move(references)), radiators(std::move(radiators)), radiator_arrays(std::move(radiator_arrays)),
+    tasks(std::move(tasks))
 {}

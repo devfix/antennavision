@@ -1,9 +1,14 @@
 cmake_minimum_required(VERSION 3.28)
 project(antennavision)
 
-# Matplot++ requires C++17
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# static runtime linkage
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+if(NOT MSVC)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
+endif()
 
 include(FetchContent)
 
@@ -55,6 +60,18 @@ endif()
 #########
 
 
+######### ansi_color
+FetchContent_Declare(
+        ansi_color
+        URL https://github.com/devfix/ansi_color/archive/refs/heads/main.zip
+        URL_HASH SHA256=cdebb0f9e5f48d7e61599247acb8dbf6210bf55e39a19e77446fdde50d1dd7f7
+)
+FetchContent_MakeAvailable(ansi_color)
+add_library(ansi_color INTERFACE)
+target_include_directories(ansi_color INTERFACE ${ansi_color_SOURCE_DIR})
+#########
+
+
 ######### nlohmann/json
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_FastTests OFF CACHE INTERNAL "")
@@ -68,23 +85,13 @@ FetchContent_MakeAvailable(json)
 #########
 
 
-######### Catch2
-FetchContent_Declare(
-        Catch2
-        URL https://github.com/catchorg/Catch2/archive/refs/tags/v3.15.0.tar.gz
-        URL_HASH SHA256=9650c55e497759cc39b977e45524bc8acb15256061c112080916ab6cb0b1ea66
-)
-FetchContent_MakeAvailable(Catch2)
-#########
-
-
 ######### dplotpp
-FetchContent_Declare(
-        dplotpp
-        GIT_REPOSITORY https://github.com/devfix/dplotpp.git
-        GIT_TAG        main
-)
-FetchContent_MakeAvailable(dplotpp)
+#FetchContent_Declare(
+#        dplotpp
+#        GIT_REPOSITORY https://github.com/devfix/dplotpp.git
+#        GIT_TAG        main
+#)
+#FetchContent_MakeAvailable(dplotpp)
 #########
 
 
@@ -99,6 +106,16 @@ if(NOT TARGET exprtk)
     add_library(exprtk INTERFACE)
     target_include_directories(exprtk INTERFACE ${exprtk_SOURCE_DIR})
 endif()
+#########
+
+
+######### Catch2
+FetchContent_Declare(
+        Catch2
+        URL https://github.com/catchorg/Catch2/archive/refs/tags/v3.15.0.tar.gz
+        URL_HASH SHA256=9650c55e497759cc39b977e45524bc8acb15256061c112080916ab6cb0b1ea66
+)
+FetchContent_MakeAvailable(Catch2)
 #########
 
 
@@ -121,12 +138,11 @@ target_compile_definitions(antennavision PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(antennavision PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(antennavision PRIVATE
         NumCpp::NumCpp
+        CephesSiCi
+        ansi_color
         nlohmann_json::nlohmann_json
         exprtk
-        CephesSiCi
 )
-
-# Add this in your CMakeLists.txt right after target_link_libraries
 target_compile_definitions(antennavision PRIVATE JSON_DIAGNOSTICS=0)
 #########
 
@@ -137,13 +153,12 @@ target_compile_definitions(testrunner PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(testrunner PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(testrunner PRIVATE
         NumCpp::NumCpp
+        CephesSiCi
+        ansi_color
         nlohmann_json::nlohmann_json
         exprtk
-        CephesSiCi
         Catch2::Catch2WithMain
 )
-
-# Add this in your CMakeLists.txt right after target_link_libraries
 target_compile_definitions(testrunner PRIVATE JSON_DIAGNOSTICS=0)
 
 # Enable CTest regression testing framework integration (Optional but recommended)
