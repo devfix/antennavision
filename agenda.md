@@ -5,7 +5,7 @@
 - [x] implement plot_gain_over_straight
 - [x] implement ULA
 - [x] check setup timestamp -> update only if new
-- [ ] fix cylinder width in three: pass center wavelength
+- [x] fix cylinder width in three: line2
 - [ ] add spdlog
 - [ ] add StandingWaveDipole to factory::make_radiator
 - [ ] check angle between axis1 and axis2 at plane definiton -> error if not 90 deg

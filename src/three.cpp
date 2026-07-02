@@ -10,10 +10,9 @@
 
 namespace
 {
-    [[nodiscard]] std::string hex_string_from_color(fmt::color const color)
+    [[nodiscard]] constexpr std::string hex_string_from_color(Color const color)
     {
-        fmt::rgb rgb(color);
-        return std::format("#{:02x}{:02x}{:02x}", rgb.r, rgb.g, rgb.b);
+        return std::format("#{:06x}", static_cast<std::uint32_t>(color));
     }
 
     template <typename T, typename... Args>
@@ -33,7 +32,7 @@ namespace three
 {
     void Container::add(json&& object) { this->objects.push_back(std::move(object)); }
 
-    void Container::add(std::vector<json>&& objects) { this->objects.insert(this->objects.end(), std::make_move_iterator(objects.begin()), std::make_move_iterator(objects.end())); }
+    void Container::add(std::vector<json>&& new_objects) { this->objects.insert(this->objects.end(), std::make_move_iterator(new_objects.begin()), std::make_move_iterator(new_objects.end())); }
 
     void Container::export_to_javascript(std::filesystem::path const& p) const
     {
@@ -44,7 +43,30 @@ namespace three
         ofs << "];\n";
     }
 
-    json make_sphere(pos_t const& pos, double const radius, fmt::color const color, std::uint16_t const segments_width, std::uint16_t const segments_height)
+    json make_line(std::vector<pos_t> const& points, double const width, Color const color)
+    {
+        json js;
+        std::vector<double> points_flat;
+        points_flat.reserve(points.size() * 3);
+        for (auto const point : points)
+        {
+            points_flat.push_back(point.x);
+            points_flat.push_back(point.y);
+            points_flat.push_back(point.z);
+        }
+        js["type"] = "line";
+        js["color"] = hex_string_from_color(color);
+        js["width"] = width;
+        js["points"] = points_flat;
+        return js;
+    }
+
+    json make_line(pos_t pos_a, pos_t pos_b, double const width, Color const color)
+    {
+        return make_line({pos_a, pos_b}, width, color);
+    }
+
+    json make_sphere(pos_t const& pos, double const radius, Color const color, std::uint16_t const segments_width, std::uint16_t const segments_height)
     {
         json js;
         js["type"] = "sphere";
@@ -58,7 +80,7 @@ namespace three
         return js;
     }
 
-    json make_cylinder(pos_t const& pos_start, pos_t const& pos_end, double const radius_start, double const radius_end, fmt::color const color, std::uint16_t segments_radial)
+    json make_cylinder(pos_t const& pos_start, pos_t const& pos_end, double const radius_start, double const radius_end, Color const color, std::uint16_t segments_radial)
     {
         json js;
         js["type"] = "cylinder";
@@ -77,7 +99,7 @@ namespace three
         return js;
     }
 
-    json make_cone(pos_t const& pos_start, pos_t const& pos_end, double const radius, fmt::color const color, std::uint16_t segments_radial)
+    json make_cone(pos_t const& pos_start, pos_t const& pos_end, double const radius, Color const color, std::uint16_t segments_radial)
     {
         json js;
         js["type"] = "cone";
@@ -95,7 +117,7 @@ namespace three
         return js;
     }
 
-    json make_plane(pos_t const& pos, pos_t const& dir_target, double const width, double const height, double const angle, fmt::color const color)
+    json make_plane(pos_t const& pos, pos_t const& dir_target, double const width, double const height, double const angle, Color const color)
     {
         json js;
         js["type"] = "plane";
@@ -110,7 +132,7 @@ namespace three
         return js;
     }
 
-    std::vector<json> create_arrow(pos_t const& pos_start, pos_t const& pos_end, double const len_head, double const radius_line, double const radius_head, fmt::color const color)
+    std::vector<json> create_arrow(pos_t const& pos_start, pos_t const& pos_end, double const len_head, double const radius_line, double const radius_head, Color const color)
     {
         auto const pos_contact = pos_end + (pos_start - pos_end).normalize() * len_head;
         return {make_cylinder(pos_start, pos_contact, radius_line, radius_line, color), make_cone(pos_contact, pos_end, radius_head, color)};
@@ -118,11 +140,15 @@ namespace three
 
     std::vector<json> create_coordinate_arrows(pos_t const& pos_center, pos_t const& dir_x, pos_t const& dir_y, pos_t const& dir_z, double const len_arrow)
     {
-        auto objects_x = create_arrow(pos_center, pos_center + len_arrow * dir_x.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, fmt::color::red);
-        auto const objects_y = create_arrow(pos_center, pos_center + len_arrow * dir_y.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, fmt::color::green);
-        auto const objects_z = create_arrow(pos_center, pos_center + len_arrow * dir_z.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, fmt::color::blue);
-        std::vector const ball = {make_sphere(pos_center, 0.05 * len_arrow)};
-        return concat_and_destroy(std::move(objects_x), objects_y, objects_z, ball);
+        // auto objects_x = create_arrow(pos_center, pos_center + len_arrow * dir_x.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, Color::red);
+        // auto const objects_y = create_arrow(pos_center, pos_center + len_arrow * dir_y.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, Color::green);
+        // auto const objects_z = create_arrow(pos_center, pos_center + len_arrow * dir_z.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, Color::blue);
+        // std::vector const ball = {make_sphere(pos_center, 0.05 * len_arrow)};
+        // return concat_and_destroy(std::move(objects_x), objects_y, objects_z, ball);
+        auto line_x = make_line(pos_center, pos_center + len_arrow * dir_x.normalize(), 2.0, Color::red);
+        auto const line_y = make_line(pos_center, pos_center + len_arrow * dir_y.normalize(), 2.0, Color::lime);
+        auto const line_z = make_line(pos_center, pos_center + len_arrow * dir_z.normalize(), 2.0, Color::blue);
+        return {line_x, line_y, line_z};
     }
 
 } // namespace three

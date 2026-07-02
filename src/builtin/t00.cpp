@@ -19,9 +19,9 @@ namespace builtin
         std::string name = std::format("builtin.{}", __func__);
         std::println("Creating plot: {}", name);
 
-        json js;
+        ojson js;
         js["name"] = name;
-        std::vector<json> entries;
+        std::vector<ojson> entries;
 
         Reference& ref_start = setup.get_reference_by_id("ref_rx_start");
         Reference::StateGuard start(ref_start);

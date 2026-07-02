@@ -13,7 +13,7 @@
 
 TEST_CASE("ULA position and rotation", "[TestULA]")
 {
-    json const js = json::parse(R"JSON(
+    ojson const js = ojson::parse(R"JSON(
 {
   "metadata": {
     "setup_name": "test-ula"
@@ -92,7 +92,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
 
 TEST_CASE("ULA gain", "[TestULA]")
 {
-    json const js = json::parse(R"JSON(
+    ojson const js = ojson::parse(R"JSON(
 {
   "metadata": {
     "setup_name": "test-ula"

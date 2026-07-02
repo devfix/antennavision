@@ -10,7 +10,7 @@
 
 TEST_CASE("setup without rotation", "[TestSetupReferences]")
 {
-    json const js = json::parse(R"(
+    ojson const js = ojson::parse(R"(
 {
   "metadata": {
     "setup_name": "test_setup_without_rotation"
@@ -74,7 +74,7 @@ TEST_CASE("setup without rotation", "[TestSetupReferences]")
 
 TEST_CASE("setup with rotation", "[TestSetupReferences]")
 {
-    json const js = json::parse(R"(
+    ojson const js = ojson::parse(R"(
 {
   "metadata": {
     "setup_name": "test_setup_with_rotation"

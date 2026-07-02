@@ -26,7 +26,7 @@ struct Setup
 
     using task_t = std::function<void(std::filesystem::path const& directory)>;
 
-    static std::unique_ptr<Setup> from_json(json const& js, timeutil::timestamp_t timestamp = 0);
+    static std::unique_ptr<Setup> from_json(ojson const& js, timeutil::timestamp_t timestamp = 0);
     static std::unique_ptr<Setup> from_file(std::filesystem::path const& p);
     void export_to_three(std::filesystem::path const& directory) const;
     void run_tasks(std::filesystem::path const& directory, const std::function<void(std::string_view)>& builtin_handler);

@@ -32,7 +32,7 @@ namespace
 
 std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeutil::timestamp_t const timestamp)
 {
-    json setup_desc = js; // create a copy of the json object in order to decompose it
+    ojson setup_desc = js; // create a copy of the json object in order to decompose it
     auto const& metadata = json_get(setup_desc, "metadata");
     std::string_view const setup_name = json_get(metadata, "setup_name").get<std::string_view>();
     std::println("Setup name: {}", setup_name);
@@ -158,8 +158,7 @@ void Setup::export_to_three(std::filesystem::path const& directory) const
         auto const pos_center = reference.global_from_local_pos({0, 0, 0});
         auto const pos_origin = reference.origin->global_from_local_pos({0, 0, 0});
         auto const distance = (pos_center - pos_origin).norm();
-        auto const radius = distance * 1e-3;
-        container.add(three::make_cylinder(pos_origin, pos_center, radius, radius, fmt::color::white));
+        container.add(three::make_line(pos_origin, pos_center, 1.0, Color::white));
         container.add(three::create_coordinate_arrows(pos_center, reference.global_from_local_pos({1, 0, 0}) - pos_center, reference.global_from_local_pos({0, 1, 0}) - pos_center,
                                                       reference.global_from_local_pos({0, 0, 1}) - pos_center, distance * 1e-1));
     }

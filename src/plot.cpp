@@ -62,9 +62,9 @@ void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Ra
     //     fig.axes['r'] = as;
     // }
 
-    json js;
+    ojson js;
     js["name"] = name;
-    std::vector<json> entries;
+    std::vector<ojson> entries;
 
     double const wavelength = 0.1;
 
@@ -72,7 +72,7 @@ void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Ra
     NdArray directivities(polar_angles.shape());
     for (auto const azimuth : azimuth_angles)
     {
-        json js_entry;
+        ojson js_entry;
         std::ranges::transform(polar_angles, directivities.begin(),
                                [&radiator, azimuth, wavelength](double const theta) { return radiator.calc_directivity_from_spherical(theta, azimuth, wavelength, {}); });
         js_entry["azimuth"] = azimuth / nc::constants::pi;
@@ -134,7 +134,7 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
     //     fig.axes['r'] = as;
     // }
 
-    json js;
+    ojson js;
     js["name"] = name;
 
     constexpr std::size_t n_points = 101;
@@ -183,7 +183,7 @@ void plot::plot_gain_over_plane(std::filesystem::path const& dir_plot, radiator_
     std::string name = std::format("{}.{}.{}.{}.{}.{}.{}", __func__, source_id, sink.id, n_points_axis1, n_points_axis2, label_axis1, label_axis2);
     std::println("Creating plot: {}", name);
 
-    json js;
+    ojson js;
     js["name"] = name;
 
     Reference::StateGuard zero(ref_zero);
