@@ -187,16 +187,16 @@ Reference& Setup::get_reference_by_id(std::string_view const id) { return factor
 
 Radiator const& Setup::get_radiator_by_id(std::string_view const id) const { return factory::find_radiator_by_id(radiators, id); }
 
-// std::vector<std::reference_wrapper<Radiator>> Setup::get_radiator_array(std::string_view id) const
-// {
-//     std::vector<std::reference_wrapper<Radiator>> radiator_array;
-//     std::string const id_prefix = std::format("{}:radiator:", id);
-//     for (auto& radiator : radiators)
-//     {
-//         if (radiator->id.starts_with(id_prefix)) { radiator_array.push_back(std::ref(*radiator)); }
-//     }
-//     return radiator_array;
-// }
+ScalarField Setup::get_voltage_field(RadiatorArray const& radiator_array_tx, Radiator& radiator_rx, math::NumParams const& num_params)
+{
+    return {[&radiator_array_tx, &radiator_rx](pos_t pos, double wavelength, math::NumParams const& num_params) -> complex_t
+            {
+                Reference::StateGuard state_guard(radiator_rx.origin);
+                radiator_rx.origin.pos = pos;
+                return calc_voltage_gain(radiator_array_tx, radiator_rx, wavelength, num_params);
+            },
+            num_params};
+}
 
 complex_t Setup::calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double const wavelength, math::NumParams const& num_params)
 {
@@ -234,6 +234,10 @@ double Setup::calc_power_gain(Radiator const& radiator_tx, Radiator const& radia
 
 double Setup::calc_power_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params)
 { return math::square(std::abs(calc_voltage_gain(radiator_array_tx, radiator_rx, wavelength, num_params))); }
+
+Setup::VoltageField::VoltageField(RadiatorArray const& radiator_array_tx, Radiator& radiator_rx) : radiator_array_tx(radiator_array_tx), radiator_rx(radiator_rx) {}
+
+complex_t Setup::VoltageField::calc_voltage_gain(pos_t pos, double wavelength) {}
 
 Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, std::map<std::string, double>&& variables, std::list<Reference>&& references,
              std::list<std::unique_ptr<Radiator>>&& radiators, std::map<std::string, RadiatorArray>&& radiator_arrays, std::list<std::pair<std::string, task_t>>&& tasks) :

@@ -11,6 +11,7 @@
 #include "components/radiator.hpp"
 #include "components/radiatorarray.hpp"
 #include "components/source.hpp"
+#include "scalarfield.hpp"
 #include "timeutil.hpp"
 #include "types.hpp"
 
@@ -23,6 +24,15 @@ struct Setup
         double magnitude;
         double phase;
     };
+private:
+    struct VoltageField
+    {
+        VoltageField(RadiatorArray const& radiator_array_tx, Radiator & radiator_rx);
+        RadiatorArray const& radiator_array_tx;
+        Radiator & radiator_rx;
+        complex_t calc_voltage_gain(pos_t pos, double wavelength);
+    };
+public:
 
     using task_t = std::function<void(std::filesystem::path const& directory)>;
 
@@ -34,6 +44,7 @@ struct Setup
     [[nodiscard]] Reference& get_reference_by_id(std::string_view id);
     [[nodiscard]] Radiator const& get_radiator_by_id(std::string_view id) const;
 
+    [[nodiscard]] static ScalarField get_voltage_field(RadiatorArray const& radiator_array_tx, Radiator & radiator_rx, math::NumParams const& num_params);
     [[nodiscard]] static std::complex<double> calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
     [[nodiscard]] static std::complex<double> calc_voltage_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
     [[nodiscard]] static double calc_power_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
@@ -46,6 +57,7 @@ struct Setup
     std::list<std::unique_ptr<Radiator>> const radiators;
     std::map<std::string, RadiatorArray> const radiator_arrays;
     std::list<std::pair<std::string, task_t>> const tasks;
+    std::list<VoltageField> voltage_fields;
 
     std::vector<Source> sources;
     std::vector<Component> inter_components;

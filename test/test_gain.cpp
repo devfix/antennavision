@@ -105,7 +105,7 @@ TEST_CASE("Power Gain of auto With Y-Rotation", "[Gain]")
     REQUIRE(std::arg(voltage_gain_actual) == Catch::Approx(-0.5 * pi));
 }
 
-TEST_CASE("Power Gain of auto With Z-Rotation", "[Gain]")
+TEST_CASE("Power GReference::StateGuardain of auto With Z-Rotation", "[Gain]")
 {
     double constexpr lambda = 0.1;
     Reference reference1("", nullptr);

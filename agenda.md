@@ -6,14 +6,15 @@
 - [x] implement ULA
 - [x] check setup timestamp -> update only if new
 - [x] fix cylinder width in three: line2
-- [ ] add spdlog
+- [x] remove fmt dependency finally
+- [ ] add beamforming coefficients
 - [ ] add StandingWaveDipole to factory::make_radiator
 - [ ] check angle between axis1 and axis2 at plane definiton -> error if not 90 deg
 - [ ] implement beamwidth measure function
 - [ ] implement PS
 - [ ] implement connections between components
 - [ ] pre compute radiation resistance for gain and directivtiy
-- [ ] remove fmt dependency finally
+- [ ] add spdlog
 
 ## Writing
 - [ ] derive magnetic vector potential using Lorenz Equation
