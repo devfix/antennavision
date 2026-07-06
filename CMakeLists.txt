@@ -29,10 +29,37 @@ endif()
 set(NUMCPP_NO_USE_BOOST ON CACHE BOOL "Don't use the boost libraries" FORCE)
 FetchContent_Declare(
         NumCpp
-        URL https://github.com/dpilger26/NumCpp/archive/refs/tags/Version_2.16.1.tar.gz
-        URL_HASH SHA256=e543049b267ce6bc28463e45db3eaefa4e7c0944c89d709df515736bfef807b4
+        GIT_REPOSITORY https://github.com/dpilger26/NumCpp.git
+        GIT_TAG        Version_2.16.1
+        GIT_SHALLOW    TRUE
 )
 FetchContent_MakeAvailable(NumCpp)
+#########
+
+
+######### magic_enum
+FetchContent_Declare(
+        magic_enum
+        GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
+        GIT_TAG        v0.9.8
+        GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(magic_enum)
+#########
+
+
+######### nlopt
+set(NLOPT_PYTHON OFF CACHE INTERNAL "")
+set(NLOPT_GUILE OFF CACHE INTERNAL "")
+set(NLOPT_MATLAB OFF CACHE INTERNAL "")
+set(NLOPT_TESTS OFF CACHE INTERNAL "")
+FetchContent_Declare(
+        nlopt
+        GIT_REPOSITORY https://github.com/stevengj/nlopt.git
+        GIT_TAG        v2.11.0
+        GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(nlopt)
 #########
 
 
@@ -138,6 +165,8 @@ target_compile_definitions(antennavision PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(antennavision PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(antennavision PRIVATE
         NumCpp::NumCpp
+        magic_enum::magic_enum
+        nlopt
         CephesSiCi
         ansi_color
         nlohmann_json::nlohmann_json
@@ -153,6 +182,8 @@ target_compile_definitions(testrunner PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(testrunner PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(testrunner PRIVATE
         NumCpp::NumCpp
+        magic_enum::magic_enum
+        nlopt
         CephesSiCi
         ansi_color
         nlohmann_json::nlohmann_json

@@ -38,7 +38,7 @@
         "z": 1
       },
       "spacing": "wavelength * 0.5",
-      "count": 9,
+      "count": 32,
       "radiator": {
         "type": "HertzianDipole"
       }

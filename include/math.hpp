@@ -12,6 +12,17 @@ namespace math
     {
         std::size_t n_polar = 101;
         std::size_t n_azimuth = 201;
+        std::size_t n_linear = 101;
+        double xtol_rel = 1e-8;
+        double ftol_rel = 1e-8;
+    };
+
+    struct OptimizationParams
+    {
+        std::function<double(double x)> fn;  // objective function that gets minimized
+        double x_a;
+        double x_b;
+        NumParams const& num_params;
     };
 
     template <typename R, typename T>
@@ -99,4 +110,6 @@ namespace math
         auto const [r, polar, azimuth] = spherical_from_cartesian(pos_local);
         return get_rot_mat_from_spherical(polar, azimuth);
     }
+
+    std::pair<double, double> f_min(OptimizationParams const& optimization_params);
 } // namespace math

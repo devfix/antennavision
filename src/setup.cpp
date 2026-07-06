@@ -185,17 +185,16 @@ void Setup::run_tasks(std::filesystem::path const& directory, std::function<void
 
 Reference& Setup::get_reference_by_id(std::string_view const id) { return factory::find_reference_by_id(references, id); }
 
-Radiator const& Setup::get_radiator_by_id(std::string_view const id) const { return factory::find_radiator_by_id(radiators, id); }
+Radiator& Setup::get_radiator_by_id(std::string_view const id) const { return factory::find_radiator_by_id(radiators, id); }
 
 ScalarField Setup::get_voltage_field(RadiatorArray const& radiator_array_tx, Radiator& radiator_rx, math::NumParams const& num_params)
 {
-    return {[&radiator_array_tx, &radiator_rx](pos_t pos, double wavelength, math::NumParams const& num_params) -> complex_t
+    return {[&radiator_array_tx, &radiator_rx, num_params](pos_t const& pos, double const wavelength) -> complex_t
             {
-                Reference::StateGuard state_guard(radiator_rx.origin);
                 radiator_rx.origin.pos = pos;
                 return calc_voltage_gain(radiator_array_tx, radiator_rx, wavelength, num_params);
             },
-            num_params};
+            [&radiator_rx] { radiator_rx.origin.reset(); }, num_params};
 }
 
 complex_t Setup::calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double const wavelength, math::NumParams const& num_params)

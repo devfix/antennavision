@@ -4,6 +4,9 @@
 
 #include "math.hpp"
 #include <cmath>
+#include <magic_enum/magic_enum.hpp>
+#include <nlopt.h>
+#include "simulationerror.hpp"
 
 extern "C" {
 // part of the Cephes library
@@ -12,6 +15,15 @@ extern int sici(double x, double* si, double* ci);
 
 namespace math
 {
+    namespace
+    {
+        double objective_function(unsigned n, const double* x, double* grad, void* data)
+        {
+            auto params = static_cast<OptimizationParams*>(data);
+            return params->fn(*x);
+        }
+    } // namespace
+
     double angle_between_vectors(pos_t vec1, pos_t vec2)
     {
         double const norm1 = vec1.norm();
@@ -35,8 +47,8 @@ namespace math
             // We "search" for a viable orthogonal direction
             std::array<std::tuple<pos_t, double>, 3> dir_orts{{{dir_initial.cross(pos_t(1, 0, 0)), 0}, {dir_initial.cross(pos_t(0, 1, 0)), 0}, {dir_initial.cross(pos_t(0, 0, 1)), 0}}};
             for (auto& [dir, len] : dir_orts) { len = dir.norm(); }
-            auto const dir_ort_best =
-                std::get<0>(*std::max_element(dir_orts.begin(), dir_orts.end(), [](std::tuple<pos_t, double> const& a, std::tuple<pos_t, double> const& b) { return std::get<1>(a) < std::get<1>(b); }));
+            auto const dir_ort_best = std::get<0>(
+                *std::max_element(dir_orts.begin(), dir_orts.end(), [](std::tuple<pos_t, double> const& a, std::tuple<pos_t, double> const& b) { return std::get<1>(a) < std::get<1>(b); }));
             return {dir_ort_best.normalize(), nc::constants::pi};
         }
         else
@@ -58,5 +70,45 @@ namespace math
         auto const [six, cix] = math::sici(x);
         auto const [si2x, ci2x] = math::sici(2.0 * x);
         return egamma + std::log(x) - cix + 0.5 * std::sin(x) * (si2x - 2.0 * six) + 0.5 * std::cos(x) * (egamma + std::log(0.5 * x) + ci2x - 2.0 * cix);
+    }
+
+    std::pair<double, double> f_min(OptimizationParams const& optimization_params)
+    {
+        auto const& n_samples = optimization_params.num_params.n_linear;
+        std::vector<double> abs_values(n_samples, 0.0);
+        double const delta = optimization_params.x_b - optimization_params.x_a;
+        for (std::size_t k = 0; k < n_samples; k++)
+        {
+            double const f = static_cast<double>(k) / static_cast<double>(n_samples - 1);
+            abs_values[k] = optimization_params.fn(optimization_params.x_a + f * delta);
+        }
+        std::size_t const k_max = std::distance(abs_values.begin(), std::ranges::min_element(abs_values));
+        std::size_t const k_a = std::max(static_cast<std::size_t>(0), k_max - 1);
+        std::size_t const k_b = std::min(n_samples - 1, k_max + 1);
+        double const f_a = static_cast<double>(k_a) / static_cast<double>(n_samples - 1);
+        double const f_b = static_cast<double>(k_b) / static_cast<double>(n_samples - 1);
+
+        OptimizationParams params_nlopt(optimization_params);
+        params_nlopt.x_a = optimization_params.x_a + f_a * delta;
+        params_nlopt.x_b = optimization_params.x_a + f_b * delta;
+
+        double const x_lower = std::min(params_nlopt.x_a, params_nlopt.x_b);
+        double const x_upper = std::max(params_nlopt.x_a, params_nlopt.x_b);
+
+        nlopt_opt opt = nlopt_create(NLOPT_LN_BOBYQA, 1); // set algorithm and dimension of x
+        nlopt_set_min_objective(opt, objective_function, &params_nlopt);
+        nlopt_set_lower_bounds(opt, &x_lower);
+        nlopt_set_upper_bounds(opt, &x_upper);
+        nlopt_set_xtol_rel(opt, optimization_params.num_params.xtol_rel);
+        nlopt_set_ftol_rel(opt, optimization_params.num_params.ftol_rel);
+        double x = 0.5 * (params_nlopt.x_a + params_nlopt.x_b); // initial guess
+        double min_f;
+        nlopt_result const result = nlopt_optimize(opt, &x, &min_f);
+        nlopt_destroy(opt);
+        if (result < 0) { throw SimulationError("Error: nlopt returned '{}'", magic_enum::enum_name(result)); }
+        std::cout << "Optimization succeeded!" << std::endl;
+        std::cout << "Found minimum at x = " << x << std::endl;
+        std::cout << "Minimum function value = " << min_f << std::endl;
+        return {x, min_f};
     }
 } // namespace math

@@ -8,17 +8,6 @@
 
 struct Reference
 {
-    struct StateGuard
-    {
-        explicit StateGuard(Reference & reference);
-        ~StateGuard();
-
-        Reference & reference;
-        pos_t const pos;
-        Quaternion const rotation;
-        NdArray const rotation_array;
-    };
-
     Reference(std::string_view id, Reference * origin, pos_t const& translation = {}, Quaternion const& rotation = {});
 
     Reference(Reference const&) = delete; // disable copy constructor
@@ -33,9 +22,12 @@ struct Reference
     [[nodiscard]] vec_t local_from_global_vec(vec_t const& vec_global) const;
     [[nodiscard]] vec_t global_from_local_vec(vec_t const& vec_local) const;
     [[nodiscard]] pos_t localize(Reference const& reference) const;
+    void reset();
 
     std::string const id;
     Reference *const origin;
     pos_t pos;
     Quaternion rotation;
+    pos_t const pos_initial;
+    Quaternion const rotation_initial;
 };

@@ -161,10 +161,9 @@ TEST_CASE("ULA gain", "[TestULA]")
     auto const& rx = setup->get_radiator_by_id("receiver");
     Reference& ref_start = setup->get_reference_by_id("ref_rx_start");
     Reference const& ref_stop = setup->get_reference_by_id("ref_rx_stop");
-    Reference::StateGuard start(ref_start);
 
     constexpr std::size_t n_points = 11;
-    pos_t const pos_delta = ref_stop.pos - start.pos;
+    pos_t const pos_delta = ref_stop.pos - ref_start.pos_initial;
     NdArray const rotation_delta = ref_stop.rotation.toNdArray() - ref_start.rotation.toNdArray();
     double const length = pos_delta.norm();
 
@@ -175,9 +174,116 @@ TEST_CASE("ULA gain", "[TestULA]")
     for (NdArray::index_type k = 0; k < n_points; k++)
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
-        ref_start.pos = start.pos + pos_delta * f;
-        ref_start.rotation = start.rotation.toNdArray() + rotation_delta * f;
+        ref_start.pos = ref_start.pos_initial + pos_delta * f;
+        ref_start.rotation = ref_start.rotation_initial.toNdArray() + rotation_delta * f;
         gains.at(k) = Setup::calc_voltage_gain(tx, rx, wavelength, {});
+        distances.at(k) = *distance_ptr;
+    }
+    ref_start.reset();
+
+    complex_t const gain_votage_abs_max = std::ranges::max(gains, {}, [](complex_t const& gain) -> double { return std::abs(gain); });
+    REQUIRE(std::abs(gain_votage_abs_max) == Catch::Approx(0.00035809851155573));
+    REQUIRE(std::arg(gain_votage_abs_max) == Catch::Approx(-0.5 * pi).margin(1e-3));
+
+    std::ranges::transform(gains, gains.begin(), [gain_votage_abs_max](auto gain) -> complex_t { return gain / std::abs(gain_votage_abs_max); });
+
+    std::vector<double> const gains_power_expected = {0.100653501560284, 0.227131737832402, 0.430093185362579, 0.684406554078239, 0.90888660875903, 1,
+                                                      0.90888660875903,  0.684406554078239, 0.430093185362579, 0.227131737832402, 0.100653501560284};
+    std::vector<double> const gains_voltage_arg_expected = {-1.78360365074871963, -1.77764329249379149, -1.7634739579509644, -0.33901331302971988, -1.49312253721690102, -1.57131992547758736,
+                                                            -1.49312253721690102, -0.33901331302971988, -1.7634739579509644, -1.77764329249379149, -1.78360365074871963};
+    for (std::size_t k = 0; k < gains.size(); k++)
+    {
+        REQUIRE(math::square(std::abs(gains.at(k))) == Catch::Approx(gains_power_expected.at(k)));
+        REQUIRE(std::arg(gains.at(k)) == Catch::Approx(gains_voltage_arg_expected.at(k)));
+    }
+}
+
+TEST_CASE("ULA gain using ScalarField", "[TestULA]")
+{
+    ojson const js = ojson::parse(R"JSON(
+{
+  "metadata": {
+    "setup_name": "test-ula"
+  },
+  "variables": {
+    "wavelength": 0.1,
+    "distance": 100
+  },
+  "references": [
+    {
+      "id": "ref_ula",
+      "origin": ""
+    },
+    {
+      "id": "ref_rx_start",
+      "origin": "",
+      "pos": {
+        "x": 0,
+        "y": "distance",
+        "z": "-distance/2"
+      }
+    },
+    {
+      "id": "ref_rx_stop",
+      "origin": "",
+      "pos": {
+        "x": 0,
+        "y": "distance",
+        "z": "distance/2"
+      }
+    }
+  ],
+  "radiators": [
+    {
+      "type": "ULA",
+      "id": "ula1",
+      "ref": "ref_ula",
+      "dir": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "spacing": "wavelength * 0.5",
+      "count": 3,
+      "radiator": {
+        "type": "HertzianDipole"
+      }
+    },
+    {
+      "id": "receiver",
+      "ref": "ref_rx_start",
+      "type": "HertzianDipole"
+    }
+  ],
+  "tasks": [
+    {
+      "type": "builtin",
+      "key": "t00_compare_beamwidth"
+    }
+  ]
+}
+)JSON");
+    auto const setup = Setup::from_json(js);
+    auto const wavelength = setup->variables.at("wavelength");
+    auto const& tx = setup->radiator_arrays.at("ula1");
+    auto & rx = setup->get_radiator_by_id("receiver");
+    Reference const& ref_stop = setup->get_reference_by_id("ref_rx_stop");
+    math::NumParams num_params;
+    auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
+
+    constexpr std::size_t n_points = 11;
+    pos_t const pos_delta = ref_stop.pos - rx.origin.pos;
+    pos_t const pos_zero = rx.origin.pos;
+    double const length = pos_delta.norm();
+
+    std::vector<complex_t> gains(n_points, 0.0);
+    std::vector<double> distances(n_points, 0.0);
+
+    double* distance_ptr = &rx.origin.pos.z;
+    for (NdArray::index_type k = 0; k < n_points; k++)
+    {
+        double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
+        gains.at(k) = voltage_field.field(pos_zero + pos_delta * f, wavelength);
         distances.at(k) = *distance_ptr;
     }
 
@@ -195,5 +301,16 @@ TEST_CASE("ULA gain", "[TestULA]")
     {
         REQUIRE(math::square(std::abs(gains.at(k))) == Catch::Approx(gains_power_expected.at(k)));
         REQUIRE(std::arg(gains.at(k)) == Catch::Approx(gains_voltage_arg_expected.at(k)));
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    auto const distance = setup->variables.at("distance");
+    {
+        pos_t pos_abs_max = voltage_field.argmax_line_abs(pos_t(0, distance, -0.5*distance), pos_t(0, distance, 0.5*distance), wavelength);
+        REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
+    }
+    {
+        pos_t pos_abs_max = voltage_field.argmax_circle_abs(POS_ZERO, pos_t(1.0, 0.0, 0.0), distance, pos_t(0.0, distance, -0.5*distance), 0.5*pi, wavelength);
+        REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
     }
 }

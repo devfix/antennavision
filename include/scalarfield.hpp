@@ -4,14 +4,34 @@
 
 #pragma once
 
+#include <functional>
 #include "math.hpp"
 #include "types.hpp"
-#include <functional>
 
 struct ScalarField
 {
-    using field_t = std::function<complex_t(pos_t pos, double wavelength, math::NumParams const& num_params)>;
-    ScalarField(field_t const& field, math::NumParams const& num_params);
+    using field_t = std::function<complex_t(pos_t const& pos, double wavelength)>;
+    using reset_t = std::function<void()>;
+    ScalarField(field_t&& field, reset_t&& reset, math::NumParams const& num_params);
+    ~ScalarField();
+
+    pos_t argmax_line_abs(pos_t const& pos_a, pos_t const& pos_b, double wavelength) const;
+
+    /**
+     *
+     * @param pos_center
+     * @param dir_normal
+     * @param radius
+     * @param dir_start
+     * @param angle
+     * @param wavelength
+     * @return
+     */
+    pos_t argmax_circle_abs(pos_t const& pos_center, pos_t dir_normal, double radius, pos_t const& dir_start, double angle, double wavelength) const;
+
     field_t const field;
     math::NumParams const& num_params;
+
+private:
+    reset_t const reset;
 };

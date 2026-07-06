@@ -42,7 +42,7 @@ public:
     void run_tasks(std::filesystem::path const& directory, const std::function<void(std::string_view)>& builtin_handler);
 
     [[nodiscard]] Reference& get_reference_by_id(std::string_view id);
-    [[nodiscard]] Radiator const& get_radiator_by_id(std::string_view id) const;
+    [[nodiscard]] Radiator& get_radiator_by_id(std::string_view id) const;
 
     [[nodiscard]] static ScalarField get_voltage_field(RadiatorArray const& radiator_array_tx, Radiator & radiator_rx, math::NumParams const& num_params);
     [[nodiscard]] static std::complex<double> calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);

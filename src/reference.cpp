@@ -6,16 +6,9 @@
 
 #include "math.hpp"
 
-Reference::StateGuard::StateGuard(Reference& reference) : reference(reference), pos(reference.pos), rotation(reference.rotation), rotation_array(reference.rotation.toNdArray())
+Reference::Reference(std::string_view const id, Reference* const origin, pos_t const& translation, Quaternion const& rotation) :
+    id(id), origin(origin), pos(translation), rotation(rotation), pos_initial(pos), rotation_initial(rotation)
 {}
-
-Reference::StateGuard::~StateGuard()
-{
-    reference.pos = pos;
-    reference.rotation = rotation;
-}
-
-Reference::Reference(std::string_view const id, Reference *const origin, pos_t const& translation, Quaternion const& rotation) : id(id), origin(origin), pos(translation), rotation(rotation) {}
 
 pos_t Reference::local_from_global_pos(pos_t const& pos_global) const { return rotation.inverse().rotate((origin ? origin->local_from_global_pos(pos_global) : pos_global) - this->pos); }
 
@@ -34,3 +27,9 @@ vec_t Reference::global_from_local_vec(vec_t const& vec_local) const
 }
 
 pos_t Reference::localize(Reference const& reference) const { return local_from_global_pos(reference.global_from_local_pos(POS_ZERO)); }
+
+void Reference::reset()
+{
+    pos = pos_initial;
+    rotation = rotation_initial;
+}
