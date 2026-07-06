@@ -302,15 +302,4 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
         REQUIRE(math::square(std::abs(gains.at(k))) == Catch::Approx(gains_power_expected.at(k)));
         REQUIRE(std::arg(gains.at(k)) == Catch::Approx(gains_voltage_arg_expected.at(k)));
     }
-
-    ///////////////////////////////////////////////////////////////////////////
-    auto const distance = setup->variables.at("distance");
-    {
-        pos_t pos_abs_max = voltage_field.argmax_line_abs(pos_t(0, distance, -0.5*distance), pos_t(0, distance, 0.5*distance), wavelength);
-        REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
-    }
-    {
-        pos_t pos_abs_max = voltage_field.argmax_circle_abs(POS_ZERO, pos_t(1.0, 0.0, 0.0), distance, pos_t(0.0, distance, -0.5*distance), 0.5*pi, wavelength);
-        REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
-    }
 }

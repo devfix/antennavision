@@ -19,10 +19,31 @@ namespace math
     {
         double objective_function(unsigned n, const double* x, double* grad, void* data)
         {
-            auto params = static_cast<OptimizationParams*>(data);
+            auto params = static_cast<OptParams*>(data);
             return params->fn(*x);
         }
     } // namespace
+
+    void Circle::rotate_base(double angle)
+    {
+        pos_t const v1_new = std::cos(angle) * v1 + std::sin(angle) * v2;
+        pos_t const v2_new = -std::sin(angle) * v1 + std::cos(angle) * v2;
+        v1 = v1_new;
+        v2 = v2_new;
+    }
+
+    Circle get_circle(pos_t const& center, pos_t const& normal, double radius, pos_t const& dir_start)
+    {
+        Circle circle{
+            .center = center,
+            .normal = normal.normalize(),
+            .radius = radius,
+        };
+        // Project start_direction onto the plane to ensure it's perfectly perpendicular to the normal Vector projection: v1 = v - (v . n) * n
+        circle.v1 = (dir_start - dir_start.dot(circle.normal) * circle.normal).normalize();
+        circle.v2 = circle.normal.cross(circle.v1);
+        return circle;
+    }
 
     double angle_between_vectors(pos_t vec1, pos_t vec2)
     {
@@ -72,7 +93,7 @@ namespace math
         return egamma + std::log(x) - cix + 0.5 * std::sin(x) * (si2x - 2.0 * six) + 0.5 * std::cos(x) * (egamma + std::log(0.5 * x) + ci2x - 2.0 * cix);
     }
 
-    std::pair<double, double> f_min(OptimizationParams const& optimization_params)
+    std::pair<double, double> f_min(OptParams const& optimization_params)
     {
         auto const& n_samples = optimization_params.num_params.n_linear;
         std::vector<double> abs_values(n_samples, 0.0);
@@ -88,7 +109,7 @@ namespace math
         double const f_a = static_cast<double>(k_a) / static_cast<double>(n_samples - 1);
         double const f_b = static_cast<double>(k_b) / static_cast<double>(n_samples - 1);
 
-        OptimizationParams params_nlopt(optimization_params);
+        OptParams params_nlopt(optimization_params);
         params_nlopt.x_a = optimization_params.x_a + f_a * delta;
         params_nlopt.x_b = optimization_params.x_a + f_b * delta;
 

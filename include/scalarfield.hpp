@@ -15,7 +15,7 @@ struct ScalarField
     ScalarField(field_t&& field, reset_t&& reset, math::NumParams const& num_params);
     ~ScalarField();
 
-    pos_t argmax_line_abs(pos_t const& pos_a, pos_t const& pos_b, double wavelength) const;
+    std::pair<pos_t, double> argmax_line_abs(pos_t const& pos_a, pos_t const& pos_b, double wavelength) const;
 
     /**
      *
@@ -27,7 +27,9 @@ struct ScalarField
      * @param wavelength
      * @return
      */
-    pos_t argmax_circle_abs(pos_t const& pos_center, pos_t dir_normal, double radius, pos_t const& dir_start, double angle, double wavelength) const;
+    std::pair<pos_t, double> argmax_circle_abs(math::Circle const& circle, double angle, double wavelength) const;
+
+    std::pair<pos_t, double> calc_beamwidth(math::Circle const& circle, double ratio, double wavelength) const;
 
     field_t const field;
     math::NumParams const& num_params;

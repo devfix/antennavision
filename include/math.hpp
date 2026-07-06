@@ -17,13 +17,41 @@ namespace math
         double ftol_rel = 1e-8;
     };
 
-    struct OptimizationParams
+    struct OptParams
     {
         std::function<double(double x)> fn;  // objective function that gets minimized
         double x_a;
         double x_b;
         NumParams const& num_params;
     };
+
+    //             ^ v2 axis (90°)
+    //             |
+    //         . . | . .
+    //       .     |     .             ⊙ normal (up in the circle's plane)
+    //     .       |       .
+    //    .        |        .
+    //   .         |         .
+    //   .         |         .
+    // --.---------C---------.---------> v1 axis (0°, start_direction)
+    //   .       (Center)    .
+    //    .        |        .
+    //     .       |       .
+    //       .     |     .
+    //         . . | . .
+    //             |
+    struct Circle
+    {
+        pos_t center; /// center position
+        pos_t normal; /// normal direction, together with center defines circle plane
+        double radius; /// circle radius
+        pos_t v1; /// first base vector (see ascii sketch)
+        pos_t v2; /// first base vector (see ascii sketch)
+
+        void rotate_base(double angle);
+    };
+
+    Circle get_circle(pos_t const& center, pos_t const& normal, double radius, pos_t const& dir_start);
 
     template <typename R, typename T>
     nc::NdArray<R> constexpr vec(T a, T b, T c)
@@ -111,5 +139,5 @@ namespace math
         return get_rot_mat_from_spherical(polar, azimuth);
     }
 
-    std::pair<double, double> f_min(OptimizationParams const& optimization_params);
+    std::pair<double, double> f_min(OptParams const& optimization_params);
 } // namespace math
