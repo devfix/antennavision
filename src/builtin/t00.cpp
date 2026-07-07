@@ -37,7 +37,7 @@ namespace builtin
         NdArray const rotation_delta = ref_stop.rotation.toNdArray() - ref_start.rotation_initial.toNdArray();
         double const length = pos_delta.norm();
 
-        auto voltage_field = Setup::get_voltage_field(tx, rx, {});
+        auto voltage_field = setup.get_voltage_field(tx, rx, {});
         voltage_field.argmax_line_abs(pos_t(0,50,-25), pos_t(0,50,25), wavelength);
 
         std::vector<double> gains(n_points, 0.0);

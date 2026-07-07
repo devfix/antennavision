@@ -5,9 +5,11 @@
 #include <NumCpp/Functions/linspace.hpp>
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <nlohmann/json.hpp>
 
 #include "components/radiator.hpp"
 #include "math.hpp"
+#include "setup.hpp"
 #include "testutil.hpp"
 
 double constexpr DIPOLE_LENGTH = 1e-3;
@@ -67,7 +69,7 @@ TEST_CASE("HertzianDipole", "[Radiator]")
     require_close_array(directivities_actual_phi1, directivities_expected);
 }
 
-TEST_CASE("HalfWaveDipole", "[Radiator]")
+TEST_CASE("HalfWaveDipole direct", "[Radiator]")
 {
     double constexpr wavelength = 0.1;
     Reference reference("", nullptr);
@@ -78,7 +80,41 @@ TEST_CASE("HalfWaveDipole", "[Radiator]")
     REQUIRE(actual == Catch::Approx(1.640922388).margin(1e-3));
 }
 
-TEST_CASE("FullWaveDipole", "[Radiator]")
+TEST_CASE("HalfWaveDipole via setup", "[Radiator]")
+{
+    ojson const js = ojson::parse(R"JSON(
+{
+  "metadata": {
+    "setup_name": "test-radiator"
+  },
+  "variables": {
+    "wavelength": 0.1
+  },
+  "references": [
+    {
+      "id": "ref_ula",
+      "origin": ""
+    }
+  ],
+  "radiators": [
+    {
+      "type": "StandingWaveDipole",
+      "id": "DUT",
+      "ref": "",
+      "dipole_length": "0.5*wavelength"
+    }
+  ]
+}
+)JSON");
+    auto const setup = Setup::from_json(js);
+    auto const wavelength = setup->variables.at("wavelength");
+    auto & radiator = setup->get_radiator_by_id("DUT");
+    REQUIRE_THROWS(radiator.calc_path(0, 0));
+    auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, wavelength, {});
+    REQUIRE(actual == Catch::Approx(1.640922388).margin(1e-3));
+}
+
+TEST_CASE("FullWaveDipole direct", "[Radiator]")
 {
     double constexpr wavelength = 0.1;
     Reference reference("", nullptr);
@@ -89,13 +125,81 @@ TEST_CASE("FullWaveDipole", "[Radiator]")
     REQUIRE(actual == Catch::Approx(2.4116035252).margin(1e-3));
 }
 
-TEST_CASE("3/2-WaveDipole", "[Radiator]")
+TEST_CASE("FullWaveDipole via setup", "[Radiator]")
+{
+    ojson const js = ojson::parse(R"JSON(
+{
+  "metadata": {
+    "setup_name": "test-radiator"
+  },
+  "variables": {
+    "wavelength": 0.1
+  },
+  "references": [
+    {
+      "id": "ref_ula",
+      "origin": ""
+    }
+  ],
+  "radiators": [
+    {
+      "type": "StandingWaveDipole",
+      "id": "DUT",
+      "ref": "",
+      "dipole_length": "1.0*wavelength"
+    }
+  ]
+}
+)JSON");
+    auto const setup = Setup::from_json(js);
+    auto const wavelength = setup->variables.at("wavelength");
+    auto & radiator = setup->get_radiator_by_id("DUT");
+    REQUIRE_THROWS(radiator.calc_path(0, 0));
+    auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, wavelength, {});
+    REQUIRE(actual == Catch::Approx(2.4116035252).margin(1e-3));
+}
+
+TEST_CASE("3/2-WaveDipole direct", "[Radiator]")
 {
     double constexpr wavelength = 0.1;
     Reference reference("", nullptr);
     auto radiator = Radiator::StandingWaveDipole::create("3/2-WaveDipole", reference, 1.5 * wavelength);
     REQUIRE_THROWS(radiator.calc_path(0, 0));
 
+    auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, wavelength, {});
+    REQUIRE(actual == Catch::Approx(1.13750300493283).margin(1e-3));
+}
+
+TEST_CASE("3/2-WaveDipole via setup", "[Radiator]")
+{
+    ojson const js = ojson::parse(R"JSON(
+{
+  "metadata": {
+    "setup_name": "test-radiator"
+  },
+  "variables": {
+    "wavelength": 0.1
+  },
+  "references": [
+    {
+      "id": "ref_ula",
+      "origin": ""
+    }
+  ],
+  "radiators": [
+    {
+      "type": "StandingWaveDipole",
+      "id": "DUT",
+      "ref": "",
+      "dipole_length": "1.5*wavelength"
+    }
+  ]
+}
+)JSON");
+    auto const setup = Setup::from_json(js);
+    auto const wavelength = setup->variables.at("wavelength");
+    auto & radiator = setup->get_radiator_by_id("DUT");
+    REQUIRE_THROWS(radiator.calc_path(0, 0));
     auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, wavelength, {});
     REQUIRE(actual == Catch::Approx(1.13750300493283).margin(1e-3));
 }

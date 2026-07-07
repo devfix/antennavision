@@ -58,6 +58,13 @@ namespace factory
             radiators.push_back(std::unique_ptr<Radiator>(new Radiator(Radiator::HertzianDipole::create(id, origin)))); // NOLINT(*-make-unique)
             return {std::ref(*radiators.back())};
         }
+        if (type == "StandingWaveDipole")
+        {
+            auto const dipole_length = get_double(radiator_desc, "dipole_length", variables);
+            assert_empty(radiator_desc);
+            radiators.push_back(std::unique_ptr<Radiator>(new Radiator(Radiator::StandingWaveDipole::create(id, origin, dipole_length)))); // NOLINT(*-make-unique)
+            return {std::ref(*radiators.back())};
+        }
         if (type == "CustomRadiator")
         {
             auto const effective_length_defs = get_string_vec3(radiator_desc, "effective_length");

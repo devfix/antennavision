@@ -42,7 +42,7 @@ struct Radiator : Component
 {
     using elv_spherical_t = std::function<vec_t(double polar, double azimuth, double wavelength)>; /// effective length vector in spherical coordinates from spherical position
     using ms_elv_t = std::function<double(double wavelength)>; /// mean-squared effective length
-    static double constexpr HERTZIAN_DIPOLE_LENGTH = 1e-3;
+    static double constexpr HERTZIAN_DIPOLE_LENGTH = 1e-6;
 
     // Provide the ELV and mean-squared ELV functions for the Hertzian dipole
     struct HertzianDipole

@@ -5,7 +5,7 @@
   "variables": {
     "wavelength": 0.1,
     "distance": 100,
-    "dipole_length": 1e-3
+    "dipole_length": "wavelength/2"
   },
   "references": [
     {
@@ -69,7 +69,8 @@
     {
       "id": "receiver",
       "ref": "ref_rx_start",
-      "type": "HertzianDipole"
+      "type": "StandingWaveDipole",
+      "dipole_length": "dipole_length"
     }
   ],
   "tasks": [

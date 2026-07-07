@@ -53,8 +53,8 @@ namespace math
 
     Circle get_circle(pos_t const& center, pos_t const& normal, double radius, pos_t const& dir_start);
 
-    template <typename R, typename T>
-    nc::NdArray<R> constexpr vec(T a, T b, T c)
+    template <typename R, typename T1, typename T2, typename T3>
+    nc::NdArray<R> constexpr vec(T1 a, T2 b, T3 c)
     {
         nc::NdArray<R> vec(3, 1);
         vec(0, 0) = static_cast<R>(a);

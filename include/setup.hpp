@@ -44,7 +44,7 @@ public:
     [[nodiscard]] Reference& get_reference_by_id(std::string_view id);
     [[nodiscard]] Radiator& get_radiator_by_id(std::string_view id) const;
 
-    [[nodiscard]] static ScalarField get_voltage_field(RadiatorArray const& radiator_array_tx, Radiator & radiator_rx, math::NumParams const& num_params);
+    [[nodiscard]] ScalarField get_voltage_field(RadiatorArray const& radiator_array_tx, Radiator & radiator_rx, math::NumParams const& num_params);
     [[nodiscard]] static std::complex<double> calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
     [[nodiscard]] static std::complex<double> calc_voltage_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
     [[nodiscard]] static double calc_power_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);

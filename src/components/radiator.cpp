@@ -9,6 +9,7 @@
 #include <NumCpp/Functions/sum.hpp>
 #include <string>
 #include <utility>
+#include "../../../../../../.var/app/com.jetbrains.CLion/cache/JetBrains/CLion2025.3/.remote/sirious-media.dynv6.net_222/25c65ce8-8fc4-47c3-bf72-0a3139523830/usr/include/complex.h"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
 #include "math.hpp"
@@ -17,7 +18,7 @@
 
 Radiator Radiator::HertzianDipole::create(std::string_view id, Reference & origin) { return {id, origin, elv_spherical, ms_elv}; }
 
-Radiator::elv_spherical_t::result_type Radiator::HertzianDipole::elv_spherical(double const polar, double, double) { return math::vec<complex_t>(0.0, -HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0.0); }
+Radiator::elv_spherical_t::result_type Radiator::HertzianDipole::elv_spherical(double const polar, double, double) { return math::vec<complex_t>(0, -HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0); }
 
 Radiator::ms_elv_t::result_type Radiator::HertzianDipole::ms_elv(double) { return 2.0 / 3.0 * math::square(HERTZIAN_DIPOLE_LENGTH); }
 
@@ -30,8 +31,8 @@ Radiator Radiator::StandingWaveDipole::create(std::string_view id, Reference & o
 Radiator::elv_spherical_t::result_type Radiator::StandingWaveDipole::elv_spherical(double const polar, double const azimuth, double const wavelength, double const dipole_length)
 {
     double const x = pi * dipole_length / wavelength;
-    complex_t polar_comp = -wavelength / (pi * std::sin(polar)) * (std::cos(x * std::cos(polar)) - cos(x));
-    return {0.0, polar_comp, 0.0};
+    complex_t const polar_comp = -wavelength / (pi * std::sin(polar)) * (std::cos(x * std::cos(polar)) - cos(x));
+    return math::vec<complex_t>(0, polar_comp, 0);
 }
 
 Radiator::ms_elv_t::result_type Radiator::StandingWaveDipole::ms_elv(double const wavelength, double const dipole_length)
