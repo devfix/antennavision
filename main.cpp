@@ -1,7 +1,7 @@
 #include <NumCpp.hpp>
+#include <ansi_color.hpp>
 #include <execution>
 #include <ranges>
-#include <ansi_color.hpp>
 #include "bitmap.hpp"
 #include "builtin/t00.hpp"
 #include "include/setup.hpp"
@@ -10,88 +10,6 @@
 #include "print.hpp"
 #include "simulationerror.hpp"
 #include "types.hpp"
-
-
-using namespace ansi_color;
-
-// #include "ula.hpp"
-
-/*
-void compute_rect(array_t const &x_values, array_t const &y_values, std::vector<IRadiator*> const & rad, double freq)
-{
-    // nc::NdArray<double> simData = nc::random::rand<double>({10, 100});
-
-    // 2. NumCpp NdArrays can be converted to std::vector easily
-    // Matplot++ heatmap accepts a std::vector<std::vector<double>>
-    // std::vector<std::vector<double>> plotData;
-    //
-    // for (std::size_t x_idx = 0; x_idx < x_values.size(); x_idx++)
-    // {
-    //     plotData.emplace_back(y_values.size());
-    //     for (std::size_t y_idx = 0; y_idx < y_values.size(); y_idx++)
-    //     {
-    //         float v = 0;
-    //         for (IRadiator const* radiator : rad)
-    //         {
-    //             v += radiator->eval(x_values[x_idx], y_values[y_idx]);
-    //         }
-    //         plotData[x_idx][y_idx] = v;
-    //     }
-    // }
-
-    std::print("computing data\n");
-    std::vector<std::vector<double>> plotData(y_values.size(), std::vector<double>(x_values.size()));
-
-    // 2. Create a range of indices (0 to x_size)
-    auto x_indices = std::views::iota(0u, x_values.size());
-
-    Bitmap bitmap(x_values.size(), y_values.size());
-
-    // 3. Parallel for_each on the outer loop
-    std::for_each(std::execution::par, x_indices.begin(), x_indices.end(), [&](std::size_t x_idx) {
-        for (std::size_t y_idx = 0; y_idx < y_values.size(); y_idx++) {
-            complex_t v{0,0};
-            for (IRadiator const* radiator : rad) {
-                v += radiator->get_gain(complex_t(x_values[x_idx], y_values[y_idx]), freq);
-            }
-            plotData[y_idx][x_idx] = std::abs(v);
-            auto lum = std::log10(std::abs(v));
-            bitmap[x_idx, y_idx] = {lum, lum, lum};
-        }
-    });
-
-    std::println("saving bitmap");
-    bitmap.clamp(1e-16, 1e16);
-    bitmap.normalize();
-    bitmap.write("result.bmp");
-
-    return;
-
-    std::println("plotting results");
-
-    // for (size_t i = 0; i < simData.numRows(); ++i)
-    // {
-    //     plotData.emplace_back(simData.row(i).toStlVector());
-    // }
-
-    // 3. Plot
-    auto p = matplot::pcolor(plotData);
-    matplot::grid(matplot::off);
-    matplot::box(matplot::off);
-    matplot::colormap(matplot::palette::summer());
-    matplot::colorbar(); // Adds a scale so you know what the colors mean
-
-    // 3. Customize the look
-    matplot::title("Simulation Results");
-    matplot::xlabel("X-Axis (Tiles)");
-    matplot::ylabel("Y-Axis (Tiles)");
-
-    // Change colormap (e.g., jet, parula, hot, cool)
-    matplot::colormap(matplot::palette::cool());
-
-    matplot::show(); // This opens the window
-}
-*/
 
 namespace
 {
@@ -113,10 +31,14 @@ void run_builtin_task(Setup& setup, std::string_view key)
 
 int main(int argc, char* argv[])
 {
-    enable_windows_ansi();
-    std::println("{}{}{} v.{}{}\n", fg4::cyan, BANNER, APPLICATION_NAME, APPLICATION_VERSION, reset);
+    ansi_color::enable_windows_ansi();
+    std::println("{}{}{} v.{}{}\n", ansi_color::fg4::cyan, BANNER, APPLICATION_NAME, APPLICATION_VERSION, ansi_color::reset);
 
-    if (DEBUG_MODE) { std::println("{}Warning: Compiled in debug mode. This will severely increase the computation time!{}\n", fg4::bright_yellow, reset); }
+    if (DEBUG_MODE)
+    {
+        std::println("{}Warning: Compiled in debug mode. This will severely increase the computation time!{}\n", ansi_color::fg4::bright_yellow,
+                     ansi_color::reset);
+    }
 
     if (argc == 1)
     {
@@ -124,35 +46,36 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    std::println("Working directory: {}", std::filesystem::current_path().string());
-
     std::filesystem::path const path_setups_dir(std::filesystem::weakly_canonical(std::filesystem::path(argv[1])));
     std::filesystem::create_directories(path_setups_dir);
-    std::vector<std::filesystem::path> paths_setup;
-    for (const auto& path_setup : std::filesystem::directory_iterator(path_setups_dir))
+    std::filesystem::current_path(path_setups_dir);
+    std::println("Working directory: {}", std::filesystem::current_path().string());
+
+    std::vector<std::pair<std::filesystem::path, std::unique_ptr<Setup>>> setups;
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(path_setups_dir))
     {
-        if (path_setup.path().extension() == ".json") { paths_setup.push_back(path_setup.path()); }
+        if (entry.path().filename() == "setup.json")
+        {
+            std::filesystem::current_path(entry.path().parent_path());
+            setups.emplace_back(entry.path(), nullptr);
+        }
     }
+    std::println("Loading {} setups", setups.size());
+    for (auto& [path, setup] : setups) { setup = Setup::from_file(path); }
 
-    std::println("Found {} setup files", paths_setup.size());
-    std::vector<std::unique_ptr<Setup>> setups;
-    std::ranges::transform(paths_setup, std::back_inserter(setups), Setup::from_file);
-    for (auto const& setup : setups)
+    for (auto& [path, setup] : setups)
     {
-        std::filesystem::path directory(std::format("../results/{}", setup->name));
-        std::filesystem::create_directories(directory);
-        auto path_timestamp = directory / "timestamp";
-        timeutil::timestamp_t timestamp = std::filesystem::exists(path_timestamp) ? timeutil::load_from_file(path_timestamp) : 0;
+        std::filesystem::current_path(path.parent_path());
 
-        // we skip if the timestamps match and are non-zero
-        // zero timestamps are used by the testing framework to force setup's tasks execution
-        if (timestamp && timestamp == setup->timestamp) { std::println("Setup '{}' is unchanged since {}, skipping", setup->name, timeutil::format(timestamp)); }
+        std::filesystem::path const path_timestamp = "timestamp";
+        if (setup->isUpToDate(path_timestamp)) { std::println("Setup '{}' is unchanged since {}, skipping", setup->name, timeutil::format(setup->timestamp)); }
         else
         {
             std::println("Setup '{}' is new or updated, running", setup->name);
-            setup->export_to_three(directory);
-            setup->run_tasks(directory, [&setup](std::string_view const key) { run_builtin_task(*setup, key); });
+            setup->export_to_three(".");
+            setup->run_tasks([&setup](std::string_view const key) { run_builtin_task(*setup, key); });
             timeutil::store_to_file(path_timestamp, setup->timestamp);
+            std::println("{}All tasks completed.{}", ansi_color::fg4::cyan, ansi_color::reset);
         }
     }
 

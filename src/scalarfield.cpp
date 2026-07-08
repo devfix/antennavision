@@ -46,7 +46,7 @@ std::pair<pos_t, double> ScalarField::calc_beamwidth(math::Circle const& circle,
     math::OptParams const params{[&](double const x) -> double
                                  {
                                      pos_t const pos = circle_hpbw.center + circle_hpbw.radius * (std::cos(x) * circle_hpbw.v1 + std::sin(x) * circle_hpbw.v2);
-                                     return math::square(std::abs(field(pos, wavelength)) - 0.5 * intensity);
+                                     return math::square(std::abs(field(pos, wavelength)) - ratio * intensity);
                                  },
                                  0.0, pi / 4.0, num_params};
     auto [angle1, eps1] = math::f_min(params);
@@ -55,6 +55,5 @@ std::pair<pos_t, double> ScalarField::calc_beamwidth(math::Circle const& circle,
     auto [angle2_inv, eps2] = math::f_min(params);
     double angle2 = pi/4.0 - angle2_inv;
 
-    asm("nop");
     return {pos_beam, angle1 + angle2};
 }

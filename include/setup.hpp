@@ -38,8 +38,8 @@ public:
 
     static std::unique_ptr<Setup> from_json(ojson const& js, timeutil::timestamp_t timestamp = 0);
     static std::unique_ptr<Setup> from_file(std::filesystem::path const& p);
-    void export_to_three(std::filesystem::path const& directory) const;
-    void run_tasks(std::filesystem::path const& directory, const std::function<void(std::string_view)>& builtin_handler);
+    void export_to_three(std::filesystem::path const& directory, std::string_view objects_name = "setup") const;
+    void run_tasks(const std::function<void(std::string_view)>& builtin_handler);
 
     [[nodiscard]] Reference& get_reference_by_id(std::string_view id);
     [[nodiscard]] Radiator& get_radiator_by_id(std::string_view id) const;
@@ -49,6 +49,8 @@ public:
     [[nodiscard]] static std::complex<double> calc_voltage_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
     [[nodiscard]] static double calc_power_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
     [[nodiscard]] static double calc_power_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
+
+    [[nodiscard]] bool isUpToDate(std::filesystem::path const& path_timestamp) const;
 
     std::string const name;
     timeutil::timestamp_t const timestamp;

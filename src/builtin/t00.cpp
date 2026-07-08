@@ -5,62 +5,127 @@
 #include "../../include/builtin/t00.hpp"
 #include <nlohmann/json.hpp>
 #include <print.hpp>
-
-#include "NumCpp/Functions/linspace.hpp"
+#include <vector>
 #include "math.hpp"
 
 namespace builtin
 {
-
-    void t00_compare_beamwidth(Setup& setup)
+    namespace
     {
-        std::filesystem::path const dir_plot = std::filesystem::path(setup.name);
+        ojson const js_template = ojson::parse(R"JSON(
+{
+  "metadata": {
+    "setup_name": "ula-beamwidth"
+  },
+  "variables": {
+    "system_wavelength": 0.1,
+    "wavelength": "system_wavelength",
+    "distance": 10000,
+    "dipole_length": "0.5 * wavelength"
+  },
+  "references": [
+    {
+      "id": "ref_rx",
+      "origin": ""
+    }
+  ],
+  "radiators": [
+    {
+      "type": "ULA",
+      "id": "tx",
+      "ref": "",
+      "dir": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "spacing": "wavelength * 0.5",
+      "count": 1,
+      "radiator": {
+        "type": "StandingWaveDipole",
+        "dipole_length": "dipole_length"
+      }
+    },
+    {
+      "id": "rx",
+      "ref": "ref_rx",
+      "type": "StandingWaveDipole",
+      "dipole_length": "dipole_length"
+    }
+  ]
+}
+)JSON");
+    }
+
+    void t00_compare_beamwidth(Setup& setup_task)
+    {
+        std::filesystem::path const dir_plot = std::filesystem::path(setup_task.name);
 
         std::string name = std::format("builtin.{}", __func__);
         std::println("Creating plot: {}", name);
 
-        ojson js;
+        json js;
         js["name"] = name;
-        std::vector<ojson> entries;
 
-        double const wavelength = setup.variables.at("wavelength");
-        auto &tx = setup.radiator_arrays.at("ula1");
-        auto &rx = setup.get_radiator_by_id("receiver");
-
-
-
-        Reference& ref_start = setup.get_reference_by_id("ref_rx_start");
-        Reference const& ref_stop = setup.get_reference_by_id("ref_rx_stop");
-
-        constexpr std::size_t n_points = 101;
-        pos_t const pos_delta = ref_stop.pos - ref_start.pos_initial;
-        NdArray const rotation_delta = ref_stop.rotation.toNdArray() - ref_start.rotation_initial.toNdArray();
-        double const length = pos_delta.norm();
-
-        auto voltage_field = setup.get_voltage_field(tx, rx, {});
-        voltage_field.argmax_line_abs(pos_t(0,50,-25), pos_t(0,50,25), wavelength);
-
-        std::vector<double> gains(n_points, 0.0);
-        std::vector<double> distances(n_points, 0.0);
-
-        double distance = 0;
-
-        double* distance_ptr = &ref_start.pos.z;
-        for (NdArray::index_type k = 0; k < n_points; k++)
+        std::vector<std::uint32_t> ns_elements;
+        std::vector<double> beamwidths_axial;
+        std::vector<double> beamwidths_lateral;
+        std::uint32_t n_elements_min = static_cast<std::uint32_t>(std::round(setup_task.variables.at("n_elements_min")));
+        std::uint32_t n_elements_max = static_cast<std::uint32_t>(std::round(setup_task.variables.at("n_elements_max")));
+        for (std::uint32_t n_elements = n_elements_min; n_elements <= n_elements_max; n_elements++)
         {
-            double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
-            ref_start.pos = ref_start.pos_initial + pos_delta * f;
-            ref_start.rotation = ref_start.rotation_initial.toNdArray() + rotation_delta * f;
-            gains.at(k) = Setup::calc_power_gain(tx, rx, wavelength, {});
-            distance = f * length;
-            distances.at(k) = *distance_ptr;
+            std::println("Calculating beamwidth for n={}", n_elements);
+            ns_elements.push_back(n_elements);
+            auto js_configured = js_template;
+            js_configured.at("radiators").at(0).at("count") = n_elements;
+
+            math::NumParams num_params;
+            num_params.n_linear = 201;
+            {
+                json json_rot;
+                json_rot["roll"] = 0.0;
+                json_rot["pitch"] = 0.0;
+                json_rot["yaw"] = 0.0;
+                js_configured.at("radiators").at(0)["rot"] = json_rot;
+                auto const setup = Setup::from_json(js_configured);
+                auto const wavelength = setup->variables.at("wavelength");
+                auto const distance = setup->variables.at("distance");
+                auto& tx = setup->radiator_arrays.at("tx");
+                auto& rx = setup->get_radiator_by_id("rx");
+                auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
+                auto circle = math::get_circle(POS_ZERO, pos_t(1, 0, 0), distance, pos_t(0, 1, 0));
+
+                auto [pos_beam, beamwidth_axial] = voltage_field.calc_beamwidth(circle, sqrt2_2, wavelength);
+                beamwidths_axial.push_back(beamwidth_axial);
+                if (n_elements == n_elements_max) { setup->export_to_three(".", "axial"); }
+            }
+            {
+                json json_rot;
+                json_rot["roll"] = 0.0;
+                json_rot["pitch"] = 0.5;
+                json_rot["yaw"] = 0.0;
+                js_configured.at("radiators").at(0)["rot"] = json_rot;
+                auto const setup = Setup::from_json(js_configured);
+                auto const wavelength = setup->variables.at("wavelength");
+                auto const distance = setup->variables.at("distance");
+                auto& tx = setup->radiator_arrays.at("tx");
+                auto& rx = setup->get_radiator_by_id("rx");
+                auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
+                auto circle = math::get_circle(POS_ZERO, pos_t(1, 0, 0), distance, pos_t(0, 1, 0));
+
+                auto [pos_beam, beamwidth_lateral] = voltage_field.calc_beamwidth(circle, sqrt2_2, wavelength);
+                beamwidths_lateral.push_back(beamwidth_lateral);
+                if (n_elements == n_elements_max) { setup->export_to_three(".", "lateral"); }
+            }
         }
-        ref_start.reset();
 
-        js["distances"] = distances;
-        js["gains"] = gains;
+        js["ns_elements"] = ns_elements;
+        js["beamwidths_axial"] = beamwidths_axial;
+        js["beamwidths_lateral"] = beamwidths_lateral;
+        std::println("{}", std::filesystem::current_path().string());
+        std::println("Saving {}/{}.json", dir_plot.c_str(), name);
 
-        std::ofstream ofs(std::format("{}/{}.json", dir_plot.c_str(), name));
+        std::ofstream ofs(std::format("{}.result.json", name));
         ofs << js.dump(2) << '\n';
     }
 } // namespace builtin

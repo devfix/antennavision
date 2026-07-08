@@ -8,13 +8,19 @@
 - [x] fix cylinder width in three: line2
 - [x] remove fmt dependency finally
 - [ ] add beamforming coefficients
-- [ ] add StandingWaveDipole to factory::make_radiator
+- [x] add StandingWaveDipole to factory::make_radiator
 - [ ] check angle between axis1 and axis2 at plane definiton -> error if not 90 deg
-- [ ] implement beamwidth measure function
+- [x] implement beamwidth measure function
 - [ ] implement PS
 - [ ] implement connections between components
 - [ ] pre compute radiation resistance for gain and directivtiy
 - [ ] add spdlog
+
+- add UPA
+- parallel plane or better spherical plane
+- find beam areas
+- codebook: different planes with normalized distances to UPA
+- low resolution phase shifters
 
 ## Writing
 - [ ] derive magnetic vector potential using Lorenz Equation

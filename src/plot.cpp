@@ -82,7 +82,7 @@ void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Ra
     }
     js["curves"] = entries;
 
-    std::ofstream ofs(std::format("{}/{}.json", dir_plot.c_str(), name));
+    std::ofstream ofs(std::format("{}/{}.result.json", dir_plot.c_str(), name));
     ofs << js.dump(2) << '\n';
 
     // fig.export_figure(dir_plot, {dplot::ExportType::PDF});
@@ -171,7 +171,7 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
     // fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, distances.toStlVector(), gains.toStlVector())); //, std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / nc::constants::pi)));
     // fig.export_figure(dir_plot, {dplot::ExportType::PDF});
 
-    std::ofstream ofs(std::format("{}/{}.json", dir_plot.c_str(), name));
+    std::ofstream ofs(std::format("{}/{}.result.json", dir_plot.c_str(), name));
     ofs << js.dump(2) << '\n';
 }
 
@@ -221,7 +221,7 @@ void plot::plot_gain_over_plane(std::filesystem::path const& dir_plot, radiator_
     // fig.add(dplot::Data(dplot::XAxis::B, dplot::YAxis::L, distances.toStlVector(), gains.toStlVector())); //, std::format("{}\\,=\\,{:.2f}", R"($\phi/\pi$)", phi / nc::constants::pi)));
     // fig.export_figure(dir_plot, {dplot::ExportType::PDF});
 
-    std::ofstream ofs(std::format("{}/{}.json", dir_plot.c_str(), name));
+    std::ofstream ofs(std::format("{}/{}.result.json", dir_plot.c_str(), name));
     ofs << js.dump(2) << '\n';
 }
 

@@ -2,6 +2,9 @@
   "metadata": {
     "setup_name": "test-directivity"
   },
+  "variables": {
+    "system_wavelength": 0.1
+  },
   "radiators": [
     {
       "id": "HertzianDipole",

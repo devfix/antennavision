@@ -3,9 +3,10 @@
     "setup_name": "ula-plane"
   },
   "variables": {
-    "wavelength": 0.1,
+    "system_wavelength": 0.1,
+    "wavelength": "system_wavelength",
     "distance": 100,
-    "dipole_length": "wavelength/2"
+    "dipole_length": "0.5*wavelength"
   },
   "references": [
     {
@@ -55,15 +56,17 @@
       "type": "ULA",
       "id": "ula1",
       "ref": "origin",
+      "codebook": "../codebooks/ula16-1.json",
       "dir": {
         "x": 0,
         "y": 0,
         "z": 1
       },
       "spacing": "wavelength * 0.5",
-      "count": 32,
+      "count": 16,
       "radiator": {
-        "type": "HertzianDipole"
+        "type": "StandingWaveDipole",
+        "dipole_length": "dipole_length"
       }
     },
     {

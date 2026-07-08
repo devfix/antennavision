@@ -127,9 +127,6 @@ namespace math
         nlopt_result const result = nlopt_optimize(opt, &x, &min_f);
         nlopt_destroy(opt);
         if (result < 0) { throw SimulationError("Error: nlopt returned '{}'", magic_enum::enum_name(result)); }
-        std::cout << "Optimization succeeded!" << std::endl;
-        std::cout << "Found minimum at x = " << x << std::endl;
-        std::cout << "Minimum function value = " << min_f << std::endl;
         return {x, min_f};
     }
 } // namespace math

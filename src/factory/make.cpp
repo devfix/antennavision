@@ -80,6 +80,7 @@ namespace factory
         {
             auto const spacing = get_double(radiator_desc, "spacing", variables);
             auto const count = get_uint(radiator_desc, "count", variables);
+            auto const path_codebook  = get_string(radiator_desc, "codebook", true, true);
             auto dir = get_pos(radiator_desc, "dir", variables);
             auto const rot = get_quaternion(radiator_desc, "rot", variables, true, true);
             auto const prototype_desc = radiator_desc.at("radiator");
@@ -106,7 +107,7 @@ namespace factory
                 // call the make function recursively and append the Radiators to array_radiators
                 std::ranges::move(make_radiator(ula_element_desc, references, radiators, variables, radiator_arrays, true), std::back_inserter(array_radiators));
             }
-            if (auto [_, success] = radiator_arrays.try_emplace(id, id, array_radiators); !success) { throw SimulationError("Could not create radiator array, id '{}' already exists", id); }
+            if (auto [_, success] = radiator_arrays.try_emplace(id, id, array_radiators, path_codebook); !success) { throw SimulationError("Could not create radiator array, id '{}' already exists", id); }
             return std::move(array_radiators);
         }
         throw SimulationError("Unknown radiator type '{}'", type);

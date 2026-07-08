@@ -33,7 +33,7 @@ namespace
 std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeutil::timestamp_t const timestamp)
 {
     ojson setup_desc = js; // create a copy of the json object in order to decompose it
-    auto const& metadata = json_get(setup_desc, "metadata");
+    auto& metadata = json_get(setup_desc, "metadata");
     std::string_view const setup_name = json_get(metadata, "setup_name").get<std::string_view>();
     std::println("Setup name: {}", setup_name);
 
@@ -93,7 +93,8 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
                 auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
                 Radiator const& radiator = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "radiator"));
                 task_name = std::format("{}.{}", type, radiator.id);
-                tasks.emplace_back(task_name, [&radiator, azimuth_angles](std::filesystem::path const& directory) { plot::plot_directivity_over_polar(directory, radiator, azimuth_angles); });
+                tasks.emplace_back(task_name, [&radiator, azimuth_angles](std::filesystem::path const& directory)
+                                   { plot::plot_directivity_over_polar(directory, radiator, azimuth_angles); });
             }
             else if (type == "plot_gain_over_straight")
             {
@@ -110,7 +111,8 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
             else if (type == "plot_gain_over_plane")
             {
                 auto const source_id = factory::get_string(task_desc, "source");
-                radiator_t source = radiator_arrays.contains(source_id) ? radiator_t{radiator_arrays.at(source_id)} : radiator_t{factory::find_radiator_by_id(radiators, source_id)};
+                radiator_t source = radiator_arrays.contains(source_id) ? radiator_t{radiator_arrays.at(source_id)}
+                                                                        : radiator_t{factory::find_radiator_by_id(radiators, source_id)};
                 Radiator const& sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
                 Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
                 Reference const& ref_axis1_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis1_max"));
@@ -121,9 +123,13 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
                 auto label_axis1 = factory::get_string(task_desc, "label_axis1");
                 auto label_axis2 = factory::get_string(task_desc, "label_axis2");
                 task_name = std::format("{}.{}.{}", type, source_id, sink.id);
-                tasks.emplace_back(
-                    task_name, [source, &sink, &ref_start, &ref_axis1_max, &ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1, label_axis2](std::filesystem::path const& directory)
-                    { plot::plot_gain_over_plane(directory, source, sink, ref_start, ref_axis1_max, ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1, label_axis2); });
+                tasks.emplace_back(task_name,
+                                   [source, &sink, &ref_start, &ref_axis1_max, &ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1,
+                                    label_axis2](std::filesystem::path const& directory)
+                                   {
+                                       plot::plot_gain_over_plane(directory, source, sink, ref_start, ref_axis1_max, ref_axis2_max, wavelength, n_points_axis1,
+                                                                  n_points_axis2, label_axis1, label_axis2);
+                                   });
             }
             else
             {
@@ -135,7 +141,8 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
     }
 
     // ReSharper disable once CppDFAMemoryLeak
-    return std::unique_ptr<Setup>(new Setup(setup_name, timestamp, std::move(variables), std::move(references), std::move(radiators), std::move(radiator_arrays), std::move(tasks)));
+    return std::unique_ptr<Setup>(
+        new Setup(setup_name, timestamp, std::move(variables), std::move(references), std::move(radiators), std::move(radiator_arrays), std::move(tasks)));
 }
 
 std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const& p)
@@ -148,24 +155,38 @@ std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const& p)
     return from_json(js, timeutil::get_of_file(p));
 }
 
-void Setup::export_to_three(std::filesystem::path const& directory) const
+void Setup::export_to_three(std::filesystem::path const& directory, std::string_view const objects_name) const
 {
-    std::filesystem::path const p = directory / "objects.js";
+    std::filesystem::path const p = directory / std::format("{}.objects.js", objects_name);
+
+    if (!variables.contains("system_wavelength")) { throw SimulationError("Missing mandatory variable 'system_wavelength' for three export"); }
+    double const system_wavelength = variables.at("system_wavelength");
+
     three::Container container;
     for (auto const& reference : references)
     {
         if (!reference.origin) { continue; } // we skip the dummy reference
-        auto const pos_center = reference.global_from_local_pos({0, 0, 0});
-        auto const pos_origin = reference.origin->global_from_local_pos({0, 0, 0});
-        auto const distance = (pos_center - pos_origin).norm();
+        auto const pos_center = reference.global_from_local_pos(POS_ZERO);
+        auto const pos_origin = reference.origin->global_from_local_pos(POS_ZERO);
+        // auto const distance = (pos_center - pos_origin).norm();
         container.add(three::make_line(pos_origin, pos_center, 1.0, Color::white));
-        container.add(three::create_coordinate_arrows(pos_center, reference.global_from_local_pos({1, 0, 0}) - pos_center, reference.global_from_local_pos({0, 1, 0}) - pos_center,
-                                                      reference.global_from_local_pos({0, 0, 1}) - pos_center, distance * 1e-1));
+        container.add(three::create_coordinate_arrows(pos_center, reference.global_from_local_pos({1, 0, 0}) - pos_center,
+                                                      reference.global_from_local_pos({0, 1, 0}) - pos_center,
+                                                      reference.global_from_local_pos({0, 0, 1}) - pos_center, 0.25 * system_wavelength));
+    }
+    for (auto const& radiator: radiators)
+    {
+        auto pos_center = radiator->origin.global_from_local_pos(POS_ZERO);
+        double const radiator_length = 0.49 * system_wavelength;
+        auto pos_end = radiator->origin.global_from_local_pos({0.0,0.0,0.5*radiator_length});
+        auto const pos_start = pos_center - (pos_end - pos_center);
+        double const radius = 0.1 * radiator_length;
+        container.add(three::make_cylinder(pos_start, pos_end, radius, radius));
     }
     container.export_to_javascript(p);
 }
 
-void Setup::run_tasks(std::filesystem::path const& directory, std::function<void(std::string_view)> const& builtin_handler)
+void Setup::run_tasks(std::function<void(std::string_view)> const& builtin_handler)
 {
     for (auto& [task_name, task] : tasks)
     {
@@ -177,10 +198,9 @@ void Setup::run_tasks(std::filesystem::path const& directory, std::function<void
         else
         {
             std::println("Running task: {}", task_name);
-            task(directory);
+            task(std::filesystem::current_path());
         }
     }
-    std::println("{}All tasks completed.{}", fg4::cyan, reset);
 }
 
 Reference& Setup::get_reference_by_id(std::string_view const id) { return factory::find_reference_by_id(references, id); }
@@ -200,7 +220,10 @@ ScalarField Setup::get_voltage_field(RadiatorArray const& radiator_array_tx, Rad
 complex_t Setup::calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double const wavelength, math::NumParams const& num_params)
 {
     double const r = (radiator_tx.origin.global_from_local_pos(POS_ZERO) - radiator_rx.origin.global_from_local_pos(POS_ZERO)).norm();
-    if (r < wavelength / 10) { std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", radiator_tx.id, radiator_rx.id, r, r / wavelength); }
+    if (r < wavelength / 10)
+    {
+        std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", radiator_tx.id, radiator_rx.id, r, r / wavelength);
+    }
 
     auto const pos_local_tx = radiator_tx.origin.localize(radiator_rx.origin); // position of rx radiator in tx coordinate
     auto const pos_local_rx = radiator_rx.origin.localize(radiator_tx.origin); // position of tx radiator in rx coordinate
@@ -214,10 +237,12 @@ complex_t Setup::calc_voltage_gain(Radiator const& radiator_tx, Radiator const& 
     auto const elv_global_rx = radiator_rx.origin.global_from_local_vec(elv_cartesian_rx);
     auto const g = elv_global_tx.dot(elv_global_rx).item();
     auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * wavelength / (4.0 * pi * r);
-    auto const mean_squared_elv_tx =
-        radiator_tx.mean_squared_elv ? radiator_tx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(radiator_tx.elv_spherical, wavelength, num_params);
-    auto const mean_squared_elv_rx =
-        radiator_rx.mean_squared_elv ? radiator_rx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(radiator_rx.elv_spherical, wavelength, num_params);
+    auto const mean_squared_elv_tx = radiator_tx.mean_squared_elv
+        ? radiator_tx.mean_squared_elv(wavelength)
+        : Radiator::calc_mean_squared_effective_length(radiator_tx.elv_spherical, wavelength, num_params);
+    auto const mean_squared_elv_rx = radiator_rx.mean_squared_elv
+        ? radiator_rx.mean_squared_elv(wavelength)
+        : Radiator::calc_mean_squared_effective_length(radiator_rx.elv_spherical, wavelength, num_params);
     return -j * g / std::sqrt(mean_squared_elv_tx * mean_squared_elv_rx) * propagation;
 }
 
@@ -234,12 +259,24 @@ double Setup::calc_power_gain(Radiator const& radiator_tx, Radiator const& radia
 double Setup::calc_power_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params)
 { return math::square(std::abs(calc_voltage_gain(radiator_array_tx, radiator_rx, wavelength, num_params))); }
 
-Setup::VoltageField::VoltageField(RadiatorArray const& radiator_array_tx, Radiator& radiator_rx) : radiator_array_tx(radiator_array_tx), radiator_rx(radiator_rx) {}
+bool Setup::isUpToDate(std::filesystem::path const& path_timestamp) const
+{
+    timeutil::timestamp_t const saved_timestamp = std::filesystem::exists(path_timestamp) ? timeutil::load_from_file(path_timestamp) : 0;
+
+    // we skip if the timestamps match and are non-zero
+    // zero timestamps are used by the testing framework to force setup's tasks execution
+    return saved_timestamp && saved_timestamp == timestamp;
+}
+
+Setup::VoltageField::VoltageField(RadiatorArray const& radiator_array_tx, Radiator& radiator_rx) :
+    radiator_array_tx(radiator_array_tx), radiator_rx(radiator_rx)
+{}
 
 complex_t Setup::VoltageField::calc_voltage_gain(pos_t pos, double wavelength) {}
 
 Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, std::map<std::string, double>&& variables, std::list<Reference>&& references,
-             std::list<std::unique_ptr<Radiator>>&& radiators, std::map<std::string, RadiatorArray>&& radiator_arrays, std::list<std::pair<std::string, task_t>>&& tasks) :
-    name(name), timestamp(timestamp), variables(std::move(variables)), references(std::move(references)), radiators(std::move(radiators)), radiator_arrays(std::move(radiator_arrays)),
-    tasks(std::move(tasks))
+             std::list<std::unique_ptr<Radiator>>&& radiators, std::map<std::string, RadiatorArray>&& radiator_arrays,
+             std::list<std::pair<std::string, task_t>>&& tasks) :
+    name(name), timestamp(timestamp), variables(std::move(variables)), references(std::move(references)), radiators(std::move(radiators)),
+    radiator_arrays(std::move(radiator_arrays)), tasks(std::move(tasks))
 {}

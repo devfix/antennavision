@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cmath>
+#include <iterator>
+#include <optional>
 #include "types.hpp"
 
 namespace math
@@ -19,7 +23,7 @@ namespace math
 
     struct OptParams
     {
-        std::function<double(double x)> fn;  // objective function that gets minimized
+        std::function<double(double x)> fn; // objective function that gets minimized
         double x_a;
         double x_b;
         NumParams const& num_params;
@@ -44,7 +48,7 @@ namespace math
     {
         pos_t center; /// center position
         pos_t normal; /// normal direction, together with center defines circle plane
-        double radius; /// circle radius
+        double radius{}; /// circle radius
         pos_t v1; /// first base vector (see ascii sketch)
         pos_t v2; /// first base vector (see ascii sketch)
 
@@ -140,4 +144,16 @@ namespace math
     }
 
     std::pair<double, double> f_min(OptParams const& optimization_params);
+
+    /**
+     * Finds the index of the element closest to the target value.
+     * Returns std::nullopt if the container is empty.
+     */
+    template <typename Container, typename T = typename Container::value_type>
+    std::optional<std::size_t> find_closest_index(const Container& container, T target)
+    {
+        if (container.empty()) { return std::nullopt; }
+        auto it = std::min_element(std::begin(container), std::end(container),[target](const T& a, const T& b) { return std::abs(a - target) < std::abs(b - target); });
+        return std::distance(std::begin(container), it);
+    }
 } // namespace math
