@@ -8,6 +8,7 @@
 #include <fstream>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include "../cmake-build-release-local/_deps/numcpp-src/include/NumCpp/Functions/var.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
@@ -28,6 +29,124 @@ namespace
         return js[key];
     }
 
+    std::map<std::string, double> extract_variables(ojson & setup_desc)
+    {
+        std::map<std::string, double> variables;
+        if (setup_desc.contains("variables"))
+        {
+            for (const auto& [key, val] : setup_desc["variables"].items())
+            {
+                if (val.is_string()) { variables[key] = factory::parse_double(val.get<std::string>(), variables); }
+                else if (val.is_number()) { variables[key] = val.get<double>(); }
+                else
+                {
+                    throw SimulationError("Invalid type '{}' of variable '{}'", val.type_name(), key);
+                }
+                std::println("Define variable {}={:.15g}", key, variables[key]);
+            }
+        }
+        return variables;
+    }
+
+    std::list<Reference> extract_references(ojson& setup_desc, std::map<std::string, double> const& variables)
+    {
+        std::list<Reference> references;
+        references.emplace_back("", nullptr, pos_t(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
+        if (setup_desc.contains("references"))
+        {
+            for (auto& reference_desc : json_get(setup_desc, "references"))
+            {
+                factory::make_reference(reference_desc, references, variables);
+                factory::assert_empty(reference_desc);
+            }
+        }
+        return references;
+    }
+
+    std::pair<std::list<std::unique_ptr<Radiator>>, std::map<std::string, RadiatorArray>> extract_radiators(ojson& setup_desc, std::map<std::string, double> const& variables, std::list<Reference>& references)
+    {
+        std::list<std::unique_ptr<Radiator>> radiators;
+        std::map<std::string, RadiatorArray> radiator_arrays;
+        if (setup_desc.contains("radiators"))
+        {
+            for (auto& radiator_desc : json_get(setup_desc, "radiators"))
+            {
+                factory::make_radiator(radiator_desc, references, radiators, variables, radiator_arrays, false);
+                factory::assert_empty(radiator_desc);
+            }
+        }
+        return {std::move(radiators), std::move(radiator_arrays)};
+    }
+
+    std::list<std::pair<std::string, Setup::task_t>> extract_tasks(ojson& setup_desc, std::map<std::string, double> const& variables, std::list<Reference>& references, std::list<std::unique_ptr<Radiator>> & radiators, std::map<std::string, RadiatorArray> & radiator_arrays)
+    {
+        std::list<std::pair<std::string, Setup::task_t>> tasks;
+        if (setup_desc.contains("tasks"))
+        {
+            for (auto& task_desc : json_get(setup_desc, "tasks"))
+            {
+                auto const type = factory::get_string(task_desc, "type");
+                std::println("Found task of type '{}'", type);
+                std::string task_name;
+                if (type == "builtin")
+                {
+                    auto const key = factory::get_string(task_desc, "key");
+                    task_name = std::format("builtin.{}", key);
+                    tasks.emplace_back(task_name, nullptr);
+                }
+                else if (type == "plot_directivity_over_polar")
+                {
+                    auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
+                    Radiator const& radiator = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "radiator"));
+                    task_name = std::format("{}.{}", type, radiator.id);
+                    tasks.emplace_back(task_name, [&radiator, azimuth_angles](std::filesystem::path const& directory)
+                                       { plot::plot_directivity_over_polar(directory, radiator, azimuth_angles); });
+                }
+                else if (type == "plot_gain_over_straight")
+                {
+                    Radiator const& source = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "source"));
+                    Radiator const& sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
+                    Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
+                    Reference const& ref_stop = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_stop"));
+                    double wavelength = factory::get_double(task_desc, "wavelength", variables);
+                    char distance_axis = factory::get_char(task_desc, "distance_axis");
+                    task_name = std::format("{}.{}.{}", type, source.id, sink.id);
+                    tasks.emplace_back(task_name, [&source, &sink, &ref_start, &ref_stop, wavelength, distance_axis](std::filesystem::path const& directory)
+                                       { plot::plot_gain_over_straight(directory, source, sink, ref_start, ref_stop, wavelength, distance_axis); });
+                }
+                else if (type == "plot_gain_over_plane")
+                {
+                    auto const source_id = factory::get_string(task_desc, "source");
+                    radiator_t source = radiator_arrays.contains(source_id) ? radiator_t{radiator_arrays.at(source_id)}
+                                                                            : radiator_t{factory::find_radiator_by_id(radiators, source_id)};
+                    Radiator const& sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
+                    Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
+                    Reference const& ref_axis1_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis1_max"));
+                    Reference const& ref_axis2_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis2_max"));
+                    double wavelength = factory::get_double(task_desc, "wavelength", variables);
+                    std::uint32_t n_points_axis1 = factory::get_uint(task_desc, "n_points_axis1", variables);
+                    std::uint32_t n_points_axis2 = factory::get_uint(task_desc, "n_points_axis2", variables);
+                    auto label_axis1 = factory::get_string(task_desc, "label_axis1");
+                    auto label_axis2 = factory::get_string(task_desc, "label_axis2");
+                    task_name = std::format("{}.{}.{}", type, source_id, sink.id);
+                    tasks.emplace_back(task_name,
+                                       [source, &sink, &ref_start, &ref_axis1_max, &ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1,
+                                        label_axis2](std::filesystem::path const& directory)
+                                       {
+                                           plot::plot_gain_over_plane(directory, source, sink, ref_start, ref_axis1_max, ref_axis2_max, wavelength,
+                                                                      n_points_axis1, n_points_axis2, label_axis1, label_axis2);
+                                       });
+                }
+                else
+                {
+                    throw SimulationError("Unknown task type \"{}\"", type);
+                }
+                std::println("Created task: {}", task_name);
+                factory::assert_empty(task_desc);
+            }
+        }
+        return tasks;
+    }
 } // namespace
 
 std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeutil::timestamp_t const timestamp)
@@ -37,108 +156,10 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
     std::string_view const setup_name = json_get(metadata, "setup_name").get<std::string_view>();
     std::println("Setup name: {}", setup_name);
 
-    std::map<std::string, double> variables;
-    if (setup_desc.contains("variables"))
-    {
-        for (const auto& [key, val] : setup_desc["variables"].items())
-        {
-            if (val.is_string()) { variables[key] = factory::parse_double(val.get<std::string>(), variables); }
-            else if (val.is_number()) { variables[key] = val.get<double>(); }
-            else
-            {
-                throw SimulationError("Invalid type '{}' of variable '{}'", val.type_name(), key);
-            }
-            std::println("Define variable {}={:.15g}", key, variables[key]);
-        }
-    }
-
-    std::list<Reference> references;
-    references.emplace_back("", nullptr, pos_t(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
-    if (setup_desc.contains("references"))
-    {
-        for (auto& reference_desc : json_get(setup_desc, "references"))
-        {
-            factory::make_reference(reference_desc, references, variables);
-            factory::assert_empty(reference_desc);
-        }
-    }
-
-    std::list<std::unique_ptr<Radiator>> radiators;
-    std::map<std::string, RadiatorArray> radiator_arrays;
-    if (setup_desc.contains("radiators"))
-    {
-        for (auto& radiator_desc : json_get(setup_desc, "radiators"))
-        {
-            factory::make_radiator(radiator_desc, references, radiators, variables, radiator_arrays, false);
-            factory::assert_empty(radiator_desc);
-        }
-    }
-
-    std::list<std::pair<std::string, task_t>> tasks;
-    if (setup_desc.contains("tasks"))
-    {
-        for (auto& task_desc : json_get(setup_desc, "tasks"))
-        {
-            auto const type = factory::get_string(task_desc, "type");
-            std::println("Found task of type '{}'", type);
-            std::string task_name;
-            if (type == "builtin")
-            {
-                auto const key = factory::get_string(task_desc, "key");
-                task_name = std::format("builtin.{}", key);
-                tasks.emplace_back(task_name, nullptr);
-            }
-            else if (type == "plot_directivity_over_polar")
-            {
-                auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
-                Radiator const& radiator = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "radiator"));
-                task_name = std::format("{}.{}", type, radiator.id);
-                tasks.emplace_back(task_name, [&radiator, azimuth_angles](std::filesystem::path const& directory)
-                                   { plot::plot_directivity_over_polar(directory, radiator, azimuth_angles); });
-            }
-            else if (type == "plot_gain_over_straight")
-            {
-                Radiator const& source = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "source"));
-                Radiator const& sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
-                Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
-                Reference const& ref_stop = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_stop"));
-                double wavelength = factory::get_double(task_desc, "wavelength", variables);
-                char distance_axis = factory::get_char(task_desc, "distance_axis");
-                task_name = std::format("{}.{}.{}", type, source.id, sink.id);
-                tasks.emplace_back(task_name, [&source, &sink, &ref_start, &ref_stop, wavelength, distance_axis](std::filesystem::path const& directory)
-                                   { plot::plot_gain_over_straight(directory, source, sink, ref_start, ref_stop, wavelength, distance_axis); });
-            }
-            else if (type == "plot_gain_over_plane")
-            {
-                auto const source_id = factory::get_string(task_desc, "source");
-                radiator_t source = radiator_arrays.contains(source_id) ? radiator_t{radiator_arrays.at(source_id)}
-                                                                        : radiator_t{factory::find_radiator_by_id(radiators, source_id)};
-                Radiator const& sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
-                Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
-                Reference const& ref_axis1_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis1_max"));
-                Reference const& ref_axis2_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis2_max"));
-                double wavelength = factory::get_double(task_desc, "wavelength", variables);
-                std::uint32_t n_points_axis1 = factory::get_uint(task_desc, "n_points_axis1", variables);
-                std::uint32_t n_points_axis2 = factory::get_uint(task_desc, "n_points_axis2", variables);
-                auto label_axis1 = factory::get_string(task_desc, "label_axis1");
-                auto label_axis2 = factory::get_string(task_desc, "label_axis2");
-                task_name = std::format("{}.{}.{}", type, source_id, sink.id);
-                tasks.emplace_back(task_name,
-                                   [source, &sink, &ref_start, &ref_axis1_max, &ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1,
-                                    label_axis2](std::filesystem::path const& directory)
-                                   {
-                                       plot::plot_gain_over_plane(directory, source, sink, ref_start, ref_axis1_max, ref_axis2_max, wavelength, n_points_axis1,
-                                                                  n_points_axis2, label_axis1, label_axis2);
-                                   });
-            }
-            else
-            {
-                throw SimulationError("Unknown task type \"{}\"", type);
-            }
-            std::println("Created task: {}", task_name);
-            factory::assert_empty(task_desc);
-        }
-    }
+    auto variables = extract_variables(setup_desc);
+    auto references = extract_references(setup_desc, variables);
+    auto [radiators, radiator_arrays] = extract_radiators(setup_desc, variables, references);
+    auto tasks = extract_tasks(setup_desc, variables, references, radiators, radiator_arrays);
 
     // ReSharper disable once CppDFAMemoryLeak
     return std::unique_ptr<Setup>(
@@ -174,11 +195,11 @@ void Setup::export_to_three(std::filesystem::path const& directory, std::string_
                                                       reference.global_from_local_pos({0, 1, 0}) - pos_center,
                                                       reference.global_from_local_pos({0, 0, 1}) - pos_center, 0.25 * system_wavelength));
     }
-    for (auto const& radiator: radiators)
+    for (auto const& radiator : radiators)
     {
         auto pos_center = radiator->origin.global_from_local_pos(POS_ZERO);
         double const radiator_length = 0.49 * system_wavelength;
-        auto pos_end = radiator->origin.global_from_local_pos({0.0,0.0,0.5*radiator_length});
+        auto pos_end = radiator->origin.global_from_local_pos({0.0, 0.0, 0.5 * radiator_length});
         auto const pos_start = pos_center - (pos_end - pos_center);
         double const radius = 0.1 * radiator_length;
         container.add(three::make_cylinder(pos_start, pos_end, radius, radius));

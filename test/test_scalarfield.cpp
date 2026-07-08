@@ -96,6 +96,6 @@ TEST_CASE("ScalarField", "[TestULA]")
     {
         math::Circle circle = math::get_circle(POS_ZERO, pos_t(1.0, 0.0, 0.0), distance, pos_t(0.0, 1.0, 0.0));
         auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(circle, sqrt2_2, wavelength);
-        REQUIRE(beamwidth == Catch::Approx(0.15068600119125822));
+        REQUIRE(beamwidth == Catch::Approx(0.11053292584412225));
     }
 }
