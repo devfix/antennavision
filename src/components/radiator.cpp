@@ -16,7 +16,7 @@
 #include "print.hpp"
 #include "simulationerror.hpp"
 
-Radiator Radiator::HertzianDipole::create(std::string_view id, Reference & origin) { return {id, origin, elv_spherical, ms_elv}; }
+Radiator Radiator::HertzianDipole::create(std::string_view id, Reference& origin) { return {id, origin, elv_spherical, ms_elv}; }
 
 Radiator::elv_spherical_t::result_type Radiator::HertzianDipole::elv_spherical(double const polar, double, double) { return math::vec<complex_t>(0, -HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0); }
 

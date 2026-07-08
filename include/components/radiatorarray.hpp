@@ -4,20 +4,20 @@
 
 #pragma once
 
-#include <functional>
-#include <optional>
-#include <variant>
-
+#include <memory>
 #include "components/radiator.hpp"
 #include "ulacodebook.hpp"
 
+// CRTP scheme
+template<typename Derived>
 struct RadiatorArray
 {
-    RadiatorArray(std::string_view id, std::vector<std::reference_wrapper<Radiator>> const& elements, std::optional<std::filesystem::path> path_codebook);
+    RadiatorArray(std::string_view const id, std::list<Reference> && references, std::vector<std::unique_ptr<Radiator>> && radiators)
+        : id(id), references(std::move(references)), radiators(std::move(radiators))
+    {}
 
+    // the member variables must be non-const, otherwise the object cannot be moved which is required for returning a std::variant
     std::string id;
-    std::vector<std::reference_wrapper<Radiator>> elements;
-    std::optional<UlaCodebook> ula_codebook;
+    std::list<Reference> references;
+    std::vector<std::unique_ptr<Radiator>> radiators;
 };
-
-using radiator_t = std::variant<std::reference_wrapper<Radiator>,std::reference_wrapper<RadiatorArray>>;

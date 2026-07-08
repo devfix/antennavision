@@ -11,31 +11,26 @@
 #include "components/radiator.hpp"
 #include "components/radiatorarray.hpp"
 #include "components/source.hpp"
+#include "factory/find.hpp"
+#include "factory/make.hpp"
 #include "scalarfield.hpp"
 #include "timeutil.hpp"
 #include "types.hpp"
 
 struct Setup
 {
-    struct RadiatorSetup
-    {
-        std::string type;
-        pos_t position;
-        double magnitude;
-        double phase;
-    };
+    using task_t = factory::task_t;
+
 private:
     struct VoltageField
     {
-        VoltageField(RadiatorArray const& radiator_array_tx, Radiator & radiator_rx);
-        RadiatorArray const& radiator_array_tx;
-        Radiator & radiator_rx;
+        VoltageField(Antenna const& radiator_array_tx, Radiator& radiator_rx);
+        Antenna const& radiator_array_tx;
+        Radiator& radiator_rx;
         complex_t calc_voltage_gain(pos_t pos, double wavelength);
     };
+
 public:
-
-    using task_t = std::function<void(std::filesystem::path const& directory)>;
-
     static std::unique_ptr<Setup> from_json(ojson const& js, timeutil::timestamp_t timestamp = 0);
     static std::unique_ptr<Setup> from_file(std::filesystem::path const& p);
     void export_to_three(std::filesystem::path const& directory, std::string_view objects_name = "setup") const;
@@ -44,11 +39,14 @@ public:
     [[nodiscard]] Reference& get_reference_by_id(std::string_view id);
     [[nodiscard]] Radiator& get_radiator_by_id(std::string_view id) const;
 
-    [[nodiscard]] ScalarField get_voltage_field(RadiatorArray const& radiator_array_tx, Radiator & radiator_rx, math::NumParams const& num_params);
-    [[nodiscard]] static std::complex<double> calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
-    [[nodiscard]] static std::complex<double> calc_voltage_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
+    [[nodiscard]] ScalarField get_voltage_field(Antenna const& radiator_array_tx, Antenna& radiator_rx, math::NumParams const& num_params);
+    [[nodiscard]] static std::complex<double> calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength,
+                                                                math::NumParams const& num_params);
+    [[nodiscard]] static std::complex<double> calc_voltage_gain(Antenna const& radiator_array_tx, Radiator const& radiator_rx, double wavelength,
+                                                                math::NumParams const& num_params);
     [[nodiscard]] static double calc_power_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
-    [[nodiscard]] static double calc_power_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params);
+    [[nodiscard]] static double calc_power_gain(Antenna const& radiator_array_tx, Radiator const& radiator_rx, double wavelength,
+                                                math::NumParams const& num_params);
 
     [[nodiscard]] bool isUpToDate(std::filesystem::path const& path_timestamp) const;
 
@@ -57,7 +55,6 @@ public:
     std::map<std::string, double> const variables;
     std::list<Reference> references;
     std::list<std::unique_ptr<Radiator>> const radiators;
-    std::map<std::string, RadiatorArray> const radiator_arrays;
     std::list<std::pair<std::string, task_t>> const tasks;
     std::list<VoltageField> voltage_fields;
 
@@ -65,6 +62,5 @@ public:
     std::vector<Component> inter_components;
 
 private:
-    Setup(std::string_view name, timeutil::timestamp_t timestamp, std::map<std::string, double>&& variables, std::list<Reference>&& references, std::list<std::unique_ptr<Radiator>>&& radiators, std::map<std::string, RadiatorArray> && radiator_arrays,
-          std::list<std::pair<std::string, task_t>>&& tasks);
+    Setup(std::string_view name, timeutil::timestamp_t timestamp, factory::Context&& context);
 };

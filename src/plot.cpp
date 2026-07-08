@@ -10,7 +10,7 @@
 #include "setup.hpp"
 #include "simulationerror.hpp"
 
-void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Radiator const& radiator, NdArray const& azimuth_angles)
+void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Antenna const& radiator, NdArray const& azimuth_angles)
 {
     std::ostringstream azimuth_angles_stream;
     azimuth_angles_stream << std::fixed << std::setprecision(2);
@@ -175,11 +175,11 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
     ofs << js.dump(2) << '\n';
 }
 
-void plot::plot_gain_over_plane(std::filesystem::path const& dir_plot, radiator_t const& source, Radiator const& sink, Reference& ref_zero, Reference const& ref_axis1_max,
+void plot::plot_gain_over_plane(std::filesystem::path const& dir_plot, Antenna const& source, Radiator const& sink, Reference& ref_zero, Reference const& ref_axis1_max,
                                 Reference const& ref_axis2_max, double wavelength, std::uint32_t n_points_axis1, std::uint32_t n_points_axis2, std::string const& label_axis1,
                                 std::string const& label_axis2)
 {
-    std::string const& source_id = std::visit([](auto const& source) { return source.get().id; }, source);
+    std::string const& source_id = std::visit([](auto const& source) { return source.id; }, source);
     std::string name = std::format("{}.{}.{}.{}.{}.{}.{}", __func__, source_id, sink.id, n_points_axis1, n_points_axis2, label_axis1, label_axis2);
     std::println("Creating plot: {}", name);
 

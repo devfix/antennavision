@@ -31,8 +31,16 @@ namespace builtin
   ],
   "radiators": [
     {
-      "type": "ULA",
+      "id": "rx",
+      "ref": "ref_rx",
+      "type": "StandingWaveDipole",
+      "dipole_length": "dipole_length"
+    }
+  ]
+  "radiator_arrays": [
+    {
       "id": "tx",
+      "type": "ULA",
       "ref": "",
       "dir": {
         "x": 0,
@@ -45,12 +53,6 @@ namespace builtin
         "type": "StandingWaveDipole",
         "dipole_length": "dipole_length"
       }
-    },
-    {
-      "id": "rx",
-      "ref": "ref_rx",
-      "type": "StandingWaveDipole",
-      "dipole_length": "dipole_length"
     }
   ]
 }

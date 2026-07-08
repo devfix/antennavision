@@ -15,8 +15,6 @@ struct Reference
     Reference(Reference&&) = delete; // disable move constructor
     Reference& operator=(Reference&&) = delete; // disable move assignment
 
-    // [[nodiscard]] Reference copy() const;
-
     [[nodiscard]] pos_t local_from_global_pos(pos_t const& pos_global) const;
     [[nodiscard]] pos_t global_from_local_pos(pos_t const& pos_local) const;
     [[nodiscard]] vec_t local_from_global_vec(vec_t const& vec_global) const;

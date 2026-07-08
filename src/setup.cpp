@@ -8,7 +8,6 @@
 #include <fstream>
 #include <memory>
 #include <nlohmann/json.hpp>
-#include "../cmake-build-release-local/_deps/numcpp-src/include/NumCpp/Functions/var.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
@@ -29,12 +28,12 @@ namespace
         return js[key];
     }
 
-    std::map<std::string, double> extract_variables(ojson & setup_desc)
+    std::map<std::string, double> extract_variables(factory::Context const& context)
     {
         std::map<std::string, double> variables;
-        if (setup_desc.contains("variables"))
+        if (context.setup_desc.contains("variables"))
         {
-            for (const auto& [key, val] : setup_desc["variables"].items())
+            for (const auto& [key, val] : context.setup_desc["variables"].items())
             {
                 if (val.is_string()) { variables[key] = factory::parse_double(val.get<std::string>(), variables); }
                 else if (val.is_number()) { variables[key] = val.get<double>(); }
@@ -48,39 +47,39 @@ namespace
         return variables;
     }
 
-    std::list<Reference> extract_references(ojson& setup_desc, std::map<std::string, double> const& variables)
+    void extract_references(factory::Context& context)
     {
         std::list<Reference> references;
         references.emplace_back("", nullptr, pos_t(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
-        if (setup_desc.contains("references"))
+        if (context.setup_desc.contains("references"))
         {
-            for (auto& reference_desc : json_get(setup_desc, "references"))
+            for (auto& reference_desc : json_get(context.setup_desc, "references"))
             {
-                factory::make_reference(reference_desc, references, variables);
+                factory::make_reference(reference_desc, references, context.variables);
                 factory::assert_empty(reference_desc);
             }
         }
-        return references;
     }
 
-    std::pair<std::list<std::unique_ptr<Radiator>>, std::map<std::string, RadiatorArray>> extract_radiators(ojson& setup_desc, std::map<std::string, double> const& variables, std::list<Reference>& references)
+    void extract_antennas(factory::Context& context)
     {
-        std::list<std::unique_ptr<Radiator>> radiators;
-        std::map<std::string, RadiatorArray> radiator_arrays;
-        if (setup_desc.contains("radiators"))
+        if (context.setup_desc.contains("radiators"))
         {
-            for (auto& radiator_desc : json_get(setup_desc, "radiators"))
+            for (auto& radiator_desc : json_get(context.setup_desc, "radiators"))
             {
-                factory::make_radiator(radiator_desc, references, radiators, variables, radiator_arrays, false);
+                factory::make_antenna(radiator_desc, context, false);
                 factory::assert_empty(radiator_desc);
             }
         }
-        return {std::move(radiators), std::move(radiator_arrays)};
     }
 
-    std::list<std::pair<std::string, Setup::task_t>> extract_tasks(ojson& setup_desc, std::map<std::string, double> const& variables, std::list<Reference>& references, std::list<std::unique_ptr<Radiator>> & radiators, std::map<std::string, RadiatorArray> & radiator_arrays)
+    void extract_tasks(factory::Context & context)
     {
-        std::list<std::pair<std::string, Setup::task_t>> tasks;
+        auto &setup_desc = context.setup_desc;
+        auto &variables = context.variables;
+        auto &references = context.references;
+        auto &radiators = context.antennas;
+        auto& tasks = context.tasks;
         if (setup_desc.contains("tasks"))
         {
             for (auto& task_desc : json_get(setup_desc, "tasks"))
@@ -97,29 +96,28 @@ namespace
                 else if (type == "plot_directivity_over_polar")
                 {
                     auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
-                    Radiator const& radiator = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "radiator"));
-                    task_name = std::format("{}.{}", type, radiator.id);
+                    Antenna const& radiator = radiators.at(factory::get_string(task_desc, "radiator"));
+                    task_name = std::format("{}.{}", type, antenna::get_id(radiator));
                     tasks.emplace_back(task_name, [&radiator, azimuth_angles](std::filesystem::path const& directory)
                                        { plot::plot_directivity_over_polar(directory, radiator, azimuth_angles); });
                 }
                 else if (type == "plot_gain_over_straight")
                 {
-                    Radiator const& source = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "source"));
-                    Radiator const& sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
+                    Antenna const& source = radiators.at(factory::get_string(task_desc, "source"));
+                    Antenna const& sink = radiators.at(factory::get_string(task_desc, "sink"));
                     Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
                     Reference const& ref_stop = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_stop"));
                     double wavelength = factory::get_double(task_desc, "wavelength", variables);
                     char distance_axis = factory::get_char(task_desc, "distance_axis");
-                    task_name = std::format("{}.{}.{}", type, source.id, sink.id);
+                    task_name = std::format("{}.{}.{}", type, antenna::get_id(source), antenna::get_id(sink));
                     tasks.emplace_back(task_name, [&source, &sink, &ref_start, &ref_stop, wavelength, distance_axis](std::filesystem::path const& directory)
                                        { plot::plot_gain_over_straight(directory, source, sink, ref_start, ref_stop, wavelength, distance_axis); });
                 }
                 else if (type == "plot_gain_over_plane")
                 {
                     auto const source_id = factory::get_string(task_desc, "source");
-                    radiator_t source = radiator_arrays.contains(source_id) ? radiator_t{radiator_arrays.at(source_id)}
-                                                                            : radiator_t{factory::find_radiator_by_id(radiators, source_id)};
-                    Radiator const& sink = factory::find_radiator_by_id(radiators, factory::get_string(task_desc, "sink"));
+                    Antenna source = factory::find_radiator_by_id(radiators, source_id);
+                    Antenna const& sink = context.antennas.at(factory::get_string(task_desc, "sink"));
                     Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
                     Reference const& ref_axis1_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis1_max"));
                     Reference const& ref_axis2_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis2_max"));
@@ -128,9 +126,9 @@ namespace
                     std::uint32_t n_points_axis2 = factory::get_uint(task_desc, "n_points_axis2", variables);
                     auto label_axis1 = factory::get_string(task_desc, "label_axis1");
                     auto label_axis2 = factory::get_string(task_desc, "label_axis2");
-                    task_name = std::format("{}.{}.{}", type, source_id, sink.id);
+                    task_name = std::format("{}.{}.{}", type, source_id, antenna::get_id(sink));
                     tasks.emplace_back(task_name,
-                                       [source, &sink, &ref_start, &ref_axis1_max, &ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1,
+                                       [&source, &sink, &ref_start, &ref_axis1_max, &ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1,
                                         label_axis2](std::filesystem::path const& directory)
                                        {
                                            plot::plot_gain_over_plane(directory, source, sink, ref_start, ref_axis1_max, ref_axis2_max, wavelength,
@@ -145,7 +143,6 @@ namespace
                 factory::assert_empty(task_desc);
             }
         }
-        return tasks;
     }
 } // namespace
 
@@ -156,14 +153,14 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
     std::string_view const setup_name = json_get(metadata, "setup_name").get<std::string_view>();
     std::println("Setup name: {}", setup_name);
 
-    auto variables = extract_variables(setup_desc);
-    auto references = extract_references(setup_desc, variables);
-    auto [radiators, radiator_arrays] = extract_radiators(setup_desc, variables, references);
-    auto tasks = extract_tasks(setup_desc, variables, references, radiators, radiator_arrays);
+    factory::Context context{.setup_desc = setup_desc};
+    extract_variables(context);
+    extract_references(context);
+    extract_antennas(context);
+    extract_tasks(context);
 
     // ReSharper disable once CppDFAMemoryLeak
-    return std::unique_ptr<Setup>(
-        new Setup(setup_name, timestamp, std::move(variables), std::move(references), std::move(radiators), std::move(radiator_arrays), std::move(tasks)));
+    return std::unique_ptr<Setup>(new Setup(setup_name, timestamp, std::move(context)));
 }
 
 std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const& p)
@@ -228,39 +225,43 @@ Reference& Setup::get_reference_by_id(std::string_view const id) { return factor
 
 Radiator& Setup::get_radiator_by_id(std::string_view const id) const { return factory::find_radiator_by_id(radiators, id); }
 
-ScalarField Setup::get_voltage_field(RadiatorArray const& radiator_array_tx, Radiator& radiator_rx, math::NumParams const& num_params)
+ScalarField Setup::get_voltage_field(Antenna const& radiator_array_tx, Antenna& radiator_rx, math::NumParams const& num_params)
 {
-    return {[&radiator_array_tx, &radiator_rx, num_params](pos_t const& pos, double const wavelength) -> complex_t
+    auto tx = std::get_if<UniformLinearArray>(&radiator_array_tx);
+    assert(tx);
+    auto rx = std::get_if<Radiator>(&radiator_array_tx);
+    assert(rx);
+    return {[&tx=*tx, &rx=*rx, num_params](pos_t const& pos, double const wavelength) -> complex_t
             {
-                radiator_rx.origin.pos = pos;
-                return calc_voltage_gain(radiator_array_tx, radiator_rx, wavelength, num_params);
+                rx.origin.pos = pos;
+                return calc_voltage_gain(tx, rx, wavelength, num_params);
             },
-            [&radiator_rx] { radiator_rx.origin.reset(); }, num_params};
+            [&rx=*rx] { rx.origin.reset(); }, num_params};
 }
 
-complex_t Setup::calc_voltage_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double const wavelength, math::NumParams const& num_params)
+complex_t Setup::calc_voltage_gain(Radiator const& GenericRadiatorx, Radiator const& radiator_rx, double const wavelength, math::NumParams const& num_params)
 {
-    double const r = (radiator_tx.origin.global_from_local_pos(POS_ZERO) - radiator_rx.origin.global_from_local_pos(POS_ZERO)).norm();
+    double const r = (GenericRadiatorx.origin.global_from_local_pos(POS_ZERO) - radiator_rx.origin.global_from_local_pos(POS_ZERO)).norm();
     if (r < wavelength / 10)
     {
-        std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", radiator_tx.id, radiator_rx.id, r, r / wavelength);
+        std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", GenericRadiatorx.id, radiator_rx.id, r, r / wavelength);
     }
 
-    auto const pos_local_tx = radiator_tx.origin.localize(radiator_rx.origin); // position of rx radiator in tx coordinate
-    auto const pos_local_rx = radiator_rx.origin.localize(radiator_tx.origin); // position of tx radiator in rx coordinate
+    auto const pos_local_tx = GenericRadiatorx.origin.localize(radiator_rx.origin); // position of rx radiator in tx coordinate
+    auto const pos_local_rx = radiator_rx.origin.localize(GenericRadiatorx.origin); // position of tx radiator in rx coordinate
     auto const rot_mat_tx = math::get_rot_mat_from_cartesian(pos_local_tx);
     auto const rot_mat_rx = math::get_rot_mat_from_cartesian(pos_local_rx);
-    auto const elv_spherical_tx = radiator_tx.get_elv_spherical_from_cartesian(pos_local_tx, wavelength);
+    auto const elv_spherical_tx = GenericRadiatorx.get_elv_spherical_from_cartesian(pos_local_tx, wavelength);
     auto const elv_spherical_rx = radiator_rx.get_elv_spherical_from_cartesian(pos_local_rx, wavelength);
     auto const elv_cartesian_tx = nc::dot(rot_mat_tx, elv_spherical_tx);
     auto const elv_cartesian_rx = nc::dot(rot_mat_rx, elv_spherical_rx);
-    auto const elv_global_tx = radiator_tx.origin.global_from_local_vec(elv_cartesian_tx);
+    auto const elv_global_tx = GenericRadiatorx.origin.global_from_local_vec(elv_cartesian_tx);
     auto const elv_global_rx = radiator_rx.origin.global_from_local_vec(elv_cartesian_rx);
     auto const g = elv_global_tx.dot(elv_global_rx).item();
     auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * wavelength / (4.0 * pi * r);
-    auto const mean_squared_elv_tx = radiator_tx.mean_squared_elv
-        ? radiator_tx.mean_squared_elv(wavelength)
-        : Radiator::calc_mean_squared_effective_length(radiator_tx.elv_spherical, wavelength, num_params);
+    auto const mean_squared_elv_tx = GenericRadiatorx.mean_squared_elv
+        ? GenericRadiatorx.mean_squared_elv(wavelength)
+        : Radiator::calc_mean_squared_effective_length(GenericRadiatorx.elv_spherical, wavelength, num_params);
     auto const mean_squared_elv_rx = radiator_rx.mean_squared_elv
         ? radiator_rx.mean_squared_elv(wavelength)
         : Radiator::calc_mean_squared_effective_length(radiator_rx.elv_spherical, wavelength, num_params);
@@ -270,12 +271,12 @@ complex_t Setup::calc_voltage_gain(Radiator const& radiator_tx, Radiator const& 
 complex_t Setup::calc_voltage_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params)
 {
     complex_t gain = 0;
-    for (auto const& radiator_tx : radiator_array_tx.elements) { gain += calc_voltage_gain(radiator_tx, radiator_rx, wavelength, num_params); }
+    for (auto const& GenericRadiatorx : radiator_array_tx.elements) { gain += calc_voltage_gain(GenericRadiatorx, radiator_rx, wavelength, num_params); }
     return gain;
 }
 
-double Setup::calc_power_gain(Radiator const& radiator_tx, Radiator const& radiator_rx, double const wavelength, math::NumParams const& num_params)
-{ return math::square(std::abs(calc_voltage_gain(radiator_tx, radiator_rx, wavelength, num_params))); }
+double Setup::calc_power_gain(Radiator const& GenericRadiatorx, Radiator const& radiator_rx, double const wavelength, math::NumParams const& num_params)
+{ return math::square(std::abs(calc_voltage_gain(GenericRadiatorx, radiator_rx, wavelength, num_params))); }
 
 double Setup::calc_power_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params)
 { return math::square(std::abs(calc_voltage_gain(radiator_array_tx, radiator_rx, wavelength, num_params))); }
@@ -295,9 +296,7 @@ Setup::VoltageField::VoltageField(RadiatorArray const& radiator_array_tx, Radiat
 
 complex_t Setup::VoltageField::calc_voltage_gain(pos_t pos, double wavelength) {}
 
-Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, std::map<std::string, double>&& variables, std::list<Reference>&& references,
-             std::list<std::unique_ptr<Radiator>>&& radiators, std::map<std::string, RadiatorArray>&& radiator_arrays,
-             std::list<std::pair<std::string, task_t>>&& tasks) :
-    name(name), timestamp(timestamp), variables(std::move(variables)), references(std::move(references)), radiators(std::move(radiators)),
-    radiator_arrays(std::move(radiator_arrays)), tasks(std::move(tasks))
+Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, Context&& context) :
+    name(name), timestamp(timestamp), variables(std::move(context.variables)), references(std::move(context.references)),
+    radiators(std::move(context.radiators)), radiator_arrays(std::move(context.radiator_arrays)), tasks(std::move(context.tasks))
 {}
