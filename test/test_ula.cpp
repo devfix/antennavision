@@ -89,7 +89,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
         require_close_position(ref_element.global_from_local_pos(pos_t(0.0, 0.0, wavelength)), pos_t(x + wavelength, y, z));
     }
 }
-/*
+
 TEST_CASE("ULA gain", "[TestULA]")
 {
     ojson const js = ojson::parse(R"JSON(
@@ -303,4 +303,3 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
         REQUIRE(std::arg(gains.at(k)) == Catch::Approx(gains_voltage_arg_expected.at(k)));
     }
 }
-*/

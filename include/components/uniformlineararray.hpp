@@ -8,7 +8,5 @@
 
 struct UniformLinearArray : RadiatorArray<UniformLinearArray>
 {
-    UniformLinearArray(std::string_view const id, Reference& origin, std::list<Radiator>&& elements) :
-        RadiatorArray(id, origin, std::move(elements))
-    {}
+    UniformLinearArray(std::string_view id, Reference& origin, std::list<Radiator>&& elements);
 };
