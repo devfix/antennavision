@@ -28,34 +28,31 @@ namespace
         return js[key];
     }
 
-    std::map<std::string, double> extract_variables(factory::Context const& context)
+    void extract_variables(factory::Context& context)
     {
-        std::map<std::string, double> variables;
-        if (context.setup_desc.contains("variables"))
+        if (context.desc.contains("variables"))
         {
-            for (const auto& [key, val] : context.setup_desc["variables"].items())
+            for (const auto& [key, val] : context.desc["variables"].items())
             {
-                if (val.is_string()) { variables[key] = factory::parse_double(val.get<std::string>(), variables); }
-                else if (val.is_number()) { variables[key] = val.get<double>(); }
+                if (val.is_string()) { context.variables[key] = factory::parse_double(val.get<std::string>(), context.variables); }
+                else if (val.is_number()) { context.variables[key] = val.get<double>(); }
                 else
                 {
                     throw SimulationError("Invalid type '{}' of variable '{}'", val.type_name(), key);
                 }
-                std::println("Define variable {}={:.15g}", key, variables[key]);
+                std::println("Define variable {}={:.15g}", key, context.variables[key]);
             }
         }
-        return variables;
     }
 
     void extract_references(factory::Context& context)
     {
-        std::list<Reference> references;
-        references.emplace_back("", nullptr, pos_t(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
-        if (context.setup_desc.contains("references"))
+        context.references.emplace_back("", nullptr, pos_t(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
+        if (context.desc.contains("references"))
         {
-            for (auto& reference_desc : json_get(context.setup_desc, "references"))
+            for (auto& reference_desc : json_get(context.desc, "references"))
             {
-                factory::make_reference(reference_desc, references, context.variables);
+                factory::make_reference(reference_desc, context.references, context.variables);
                 factory::assert_empty(reference_desc);
             }
         }
@@ -63,22 +60,23 @@ namespace
 
     void extract_antennas(factory::Context& context)
     {
-        if (context.setup_desc.contains("radiators"))
+        if (context.desc.contains("radiators"))
         {
-            for (auto& radiator_desc : json_get(context.setup_desc, "radiators"))
+            for (auto& radiator_desc : json_get(context.desc, "radiators"))
             {
-                factory::make_antenna(radiator_desc, context, false);
+                Antenna ant = factory::make_antenna(radiator_desc, context);
+                context.antennas.emplace(antenna::get_id(ant), std::move(ant));
                 factory::assert_empty(radiator_desc);
             }
         }
     }
 
-    void extract_tasks(factory::Context & context)
+    void extract_tasks(factory::Context& context)
     {
-        auto &setup_desc = context.setup_desc;
-        auto &variables = context.variables;
-        auto &references = context.references;
-        auto &radiators = context.antennas;
+        auto& setup_desc = context.desc;
+        auto& variables = context.variables;
+        auto& references = context.references;
+        auto& radiators = context.antennas;
         auto& tasks = context.tasks;
         if (setup_desc.contains("tasks"))
         {
@@ -116,7 +114,7 @@ namespace
                 else if (type == "plot_gain_over_plane")
                 {
                     auto const source_id = factory::get_string(task_desc, "source");
-                    Antenna source = factory::find_radiator_by_id(radiators, source_id);
+                    Antenna& source = context.antennas.at(source_id);
                     Antenna const& sink = context.antennas.at(factory::get_string(task_desc, "sink"));
                     Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
                     Reference const& ref_axis1_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis1_max"));
@@ -153,7 +151,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
     std::string_view const setup_name = json_get(metadata, "setup_name").get<std::string_view>();
     std::println("Setup name: {}", setup_name);
 
-    factory::Context context{.setup_desc = setup_desc};
+    factory::Context context{.desc = setup_desc};
     extract_variables(context);
     extract_references(context);
     extract_antennas(context);
@@ -192,14 +190,33 @@ void Setup::export_to_three(std::filesystem::path const& directory, std::string_
                                                       reference.global_from_local_pos({0, 1, 0}) - pos_center,
                                                       reference.global_from_local_pos({0, 0, 1}) - pos_center, 0.25 * system_wavelength));
     }
-    for (auto const& radiator : radiators)
+
+    auto add_radiator = [&container, &system_wavelength](Radiator const& radiator)
     {
-        auto pos_center = radiator->origin.global_from_local_pos(POS_ZERO);
+        auto pos_center = radiator.origin.global_from_local_pos(POS_ZERO);
         double const radiator_length = 0.49 * system_wavelength;
-        auto pos_end = radiator->origin.global_from_local_pos({0.0, 0.0, 0.5 * radiator_length});
+        auto pos_end = radiator.origin.global_from_local_pos({0.0, 0.0, 0.5 * radiator_length});
         auto const pos_start = pos_center - (pos_end - pos_center);
         double const radius = 0.1 * radiator_length;
         container.add(three::make_cylinder(pos_start, pos_end, radius, radius));
+    };
+    for (const auto& antenna : antennas | std::views::values)
+    {
+        std::visit(
+            [&](auto const& ant)
+            {
+                using Type = std::decay_t<decltype(ant)>;
+                if constexpr (std::is_same_v<Type, Radiator>) { add_radiator(ant); }
+                else if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
+                {
+                    for (auto const& element : ant.elements) { add_radiator(element); }
+                }
+                else
+                {
+                    throw SimulationError("Invalid antenna type");
+                }
+            },
+            antenna);
     }
     container.export_to_javascript(p);
 }
@@ -221,65 +238,72 @@ void Setup::run_tasks(std::function<void(std::string_view)> const& builtin_handl
     }
 }
 
-Reference& Setup::get_reference_by_id(std::string_view const id) { return factory::find_reference_by_id(references, id); }
+Reference& Setup::get_reference(std::string_view const id) { return factory::find_reference_by_id(references, id); }
 
-Radiator& Setup::get_radiator_by_id(std::string_view const id) const { return factory::find_radiator_by_id(radiators, id); }
+Antenna& Setup::get_antenna(std::string const& id) { return antennas.at(id); }
 
-ScalarField Setup::get_voltage_field(Antenna const& radiator_array_tx, Antenna& radiator_rx, math::NumParams const& num_params)
+ScalarField Setup::get_voltage_field(Antenna const& tx, Antenna& rx, math::NumParams const& num_params)
 {
-    auto tx = std::get_if<UniformLinearArray>(&radiator_array_tx);
-    assert(tx);
-    auto rx = std::get_if<Radiator>(&radiator_array_tx);
-    assert(rx);
-    return {[&tx=*tx, &rx=*rx, num_params](pos_t const& pos, double const wavelength) -> complex_t
+    return {[&tx, &rx, num_params](pos_t const& pos, double const wavelength) -> complex_t
             {
-                rx.origin.pos = pos;
+                antenna::get_origin(rx).pos = pos;
                 return calc_voltage_gain(tx, rx, wavelength, num_params);
             },
-            [&rx=*rx] { rx.origin.reset(); }, num_params};
+            [&rx] { antenna::get_origin(rx).reset(); }, num_params};
 }
 
-complex_t Setup::calc_voltage_gain(Radiator const& GenericRadiatorx, Radiator const& radiator_rx, double const wavelength, math::NumParams const& num_params)
+namespace
 {
-    double const r = (GenericRadiatorx.origin.global_from_local_pos(POS_ZERO) - radiator_rx.origin.global_from_local_pos(POS_ZERO)).norm();
-    if (r < wavelength / 10)
+    complex_t calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, double const wavelength, math::NumParams const& num_params)
     {
-        std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", GenericRadiatorx.id, radiator_rx.id, r, r / wavelength);
+        double const r = (tx.origin.global_from_local_pos(POS_ZERO) - rx.origin.global_from_local_pos(POS_ZERO)).norm();
+        if (r < wavelength / 10) { std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength); }
+
+        auto const pos_local_tx = tx.origin.localize(rx.origin); // position of rx radiator in tx coordinate
+        auto const pos_local_rx = rx.origin.localize(tx.origin); // position of tx radiator in rx coordinate
+        auto const rot_mat_tx = math::get_rot_mat_from_cartesian(pos_local_tx);
+        auto const rot_mat_rx = math::get_rot_mat_from_cartesian(pos_local_rx);
+        auto const elv_spherical_tx = tx.get_elv_spherical_from_cartesian(pos_local_tx, wavelength);
+        auto const elv_spherical_rx = rx.get_elv_spherical_from_cartesian(pos_local_rx, wavelength);
+        auto const elv_cartesian_tx = nc::dot(rot_mat_tx, elv_spherical_tx);
+        auto const elv_cartesian_rx = nc::dot(rot_mat_rx, elv_spherical_rx);
+        auto const elv_global_tx = tx.origin.global_from_local_vec(elv_cartesian_tx);
+        auto const elv_global_rx = rx.origin.global_from_local_vec(elv_cartesian_rx);
+        auto const g = elv_global_tx.dot(elv_global_rx).item();
+        auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * wavelength / (4.0 * pi * r);
+        auto const mean_squared_elv_tx =
+            tx.mean_squared_elv ? tx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(tx.elv_spherical, wavelength, num_params);
+        auto const mean_squared_elv_rx =
+            rx.mean_squared_elv ? rx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(rx.elv_spherical, wavelength, num_params);
+        return -j * g / std::sqrt(mean_squared_elv_tx * mean_squared_elv_rx) * propagation;
     }
+} // namespace
 
-    auto const pos_local_tx = GenericRadiatorx.origin.localize(radiator_rx.origin); // position of rx radiator in tx coordinate
-    auto const pos_local_rx = radiator_rx.origin.localize(GenericRadiatorx.origin); // position of tx radiator in rx coordinate
-    auto const rot_mat_tx = math::get_rot_mat_from_cartesian(pos_local_tx);
-    auto const rot_mat_rx = math::get_rot_mat_from_cartesian(pos_local_rx);
-    auto const elv_spherical_tx = GenericRadiatorx.get_elv_spherical_from_cartesian(pos_local_tx, wavelength);
-    auto const elv_spherical_rx = radiator_rx.get_elv_spherical_from_cartesian(pos_local_rx, wavelength);
-    auto const elv_cartesian_tx = nc::dot(rot_mat_tx, elv_spherical_tx);
-    auto const elv_cartesian_rx = nc::dot(rot_mat_rx, elv_spherical_rx);
-    auto const elv_global_tx = GenericRadiatorx.origin.global_from_local_vec(elv_cartesian_tx);
-    auto const elv_global_rx = radiator_rx.origin.global_from_local_vec(elv_cartesian_rx);
-    auto const g = elv_global_tx.dot(elv_global_rx).item();
-    auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * wavelength / (4.0 * pi * r);
-    auto const mean_squared_elv_tx = GenericRadiatorx.mean_squared_elv
-        ? GenericRadiatorx.mean_squared_elv(wavelength)
-        : Radiator::calc_mean_squared_effective_length(GenericRadiatorx.elv_spherical, wavelength, num_params);
-    auto const mean_squared_elv_rx = radiator_rx.mean_squared_elv
-        ? radiator_rx.mean_squared_elv(wavelength)
-        : Radiator::calc_mean_squared_effective_length(radiator_rx.elv_spherical, wavelength, num_params);
-    return -j * g / std::sqrt(mean_squared_elv_tx * mean_squared_elv_rx) * propagation;
-}
-
-complex_t Setup::calc_voltage_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params)
+complex_t Setup::calc_voltage_gain(Antenna const& tx, Antenna const& rx, double wavelength, math::NumParams const& num_params)
 {
-    complex_t gain = 0;
-    for (auto const& GenericRadiatorx : radiator_array_tx.elements) { gain += calc_voltage_gain(GenericRadiatorx, radiator_rx, wavelength, num_params); }
-    return gain;
+    Radiator const* const radiator_rx = std::get_if<Radiator>(&rx);
+    assert(radiator_rx);
+    return std::visit(
+        [&](auto const& radiator_tx)
+        {
+            using Type = std::decay_t<decltype(radiator_tx)>;
+            if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(radiator_tx, *radiator_rx, wavelength, num_params); }
+            else if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
+            {
+                complex_t gain = 0;
+                for (auto const& element : radiator_tx.elements) { gain += calc_voltage_gain_direct(element, *radiator_rx, wavelength, num_params); }
+                return gain;
+            }
+            else
+            {
+                throw SimulationError("Invalid antenna type");
+            }
+        },
+        tx);
 }
 
-double Setup::calc_power_gain(Radiator const& GenericRadiatorx, Radiator const& radiator_rx, double const wavelength, math::NumParams const& num_params)
-{ return math::square(std::abs(calc_voltage_gain(GenericRadiatorx, radiator_rx, wavelength, num_params))); }
-
-double Setup::calc_power_gain(RadiatorArray const& radiator_array_tx, Radiator const& radiator_rx, double wavelength, math::NumParams const& num_params)
-{ return math::square(std::abs(calc_voltage_gain(radiator_array_tx, radiator_rx, wavelength, num_params))); }
+double Setup::calc_power_gain(Antenna const& tx, Antenna const& rx, double wavelength, math::NumParams const& num_params)
+{ return math::square(std::abs(calc_voltage_gain(tx, rx, wavelength, num_params))); }
 
 bool Setup::isUpToDate(std::filesystem::path const& path_timestamp) const
 {
@@ -290,13 +314,13 @@ bool Setup::isUpToDate(std::filesystem::path const& path_timestamp) const
     return saved_timestamp && saved_timestamp == timestamp;
 }
 
-Setup::VoltageField::VoltageField(RadiatorArray const& radiator_array_tx, Radiator& radiator_rx) :
-    radiator_array_tx(radiator_array_tx), radiator_rx(radiator_rx)
-{}
+// Setup::VoltageField::VoltageField(RadiatorArray const& radiator_array_tx, Radiator& radiator_rx) :
+//     radiator_array_tx(radiator_array_tx), radiator_rx(radiator_rx)
+// {}
+//
+// complex_t Setup::VoltageField::calc_voltage_gain(pos_t pos, double wavelength) {}
 
-complex_t Setup::VoltageField::calc_voltage_gain(pos_t pos, double wavelength) {}
-
-Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, Context&& context) :
-    name(name), timestamp(timestamp), variables(std::move(context.variables)), references(std::move(context.references)),
-    radiators(std::move(context.radiators)), radiator_arrays(std::move(context.radiator_arrays)), tasks(std::move(context.tasks))
+Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, factory::Context&& context) :
+    name(name), timestamp(timestamp), variables(std::move(context.variables)), references(std::move(context.references)), antennas(std::move(context.antennas)),
+    tasks(std::move(context.tasks))
 {}

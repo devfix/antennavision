@@ -10,7 +10,6 @@
 #include "components/component.hpp"
 #include "math.hpp"
 #include "reference.hpp"
-#include "uniformlineararray.hpp"
 
 // Coordinate System
 // -----------------
@@ -66,8 +65,8 @@ struct Radiator : Component
 
     Radiator(Radiator const&) = delete; // disable copy constructor
     Radiator& operator=(Radiator const&) = delete; // disable copy assignment
-    // Radiator(Radiator&&) = delete; // disable move constructor
-    // Radiator& operator=(Radiator&&) = delete; // disable move assignment
+    Radiator(Radiator&&) noexcept = default; // only allow move constructor
+    Radiator& operator=(Radiator&&) = delete; // disable move assignment
 
     Reference & origin;
     elv_spherical_t const elv_spherical; /// callback for effective length vector in spherical coordinates
@@ -81,7 +80,7 @@ struct Radiator : Component
     [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, double wavelength, math::NumParams const& num_params) const;
     [[nodiscard]] double calc_directivity_from_cartesian(pos_t const& pos_local, double wavelength, math::NumParams const& num_params) const;
 
-    std::complex<double> calc_path(std::size_t idx_input, std::size_t idx_output) override;
+    complex_t calc_path(std::size_t idx_input, std::size_t idx_output) override;
 
 };
 

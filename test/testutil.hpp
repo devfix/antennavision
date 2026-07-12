@@ -18,7 +18,7 @@ bool isclose(T a, T b)
 
 void require_close_position(pos_t const &actual, pos_t const &expected);
 
-void require_close_array(NdArray const& actual, NdArray const& expected);
+void require_close_array(RealArray const& actual, RealArray const& expected);
 
 void test_inverse_transformation(Reference const &reference, pos_t const &pos);
 

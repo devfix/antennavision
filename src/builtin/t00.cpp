@@ -31,14 +31,6 @@ namespace builtin
   ],
   "radiators": [
     {
-      "id": "rx",
-      "ref": "ref_rx",
-      "type": "StandingWaveDipole",
-      "dipole_length": "dipole_length"
-    }
-  ]
-  "radiator_arrays": [
-    {
       "id": "tx",
       "type": "ULA",
       "ref": "",
@@ -53,6 +45,12 @@ namespace builtin
         "type": "StandingWaveDipole",
         "dipole_length": "dipole_length"
       }
+    },
+    {
+      "id": "rx",
+      "ref": "ref_rx",
+      "type": "StandingWaveDipole",
+      "dipole_length": "dipole_length"
     }
   ]
 }
@@ -92,8 +90,8 @@ namespace builtin
                 auto const setup = Setup::from_json(js_configured);
                 auto const wavelength = setup->variables.at("wavelength");
                 auto const distance = setup->variables.at("distance");
-                auto& tx = setup->radiator_arrays.at("tx");
-                auto& rx = setup->get_radiator_by_id("rx");
+                auto& tx = setup->get_antenna("tx");
+                auto& rx = setup->get_antenna("rx");
                 auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
                 auto circle = math::get_circle(POS_ZERO, pos_t(1, 0, 0), distance, pos_t(0, 1, 0));
 
@@ -110,8 +108,8 @@ namespace builtin
                 auto const setup = Setup::from_json(js_configured);
                 auto const wavelength = setup->variables.at("wavelength");
                 auto const distance = setup->variables.at("distance");
-                auto& tx = setup->radiator_arrays.at("tx");
-                auto& rx = setup->get_radiator_by_id("rx");
+                auto& tx = setup->get_antenna("tx");
+                auto& rx = setup->get_antenna("rx");
                 auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
                 auto circle = math::get_circle(POS_ZERO, pos_t(1, 0, 0), distance, pos_t(0, 1, 0));
 

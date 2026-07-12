@@ -19,7 +19,7 @@ namespace factory
     void assert_empty(nlohmann::ordered_json const& js);
 
     std::string get_string(nlohmann::ordered_json& js, std::string_view key, bool remove = true, bool default_ok = false);
-    nc::NdArray<double> get_ndarray(nlohmann::ordered_json& js, std::string_view key, bool remove = true);
+    RealArray get_ndarray(nlohmann::ordered_json& js, std::string_view key, bool remove = true);
     char get_char(nlohmann::ordered_json& js, std::string_view key, bool remove = true);
     double get_double(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove = true, bool default_ok = false);
     std::uint32_t get_uint(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove = true, bool default_ok = false);

@@ -15,7 +15,7 @@ namespace factory
     using task_t = std::function<void(std::filesystem::path const& directory)>;
     struct Context
     {
-        ojson &setup_desc;
+        ojson &desc;
         std::map<std::string, double> variables;
         std::list<Reference> references;
         std::map<std::string, Antenna> antennas;
@@ -23,5 +23,5 @@ namespace factory
     };
 
     Reference& make_reference(ojson& reference_desc, std::list<Reference>& references, std::map<std::string, double> const& variables);
-    std::unique_ptr<Antenna> make_antenna(ojson& desc, Context& context, bool is_generated);
+    [[nodiscard]] Antenna make_antenna(ojson& desc, Context& context);
 } // namespace factory

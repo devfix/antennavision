@@ -116,14 +116,14 @@ namespace math
      * @param phi   Azimuthal angle (in radians) [cite: 227]
      * @return      A 3x3 matrix represented as NdArray
      */
-    [[nodiscard]] constexpr NdArray get_rot_mat_from_spherical(double const theta, double const phi)
+    [[nodiscard]] constexpr RealArray get_rot_mat_from_spherical(double const theta, double const phi)
     {
         double const st = std::sin(theta);
         double const ct = std::cos(theta);
         double const sp = std::sin(phi);
         double const cp = std::cos(phi);
 
-        NdArray omega(3, 3);
+        RealArray omega(3, 3);
         omega(0, 0) = st * cp;
         omega(0, 1) = ct * cp;
         omega(0, 2) = -sp;
@@ -137,7 +137,7 @@ namespace math
         return omega;
     }
 
-    [[nodiscard]] NdArray constexpr get_rot_mat_from_cartesian(pos_t const& pos_local)
+    [[nodiscard]] RealArray constexpr get_rot_mat_from_cartesian(pos_t const& pos_local)
     {
         auto const [r, polar, azimuth] = spherical_from_cartesian(pos_local);
         return get_rot_mat_from_spherical(polar, azimuth);

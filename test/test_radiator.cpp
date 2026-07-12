@@ -59,9 +59,9 @@ TEST_CASE("HertzianDipole", "[Radiator]")
     REQUIRE_THROWS(radiator.calc_path(0, 0));
 
     auto const thetas = nc::linspace(0.0, pi, 21);
-    NdArray directivities_actual_phi0(thetas.shape());
-    NdArray directivities_actual_phi1(thetas.shape());
-    NdArray directivities_expected(thetas.shape());
+    RealArray directivities_actual_phi0(thetas.shape());
+    RealArray directivities_actual_phi1(thetas.shape());
+    RealArray directivities_expected(thetas.shape());
     std::ranges::transform(thetas, directivities_actual_phi0.begin(), [&radiator](double const theta_) { return radiator.calc_directivity_from_spherical(theta_, 0.0, 101, {}); });
     std::ranges::transform(thetas, directivities_actual_phi1.begin(), [&radiator](double const theta_) { return radiator.calc_directivity_from_spherical(theta_, 1.0, 101, {}); });
     std::ranges::transform(thetas, directivities_expected.begin(), [](double const theta_) { return 1.5 * math::square(std::sin(theta_)); });
@@ -108,9 +108,10 @@ TEST_CASE("HalfWaveDipole via setup", "[Radiator]")
 )JSON");
     auto const setup = Setup::from_json(js);
     auto const wavelength = setup->variables.at("wavelength");
-    auto & radiator = setup->get_radiator_by_id("DUT");
-    REQUIRE_THROWS(radiator.calc_path(0, 0));
-    auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, wavelength, {});
+    auto & antenna = setup->get_antenna("DUT");
+    auto* radiator = std::get_if<Radiator>(&antenna);
+    assert(radiator);
+    auto const actual = radiator->calc_directivity_from_spherical(0.5 * pi, 0, wavelength, {});
     REQUIRE(actual == Catch::Approx(1.640922388).margin(1e-3));
 }
 
@@ -135,12 +136,6 @@ TEST_CASE("FullWaveDipole via setup", "[Radiator]")
   "variables": {
     "wavelength": 0.1
   },
-  "references": [
-    {
-      "id": "ref_ula",
-      "origin": ""
-    }
-  ],
   "radiators": [
     {
       "type": "StandingWaveDipole",
@@ -153,9 +148,10 @@ TEST_CASE("FullWaveDipole via setup", "[Radiator]")
 )JSON");
     auto const setup = Setup::from_json(js);
     auto const wavelength = setup->variables.at("wavelength");
-    auto & radiator = setup->get_radiator_by_id("DUT");
-    REQUIRE_THROWS(radiator.calc_path(0, 0));
-    auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, wavelength, {});
+    auto & antenna = setup->get_antenna("DUT");
+    auto* radiator = std::get_if<Radiator>(&antenna);
+    assert(radiator);
+    auto const actual = radiator->calc_directivity_from_spherical(0.5 * pi, 0, wavelength, {});
     REQUIRE(actual == Catch::Approx(2.4116035252).margin(1e-3));
 }
 
@@ -198,8 +194,9 @@ TEST_CASE("3/2-WaveDipole via setup", "[Radiator]")
 )JSON");
     auto const setup = Setup::from_json(js);
     auto const wavelength = setup->variables.at("wavelength");
-    auto & radiator = setup->get_radiator_by_id("DUT");
-    REQUIRE_THROWS(radiator.calc_path(0, 0));
-    auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, wavelength, {});
+    auto & antenna = setup->get_antenna("DUT");
+    auto* radiator = std::get_if<Radiator>(&antenna);
+    assert(radiator);
+    auto const actual = radiator->calc_directivity_from_spherical(0.5 * pi, 0, wavelength, {});
     REQUIRE(actual == Catch::Approx(1.13750300493283).margin(1e-3));
 }

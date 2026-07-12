@@ -9,7 +9,6 @@
 #include <NumCpp/Functions/sum.hpp>
 #include <string>
 #include <utility>
-#include "../../../../../../.var/app/com.jetbrains.CLion/cache/JetBrains/CLion2025.3/.remote/sirious-media.dynv6.net_222/25c65ce8-8fc4-47c3-bf72-0a3139523830/usr/include/complex.h"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
 #include "math.hpp"
@@ -67,7 +66,7 @@ double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_s
         2.0;
     auto const [polar_grid, azimuth_grid] = nc::meshgrid(polar_mids, azimuth_mids);
 
-    NdArray squared_norms(polar_grid.shape());
+    RealArray squared_norms(polar_grid.shape());
     std::ranges::transform(polar_grid, azimuth_grid, squared_norms.begin(),
                            [&elv_spherical, wavelength](double const polar, double const azimuth) -> double { return math::square(math::norm(elv_spherical(polar, azimuth, wavelength))); });
 

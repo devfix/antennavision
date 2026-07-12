@@ -70,10 +70,10 @@ TEST_CASE("setup context with references", "[TestSetupContext]")
 }
 )JSON");
     auto const su = Setup::from_json(js);
-    REQUIRE(su->get_reference_by_id("ref1").pos.x == Catch::Approx(1.0));
-    REQUIRE(su->get_reference_by_id("ref1").pos.y == Catch::Approx(2.0));
-    REQUIRE(su->get_reference_by_id("ref1").pos.z == Catch::Approx(3.0));
-    REQUIRE(su->get_reference_by_id("ref1").rotation.yaw() == Catch::Approx(0.1 * pi));
-    REQUIRE(su->get_reference_by_id("ref1").rotation.pitch() == Catch::Approx(0.2 * pi));
-    REQUIRE(su->get_reference_by_id("ref1").rotation.roll() == Catch::Approx(0.3 * pi));
+    REQUIRE(su->get_reference("ref1").pos.x == Catch::Approx(1.0));
+    REQUIRE(su->get_reference("ref1").pos.y == Catch::Approx(2.0));
+    REQUIRE(su->get_reference("ref1").pos.z == Catch::Approx(3.0));
+    REQUIRE(su->get_reference("ref1").rotation.yaw() == Catch::Approx(0.1 * pi));
+    REQUIRE(su->get_reference("ref1").rotation.pitch() == Catch::Approx(0.2 * pi));
+    REQUIRE(su->get_reference("ref1").rotation.roll() == Catch::Approx(0.3 * pi));
 }

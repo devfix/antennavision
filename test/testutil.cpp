@@ -13,7 +13,7 @@ void require_close_position(pos_t const &actual, pos_t const &expected)
     REQUIRE(actual.toNdArray().at(2) == Catch::Approx(expected.toNdArray().at(2)).margin(TEST_MARGIN));
 }
 
-void require_close_array(NdArray const &actual, NdArray const &expected)
+void require_close_array(RealArray const &actual, RealArray const &expected)
 {
     REQUIRE(actual.shape() == expected.shape());
     for (nc::uint32 r = 0; r < expected.shape().rows; r++)

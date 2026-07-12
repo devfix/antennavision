@@ -80,8 +80,8 @@ TEST_CASE("ScalarField", "[TestULA]")
     auto const setup = Setup::from_json(js);
     auto const wavelength = setup->variables.at("wavelength");
     auto const distance = setup->variables.at("distance");
-    auto const& tx = setup->radiator_arrays.at("ula1");
-    auto & rx = setup->get_radiator_by_id("receiver");
+    auto const& tx = setup->get_antenna("ula1");
+    auto & rx = setup->get_antenna("receiver");
     math::NumParams num_params;
     auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
     {

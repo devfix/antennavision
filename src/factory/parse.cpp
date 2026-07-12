@@ -11,7 +11,7 @@
 
 namespace factory
 {
-    std::function<std::complex<double>(double polar, double azimuth, double wavelength)> parse_polar_azimuth_function(std::string const& expr)
+    std::function<complex_t(double polar, double azimuth, double wavelength)> parse_polar_azimuth_function(std::string const& expr)
     {
         // Struct to hold all ExprTk internal state variables safely on the heap
         struct ExpressionContext
@@ -39,7 +39,7 @@ namespace factory
 
         // Return the callable lambda.
         // Capturing 'ctx' by value extends the lifetime of the underlying ExprTk objects.
-        return [ctx](double const polar, double const azimuth, double const wavelength) -> std::complex<double>
+        return [ctx](double const polar, double const azimuth, double const wavelength) -> complex_t
         {
             ctx->polar = polar;
             ctx->azimuth = azimuth;

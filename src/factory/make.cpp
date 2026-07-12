@@ -46,65 +46,61 @@ namespace factory
         return references.emplace_back(id, &origin, pos, rotation);
     }
 
-    std::unique_ptr<Antenna> make_antenna(ojson& desc, Context & context, bool is_generated)
+    namespace
     {
-        auto const id = get_string(desc, "id");
-        if (!is_generated) { assert_valid_id(id); }
-        auto const origin_id = get_string(desc, "ref", true, true);
-        auto const type = get_string(desc, "type");
-        std::println("{}Creating radiator [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
-        Reference& origin = find_reference_by_id(context.references, origin_id);
-        if (type == "HertzianDipole") { return std::unique_ptr<Antenna>(new Antenna(Radiator::HertzianDipole::create(id, origin))); }
-        if (type == "StandingWaveDipole")
+        Radiator make_radiator(ojson& desc, Context& context)
         {
-            auto const dipole_length = get_double(desc, "dipole_length", context.variables);
-            return std::unique_ptr<Radiator>(new Radiator(Radiator::StandingWaveDipole::create(id, origin, dipole_length)));
-        }
-        if (type == "CustomRadiator")
-        {
-            auto const effective_length_defs = get_string_vec3(desc, "effective_length");
-            std::array<std::function<std::complex<double>(double, double, double)>, 3> effective_length_parts;
-            std::ranges::transform(effective_length_defs, effective_length_parts.begin(), parse_polar_azimuth_function);
-            auto effective_length = [effective_length_parts](double const polar, double const azimuth,
-                                                             double const wavelength) -> nc::NdArray<std::complex<double>>
+            auto const id = get_string(desc, "id");
+            auto const origin_id = get_string(desc, "ref", true, true);
+            auto const type = get_string(desc, "type");
+            std::println("{}Creating radiator [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
+            Reference& origin = find_reference_by_id(context.references, origin_id);
+            if (type == "HertzianDipole") { return Radiator::HertzianDipole::create(id, origin); }
+            if (type == "StandingWaveDipole")
             {
-                return {effective_length_parts[0](polar, azimuth, wavelength), effective_length_parts[1](polar, azimuth, wavelength),
-                        effective_length_parts[2](polar, azimuth, wavelength)};
-            };
-            return std::make_unique<Radiator>(id, origin, std::move(effective_length));
+                auto const dipole_length = get_double(desc, "dipole_length", context.variables);
+                return Radiator::StandingWaveDipole::create(id, origin, dipole_length);
+            }
+            if (type == "CustomRadiator")
+            {
+                auto const effective_length_defs = get_string_vec3(desc, "effective_length");
+                std::array<std::function<complex_t(double, double, double)>, 3> effective_length_parts;
+                std::ranges::transform(effective_length_defs, effective_length_parts.begin(), parse_polar_azimuth_function);
+                auto effective_length = [effective_length_parts](double const polar, double const azimuth,
+                                                                 double const wavelength) -> ComplexArray
+                {
+                    return {effective_length_parts[0](polar, azimuth, wavelength), effective_length_parts[1](polar, azimuth, wavelength),
+                            effective_length_parts[2](polar, azimuth, wavelength)};
+                };
+                return {id, origin, std::move(effective_length)};
+            }
+            throw SimulationError("Unknown radiator type '{}'", type);
         }
-        throw SimulationError("Unknown radiator type '{}'", type);
-    }
 
-    GenericRadiatorArray make_radiator_array(ojson& radiator_desc, Context & context, bool is_generated)
-    {
-        auto const id = get_string(radiator_desc, "id");
-        if (!is_generated) { assert_valid_id(id); }
-        auto const origin_id = get_string(radiator_desc, "ref", true, true);
-        auto const type = get_string(radiator_desc, "type");
-        std::println("{}Creating radiator [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
-        Reference& origin = find_reference_by_id(context.references, origin_id);
-        if (type == "ULA")
+        Antenna make_ula(ojson& desc, Context& context)
         {
-            auto const spacing = get_double(radiator_desc, "spacing", context.variables);
-            auto const count = get_uint(radiator_desc, "count", context.variables);
-            auto const path_codebook = get_string(radiator_desc, "codebook", true, true);
-            auto dir = get_pos(radiator_desc, "dir", context.variables);
-            auto const rot = get_quaternion(radiator_desc, "rot", context.variables, true, true);
-            auto const prototype_desc = radiator_desc.at("radiator");
-            radiator_desc.erase("radiator");
+            auto const id = get_string(desc, "id");
+            auto const origin_id = get_string(desc, "ref", true, true);
+            auto const type = get_string(desc, "type");
+            Reference& origin = find_reference_by_id(context.references, origin_id);
+            auto const spacing = get_double(desc, "spacing", context.variables);
+            auto const count = get_uint(desc, "count", context.variables);
+            auto const path_codebook = get_string(desc, "codebook", true, true);
+            auto dir = get_pos(desc, "dir", context.variables);
+            auto const rot = get_quaternion(desc, "rot", context.variables, true, true);
+            auto const prototype_desc = desc.at("radiator");
+            desc.erase("radiator");
 
             if (dir.norm() < NUMERICAL_MARGIN) { throw SimulationError("Invalid direction for ULA '{}'", id); }
             dir = dir.normalize();
 
             double const length = spacing * (count - 1);
-            std::list<Reference> array_references;
-            std::vector<std::unique_ptr<Radiator>> array_radiators(count);
+            std::list<Radiator> array_radiators;
             for (std::remove_const_t<decltype(count)> i = 0; i < count; i++)
             {
                 double const f = static_cast<double>(i) / static_cast<double>(count - 1);
                 pos_t const pos = dir * (f - 0.5) * length;
-                auto& ref = array_references.emplace_back(std::format("{}:ref:{}", id, i), &origin, pos, rot);
+                const auto& ref = context.references.emplace_back(std::format("{}:ref:{}", id, i), &origin, pos, rot);
 
                 // We make a copy of the "backup" description and adapt it for the current element of the ULA
                 ojson ula_element_desc = prototype_desc;
@@ -112,10 +108,20 @@ namespace factory
                 ula_element_desc["ref"] = ref.id;
 
                 // call the make function recursively and append the Radiators to array_radiators
-                array_radiators.at(i) = make_radiator(ula_element_desc, context, true);
+                array_radiators.push_back(make_radiator(ula_element_desc, context));
             }
-            return UniformLinearArray(id, std::move(array_references), std::move(array_radiators));
+            return UniformLinearArray(id, origin, std::move(array_radiators));
         }
-        throw SimulationError("Unknown radiator type '{}'", type);
+    } // namespace
+
+    Antenna make_antenna(ojson& desc, Context& context)
+    {
+        auto const id = get_string(desc, "id", false);
+        assert_valid_id(id);
+        auto const type = get_string(desc, "type", false);
+        auto const origin_id = get_string(desc, "ref", false, true);
+        std::println("{}Creating antenna [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
+        if (type == "ULA") { return make_ula(desc, context); }
+        return make_radiator(desc, context);
     }
-} // namespace factory
+}  // namespace factory

@@ -39,11 +39,11 @@ namespace factory
         return val;
     }
 
-    nc::NdArray<double> get_ndarray(nlohmann::ordered_json& js, std::string_view key, bool remove)
+    RealArray get_ndarray(nlohmann::ordered_json& js, std::string_view key, bool remove)
     {
         assert_key(js, key);
         auto const vect = js.at(key).get<std::vector<double>>();
-        auto const array = nc::NdArray<double>(vect.begin(), vect.end());
+        auto const array = RealArray(vect.begin(), vect.end());
         if (remove) { js.erase(key); }
         return array;
     }

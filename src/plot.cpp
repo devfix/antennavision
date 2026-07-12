@@ -10,16 +10,18 @@
 #include "setup.hpp"
 #include "simulationerror.hpp"
 
-void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Antenna const& radiator, NdArray const& azimuth_angles)
+void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, Antenna const& antenna, RealArray const& azimuth_angles)
 {
+    auto &radiator = antenna::cast<Radiator>(antenna);
+
     std::ostringstream azimuth_angles_stream;
     azimuth_angles_stream << std::fixed << std::setprecision(2);
-    for (NdArray::index_type k = 0; k < azimuth_angles.size(); k++)
+    for (RealArray::index_type k = 0; k < azimuth_angles.size(); k++)
     {
         azimuth_angles_stream << std::format("{:.2f}", azimuth_angles.at(k) / nc::constants::pi);
         if (k < azimuth_angles.size() - 1) { azimuth_angles_stream << '_'; }
     }
-    std::string name = std::format("{}.{}.{}", __func__, radiator.id, azimuth_angles_stream.str());
+    std::string name = std::format("{}.{}.{}", __func__, antenna::get_id(antenna), azimuth_angles_stream.str());
     std::println("Creating plot: {}", name);
 
     // dplot::Figure fig{std::string(name), std::string("test-plot")};
@@ -69,7 +71,7 @@ void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, An
     double const wavelength = 0.1;
 
     auto const polar_angles = nc::linspace(0.0, nc::constants::pi, 51);
-    NdArray directivities(polar_angles.shape());
+    RealArray directivities(polar_angles.shape());
     for (auto const azimuth : azimuth_angles)
     {
         ojson js_entry;
@@ -88,10 +90,10 @@ void plot::plot_directivity_over_polar(std::filesystem::path const& dir_plot, An
     // fig.export_figure(dir_plot, {dplot::ExportType::PDF});
 }
 
-void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiator const& source, Radiator const& sink, Reference& ref_start, Reference const& ref_stop, double wave_length,
+void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Antenna const& source, Antenna const& sink, Reference& ref_start, Reference const& ref_stop, double wave_length,
                                    char distance_axis)
 {
-    std::string name = std::format("{}.{}.{}.{}", __func__, source.id, sink.id, distance_axis);
+    std::string name = std::format("{}.{}.{}.{}", __func__, antenna::get_id(source), antenna::get_id(sink), distance_axis);
     std::println("Creating plot: {}", name);
 
     // dplot::Figure fig{std::string(name), std::string("test-plot")};
@@ -139,10 +141,10 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
 
     constexpr std::size_t n_points = 101;
     pos_t const pos_delta = ref_stop.pos - ref_start.pos_initial;
-    NdArray const rotation_delta = ref_stop.rotation.toNdArray() - ref_start.rotation_initial.toNdArray();
+    RealArray const rotation_delta = ref_stop.rotation.toNdArray() - ref_start.rotation_initial.toNdArray();
     double const length = pos_delta.norm();
-    NdArray gains(n_points, 1);
-    NdArray distances(n_points, 1);
+    RealArray gains(n_points, 1);
+    RealArray distances(n_points, 1);
     double distance = 0;
 
     double* distance_ptr = &distance;
@@ -154,7 +156,7 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
         case 'd': break; // already set
         default: throw SimulationError("Error in {}: Unknown distance_axis '{}'", __func__, distance_axis);
     }
-    for (NdArray::index_type k = 0; k < n_points; k++)
+    for (RealArray::index_type k = 0; k < n_points; k++)
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         ref_start.pos = ref_start.pos_initial + pos_delta * f;
@@ -175,37 +177,36 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Radiat
     ofs << js.dump(2) << '\n';
 }
 
-void plot::plot_gain_over_plane(std::filesystem::path const& dir_plot, Antenna const& source, Radiator const& sink, Reference& ref_zero, Reference const& ref_axis1_max,
+void plot::plot_gain_over_plane(std::filesystem::path const& dir_plot, Antenna const& source, Antenna const& sink, Reference& ref_zero, Reference const& ref_axis1_max,
                                 Reference const& ref_axis2_max, double wavelength, std::uint32_t n_points_axis1, std::uint32_t n_points_axis2, std::string const& label_axis1,
                                 std::string const& label_axis2)
 {
-    std::string const& source_id = std::visit([](auto const& source) { return source.id; }, source);
-    std::string name = std::format("{}.{}.{}.{}.{}.{}.{}", __func__, source_id, sink.id, n_points_axis1, n_points_axis2, label_axis1, label_axis2);
+    std::string name = std::format("{}.{}.{}.{}.{}.{}.{}", __func__, antenna::get_id(source), antenna::get_id(sink), n_points_axis1, n_points_axis2, label_axis1, label_axis2);
     std::println("Creating plot: {}", name);
 
     ojson js;
     js["name"] = name;
 
     pos_t const pos_delta_axis1 = ref_axis1_max.pos - ref_zero.pos_initial;
-    NdArray const rotation_delta_axis1 = ref_axis1_max.rotation.toNdArray() - ref_zero.rotation_initial.toNdArray();
+    RealArray const rotation_delta_axis1 = ref_axis1_max.rotation.toNdArray() - ref_zero.rotation_initial.toNdArray();
     double const length_axis1 = pos_delta_axis1.norm();
 
     pos_t const pos_delta_axis2 = ref_axis2_max.pos - ref_zero.pos_initial;
-    NdArray const rotation_delta_axis2 = ref_axis2_max.rotation.toNdArray() - ref_zero.rotation_initial.toNdArray();
+    RealArray const rotation_delta_axis2 = ref_axis2_max.rotation.toNdArray() - ref_zero.rotation_initial.toNdArray();
     double const length_axis2 = pos_delta_axis2.norm();
 
-    nc::NdArray<complex_t> gains(n_points_axis2, n_points_axis1);
+    ComplexArray gains(n_points_axis2, n_points_axis1);
     nc::NdArray<pos_t> positions(n_points_axis2, n_points_axis1);
-    for (NdArray::index_type k_ax2 = 0; k_ax2 < n_points_axis2; k_ax2++)
+    for (RealArray::index_type k_ax2 = 0; k_ax2 < n_points_axis2; k_ax2++)
     {
         std::print("k_ax2 = {:04d} / {:04d}\n", k_ax2, n_points_axis2);
         double const f_ax2 = static_cast<double>(k_ax2) / static_cast<double>(n_points_axis2 - 1);
-        for (NdArray::index_type k_ax1 = 0; k_ax1 < n_points_axis1; k_ax1++)
+        for (RealArray::index_type k_ax1 = 0; k_ax1 < n_points_axis1; k_ax1++)
         {
             double const f_ax1 = static_cast<double>(k_ax1) / static_cast<double>(n_points_axis1 - 1);
             ref_zero.pos = ref_zero.pos_initial + pos_delta_axis1 * f_ax1 + pos_delta_axis2 * f_ax2;
             ref_zero.rotation = ref_zero.rotation_initial.toNdArray() + rotation_delta_axis1 * f_ax2;
-            gains(k_ax2, k_ax1) = std::visit([&sink, &wavelength](auto&& source) -> complex_t { return Setup::calc_voltage_gain(source, sink, wavelength, {}); }, source);
+            gains(k_ax2, k_ax1) = Setup::calc_voltage_gain(source, sink, wavelength, {});
             positions(k_ax2, k_ax1) = ref_zero.pos;
         }
     }
