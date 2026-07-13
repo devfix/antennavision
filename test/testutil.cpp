@@ -6,26 +6,10 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
-void require_close_position(pos_t const &actual, pos_t const &expected)
-{
-    REQUIRE(actual.toNdArray().at(0) == Catch::Approx(expected.toNdArray().at(0)).margin(TEST_MARGIN));
-    REQUIRE(actual.toNdArray().at(1) == Catch::Approx(expected.toNdArray().at(1)).margin(TEST_MARGIN));
-    REQUIRE(actual.toNdArray().at(2) == Catch::Approx(expected.toNdArray().at(2)).margin(TEST_MARGIN));
-}
-
-void require_close_array(RealArray const &actual, RealArray const &expected)
-{
-    REQUIRE(actual.shape() == expected.shape());
-    for (nc::uint32 r = 0; r < expected.shape().rows; r++)
-    {
-        for (nc::uint32 c = 0; c < expected.shape().cols; c++) { REQUIRE(actual(r, c) == Catch::Approx(expected(r, c)).margin(TEST_MARGIN)); }
-    }
-}
-
 void test_inverse_transformation(Reference const &reference, pos_t const &pos)
 {
-    require_close_position(reference.local_from_global_pos(reference.global_from_local_pos(pos)), pos);
-    require_close_position(reference.global_from_local_pos(reference.local_from_global_pos(pos)), pos);
+    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.global_from_local_pos(pos)), pos);
+    REQUIRE_CLOSE_POSITION(reference.global_from_local_pos(reference.local_from_global_pos(pos)), pos);
 }
 
 void test_basic_transformations(Reference const &reference)
@@ -34,12 +18,12 @@ void test_basic_transformations(Reference const &reference)
     test_inverse_transformation(reference, reference.pos);
     if (reference.origin)
     {
-        require_close_position(reference.local_from_global_pos(reference.origin->global_from_local_pos(reference.pos)), POS_ZERO);
-        require_close_position(reference.global_from_local_pos(POS_ZERO), reference.origin->global_from_local_pos(reference.pos));
+        REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.origin->global_from_local_pos(reference.pos)), POS_ZERO);
+        REQUIRE_CLOSE_POSITION(reference.global_from_local_pos(POS_ZERO), reference.origin->global_from_local_pos(reference.pos));
     }
     else
     {
-        require_close_position(reference.local_from_global_pos(reference.pos), POS_ZERO);
-        require_close_position(reference.global_from_local_pos(POS_ZERO), reference.pos);
+        REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos), POS_ZERO);
+        REQUIRE_CLOSE_POSITION(reference.global_from_local_pos(POS_ZERO), reference.pos);
     }
 }

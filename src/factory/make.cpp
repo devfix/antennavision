@@ -86,6 +86,39 @@ namespace factory
             auto const spacing = get_double(desc, "spacing", context.variables);
             auto const count = get_uint(desc, "count", context.variables);
             auto const path_codebook = get_string(desc, "codebook", true, true);
+            auto const rot = get_quaternion(desc, "rot", context.variables, true, true);
+            auto const prototype_desc = desc.at("radiator");
+            desc.erase("radiator");
+
+            pos_t constexpr dir(1.0, 0.0, 0.0);
+            double const length = spacing * (count - 1);
+            std::list<Radiator> array_radiators;
+            for (std::remove_const_t<decltype(count)> i = 0; i < count; i++)
+            {
+                double const f = static_cast<double>(i) / static_cast<double>(count - 1);
+                pos_t const pos = dir * (f - 0.5) * length;
+                const auto& ref = context.references.emplace_back(std::format("{}:ref:{}", id, i), &origin, pos, rot);
+
+                // We make a copy of the "backup" description and adapt it for the current element of the ULA
+                ojson ula_element_desc = prototype_desc;
+                ula_element_desc["id"] = std::format("{}:radiator:{}", id, i);
+                ula_element_desc["ref"] = ref.id;
+
+                // call the make function recursively and append the Radiators to array_radiators
+                array_radiators.push_back(make_radiator(ula_element_desc, context));
+            }
+            return UniformLinearArray(id, origin, std::move(array_radiators));
+        }
+
+        Antenna make_upa(ojson& desc, Context& context)
+        {
+            auto const id = get_string(desc, "id");
+            auto const origin_id = get_string(desc, "ref", true, true);
+            auto const type = get_string(desc, "type");
+            Reference& origin = find_reference_by_id(context.references, origin_id);
+            auto const spacing = get_double(desc, "spacing", context.variables);
+            auto const count = get_uint(desc, "count", context.variables);
+            auto const path_codebook = get_string(desc, "codebook", true, true);
             auto dir = get_pos(desc, "dir", context.variables);
             auto const rot = get_quaternion(desc, "rot", context.variables, true, true);
             auto const prototype_desc = desc.at("radiator");
@@ -116,12 +149,16 @@ namespace factory
 
     Antenna make_antenna(ojson& desc, Context& context)
     {
+        // we only read the id, type and ref (origin id) from the description but do not delete them yet
         auto const id = get_string(desc, "id", false);
         assert_valid_id(id);
         auto const type = get_string(desc, "type", false);
         auto const origin_id = get_string(desc, "ref", false, true);
         std::println("{}Creating antenna [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
+
+        // depending on the make a ULA, UPA or single radiator as the antenna
         if (type == "ULA") { return make_ula(desc, context); }
+        if (type == "UPA") { return make_upa(desc, context); }
         return make_radiator(desc, context);
     }
 }  // namespace factory

@@ -14,8 +14,8 @@ TEST_CASE("cascaded references without rotation", "[CascadedReferences]")
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);
-    require_close_position(ref3.global_from_local_pos(pos_t{1, 2, 3}), pos_t(2, 3, 4));
-    require_close_position(ref3.global_from_local_pos(pos_t{-1, -1, -1}), POS_ZERO);
+    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(pos_t{1, 2, 3}), pos_t(2, 3, 4));
+    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(pos_t{-1, -1, -1}), POS_ZERO);
 }
 
 TEST_CASE("cascaded references with rotation", "[CascadedReferences]")
@@ -26,6 +26,6 @@ TEST_CASE("cascaded references with rotation", "[CascadedReferences]")
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);
-    require_close_position(ref3.global_from_local_pos(pos_t{1, 2, 3}), pos_t(2, 3, 4));
-    require_close_position(ref3.global_from_local_pos(pos_t{-1, -1, -1}), POS_ZERO);
+    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(pos_t{1, 2, 3}), pos_t(2, 3, 4));
+    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(pos_t{-1, -1, -1}), POS_ZERO);
 }

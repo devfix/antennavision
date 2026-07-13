@@ -65,8 +65,8 @@ TEST_CASE("HertzianDipole", "[Radiator]")
     std::ranges::transform(thetas, directivities_actual_phi0.begin(), [&radiator](double const theta_) { return radiator.calc_directivity_from_spherical(theta_, 0.0, 101, {}); });
     std::ranges::transform(thetas, directivities_actual_phi1.begin(), [&radiator](double const theta_) { return radiator.calc_directivity_from_spherical(theta_, 1.0, 101, {}); });
     std::ranges::transform(thetas, directivities_expected.begin(), [](double const theta_) { return 1.5 * math::square(std::sin(theta_)); });
-    require_close_array(directivities_actual_phi0, directivities_expected);
-    require_close_array(directivities_actual_phi1, directivities_expected);
+    REQUIRE_CLOSE_ARRAY(directivities_actual_phi0, directivities_expected);
+    REQUIRE_CLOSE_ARRAY(directivities_actual_phi1, directivities_expected);
 }
 
 TEST_CASE("HalfWaveDipole direct", "[Radiator]")

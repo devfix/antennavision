@@ -5,6 +5,7 @@
 #pragma once
 
 #include <NumCpp/Functions/isclose.hpp>
+#include <catch2/catch_approx.hpp>
 #include "reference.hpp"
 #include "types.hpp"
 
@@ -12,14 +13,30 @@ static constexpr double TEST_MARGIN = 1e-6;
 
 template <typename T>
 bool isclose(T a, T b)
-{
-    return nc::isclose(nc::NdArray<T>{a}, nc::NdArray<T>{b})[0];
-}
+{ return nc::isclose(nc::NdArray<T>{a}, nc::NdArray<T>{b})[0]; }
 
-void require_close_position(pos_t const &actual, pos_t const &expected);
+#define REQUIRE_CLOSE_POSITION(actual, expected)                                                                                                               \
+    do                                                                                                                                                         \
+    {                                                                                                                                                          \
+        REQUIRE((actual).toNdArray().at(0) == Catch::Approx((expected).toNdArray().at(0)).margin(TEST_MARGIN));                                                \
+        REQUIRE((actual).toNdArray().at(1) == Catch::Approx((expected).toNdArray().at(1)).margin(TEST_MARGIN));                                                \
+        REQUIRE((actual).toNdArray().at(2) == Catch::Approx((expected).toNdArray().at(2)).margin(TEST_MARGIN));                                                \
+    }                                                                                                                                                          \
+    while (0)
 
-void require_close_array(RealArray const& actual, RealArray const& expected);
+#define REQUIRE_CLOSE_ARRAY(actual, expected)                                                                                                                  \
+    do                                                                                                                                                         \
+    {                                                                                                                                                          \
+        auto const& actual_ = (actual);                                                                                                                        \
+        auto const& expected_ = (expected);                                                                                                                    \
+        REQUIRE(actual_.shape() == expected_.shape());                                                                                                         \
+        for (nc::uint32 r = 0; r < expected_.shape().rows; r++)                                                                                                \
+        {                                                                                                                                                      \
+            for (nc::uint32 c = 0; c < expected_.shape().cols; c++) { REQUIRE(actual_(r, c) == Catch::Approx(expected_(r, c)).margin(TEST_MARGIN)); }          \
+        }                                                                                                                                                      \
+    }                                                                                                                                                          \
+    while (0)
 
-void test_inverse_transformation(Reference const &reference, pos_t const &pos);
+void test_inverse_transformation(Reference const& reference, pos_t const& pos);
 
-void test_basic_transformations(Reference const &reference);
+void test_basic_transformations(Reference const& reference);

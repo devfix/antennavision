@@ -11,35 +11,45 @@
 #include "setup.hpp"
 #include "testutil.hpp"
 
-TEST_CASE("ULA position and rotation", "[TestULA]")
+TEST_CASE("UPA position and rotation", "[TestUPA]")
 {
     ojson const js = ojson::parse(R"JSON(
 {
   "metadata": {
-    "setup_name": "test-ula"
+    "setup_name": "test-upa"
   },
   "variables": {
     "wavelength": 0.1
   },
   "references": [
     {
-      "id": "ref_ula",
+      "id": "ref_upa",
       "origin": "",
       "pos": {
         "x": 0,
         "y": "wavelength * 2",
         "z": "wavelength * 2"
+      },
+      "rot": {
+        "roll": 0,
+        "pitch": 0.5,
+        "yaw": 0
       }
     }
   ],
   "radiators": [
     {
-      "type": "ULA",
-      "id": "ula1",
-      "ref": "ref_ula",
+      "type": "UPA",
+      "id": "upa1",
+      "ref": "ref_upa",
+      "dir": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
       "rot": {
-        "roll": 0.5,
-        "pitch": 0.0,
+        "roll": 0,
+        "pitch": 0,
         "yaw": 0.5
       },
       "spacing": "wavelength * 0.5",
@@ -54,26 +64,38 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
     auto const setup = Setup::from_json(js);
     auto const wavelength = setup->variables.at("wavelength");
 
-    // check ULA element references
+    // check UPA origin references
+    {
+        auto const& ref_upa = setup->get_reference("ref_upa");
+        double const x = 0.0;
+        double const y = 2.0 * wavelength;
+        double const z = 2.0 * wavelength;
+        require_close_position(ref_upa.global_from_local_pos(POS_ZERO), pos_t(x, y, z));
+        require_close_position(ref_upa.global_from_local_pos(pos_t(wavelength, 0.0, 0.0)), pos_t(x, y, z - wavelength));
+        require_close_position(ref_upa.global_from_local_pos(pos_t(0.0, wavelength, 0.0)), pos_t(x, y + wavelength, z));
+        require_close_position(ref_upa.global_from_local_pos(pos_t(0.0, 0.0, wavelength)), pos_t(x + wavelength, y, z));
+    }
+
+    // check UPA element references
     for (std::size_t i = 0; i < 8; i++)
     {
-        auto const& ref_element = setup->get_reference(std::format("ula1:ref:{}", i));
+        auto const& ref_element = setup->get_reference(std::format("upa1:ref:{}", i));
         double const x = (static_cast<double>(i) - 3.5) * 0.5 * wavelength;
         double const y = 2.0 * wavelength;
         double const z = 2.0 * wavelength;
-        REQUIRE_CLOSE_POSITION(ref_element.global_from_local_pos(POS_ZERO), pos_t(x, y, z));
-        REQUIRE_CLOSE_POSITION(ref_element.global_from_local_pos(pos_t(wavelength, 0.0, 0.0)), pos_t(x, y + wavelength, z));
-        REQUIRE_CLOSE_POSITION(ref_element.global_from_local_pos(pos_t(0.0, wavelength, 0.0)), pos_t(x, y, z + wavelength));
-        REQUIRE_CLOSE_POSITION(ref_element.global_from_local_pos(pos_t(0.0, 0.0, wavelength)), pos_t(x + wavelength, y, z));
+        require_close_position(ref_element.global_from_local_pos(POS_ZERO), pos_t(x, y, z));
+        require_close_position(ref_element.global_from_local_pos(pos_t(wavelength, 0.0, 0.0)), pos_t(x, y + wavelength, z));
+        require_close_position(ref_element.global_from_local_pos(pos_t(0.0, wavelength, 0.0)), pos_t(x, y, z + wavelength));
+        require_close_position(ref_element.global_from_local_pos(pos_t(0.0, 0.0, wavelength)), pos_t(x + wavelength, y, z));
     }
 }
 
-TEST_CASE("ULA gain", "[TestULA]")
+TEST_CASE("UPA gain", "[TestUPA]")
 {
     ojson const js = ojson::parse(R"JSON(
 {
   "metadata": {
-    "setup_name": "test-ula"
+    "setup_name": "test-upa"
   },
   "variables": {
     "wavelength": 0.1,
@@ -81,13 +103,8 @@ TEST_CASE("ULA gain", "[TestULA]")
   },
   "references": [
     {
-      "id": "ref_ula",
-      "origin": "",
-      "rot": {
-        "yaw": 0.0,
-        "pitch": -0.5,
-        "roll": 0.0
-      }
+      "id": "ref_upa",
+      "origin": ""
     },
     {
       "id": "ref_rx_start",
@@ -110,16 +127,16 @@ TEST_CASE("ULA gain", "[TestULA]")
   ],
   "radiators": [
     {
-      "type": "ULA",
-      "id": "ula1",
-      "ref": "ref_ula",
+      "type": "UPA",
+      "id": "upa1",
+      "ref": "ref_upa",
+      "dir": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
       "spacing": "wavelength * 0.5",
       "count": 3,
-      "rot": {
-        "yaw": 0.0,
-        "pitch": 0.5,
-        "roll": 0.0
-      },
       "radiator": {
         "type": "HertzianDipole"
       }
@@ -140,7 +157,7 @@ TEST_CASE("ULA gain", "[TestULA]")
 )JSON");
     auto const setup = Setup::from_json(js);
     auto const wavelength = setup->variables.at("wavelength");
-    auto const& tx = setup->get_antenna("ula1");
+    auto const& tx = setup->get_antenna("upa1");
     auto const& rx = setup->get_antenna("receiver");
     Reference& ref_start = setup->get_reference("ref_rx_start");
     Reference const& ref_stop = setup->get_reference("ref_rx_stop");
@@ -181,12 +198,12 @@ TEST_CASE("ULA gain", "[TestULA]")
     }
 }
 
-TEST_CASE("ULA gain using ScalarField", "[TestULA]")
+TEST_CASE("UPA gain using ScalarField", "[TestUPA]")
 {
     ojson const js = ojson::parse(R"JSON(
 {
   "metadata": {
-    "setup_name": "test-ula"
+    "setup_name": "test-upa"
   },
   "variables": {
     "wavelength": 0.1,
@@ -194,13 +211,8 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
   },
   "references": [
     {
-      "id": "ref_ula",
-      "origin": "",
-      "rot": {
-        "yaw": 0.0,
-        "pitch": -0.5,
-        "roll": 0.0
-      }
+      "id": "ref_upa",
+      "origin": ""
     },
     {
       "id": "ref_rx_start",
@@ -223,16 +235,16 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
   ],
   "radiators": [
     {
-      "type": "ULA",
-      "id": "ula1",
-      "ref": "ref_ula",
+      "type": "UPA",
+      "id": "upa1",
+      "ref": "ref_upa",
+      "dir": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
       "spacing": "wavelength * 0.5",
       "count": 3,
-      "rot": {
-        "yaw": 0.0,
-        "pitch": 0.5,
-        "roll": 0.0
-      },
       "radiator": {
         "type": "HertzianDipole"
       }
@@ -253,7 +265,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
 )JSON");
     auto const setup = Setup::from_json(js);
     auto const wavelength = setup->variables.at("wavelength");
-    auto const& tx = setup->get_antenna("ula1");
+    auto const& tx = setup->get_antenna("upa1");
     auto & rx = setup->get_antenna("receiver");
     Reference const& ref_stop = setup->get_reference("ref_rx_stop");
     math::NumParams num_params;

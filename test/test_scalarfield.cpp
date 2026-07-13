@@ -7,9 +7,7 @@
 #include <nlohmann/json.hpp>
 #include "components/radiator.hpp"
 #include "math.hpp"
-#include "print.hpp"
 #include "setup.hpp"
-#include "testutil.hpp"
 
 
 TEST_CASE("ScalarField", "[TestULA]")
@@ -26,7 +24,12 @@ TEST_CASE("ScalarField", "[TestULA]")
   "references": [
     {
       "id": "ref_ula",
-      "origin": ""
+      "origin": "",
+      "rot": {
+        "roll": 0.0,
+        "pitch": 0.5,
+        "yaw": 0.0
+      }
     },
     {
       "id": "ref_rx_start",
@@ -52,13 +55,13 @@ TEST_CASE("ScalarField", "[TestULA]")
       "type": "ULA",
       "id": "ula1",
       "ref": "ref_ula",
-      "dir": {
-        "x": 0,
-        "y": 0,
-        "z": 1
-      },
       "spacing": "wavelength * 0.5",
       "count": 16,
+      "rot": {
+        "roll": 0.0,
+        "pitch": -0.5,
+        "yaw": 0.0
+      },
       "radiator": {
         "type": "HertzianDipole"
       }
