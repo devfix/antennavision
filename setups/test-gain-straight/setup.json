@@ -43,7 +43,7 @@
       }
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "id": "transmitter",
       "ref": "",
@@ -63,8 +63,8 @@
   "tasks": [
     {
       "type": "plot_gain_over_straight",
-      "source": "transmitter",
-      "sink": "receiver_x",
+      "tx": "transmitter",
+      "rx": "receiver_x",
       "ref_start": "ref_rx_x_start",
       "ref_stop": "ref_rx_x_stop",
       "wavelength": 0.1,
@@ -72,8 +72,8 @@
     },
     {
       "type": "plot_gain_over_straight",
-      "source": "transmitter",
-      "sink": "receiver_z",
+      "tx": "transmitter",
+      "rx": "receiver_z",
       "ref_start": "ref_rx_z_start",
       "ref_stop": "ref_rx_z_stop",
       "wavelength": 0.1,

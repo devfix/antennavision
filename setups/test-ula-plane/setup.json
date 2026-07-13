@@ -27,43 +27,38 @@
       "id": "ref_rx_start",
       "origin": "",
       "pos": {
-        "x": 0,
+        "x": "-distance/2",
         "y": 0,
-        "z": "-distance/2"
+        "z": 0
       }
     },
     {
       "id": "ref_axis1_max",
       "origin": "",
       "pos": {
-        "x": 0,
+        "x": "distance/2",
         "y": 0,
-        "z": "distance/2"
+        "z": 0
       }
     },
     {
       "id": "ref_axis2_max",
       "origin": "",
       "pos": {
-        "x": 0,
+        "x": "-distance/2",
         "y": "distance",
-        "z": "-distance/2"
+        "z": 0
       }
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "type": "ULA",
       "id": "ula1",
       "ref": "origin",
       "codebook": "../codebooks/ula16-1.json",
-      "dir": {
-        "x": 0,
-        "y": 0,
-        "z": 1
-      },
       "spacing": "wavelength * 0.5",
-      "count": 16,
+      "size": 16,
       "radiator": {
         "type": "StandingWaveDipole",
         "dipole_length": "dipole_length"
@@ -79,15 +74,15 @@
   "tasks": [
     {
       "type": "plot_gain_over_plane",
-      "source": "ula1",
-      "sink": "receiver",
+      "tx": "ula1",
+      "rx": "receiver",
       "ref_start": "ref_rx_start",
       "ref_axis1_max": "ref_axis1_max",
       "ref_axis2_max": "ref_axis2_max",
       "wavelength": "wavelength",
       "n_points_axis1": 201,
       "n_points_axis2": 201,
-      "label_axis1": "z",
+      "label_axis1": "x",
       "label_axis2": "y"
     }
   ]

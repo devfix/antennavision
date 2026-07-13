@@ -30,117 +30,108 @@ namespace
 
     void extract_variables(factory::Context& context)
     {
-        if (context.desc.contains("variables"))
+        if (!context.desc.contains("variables")) { return; }
+        for (auto& variables = context.desc["variables"]; const auto& [key, val] : variables.items())
         {
-            for (const auto& [key, val] : context.desc["variables"].items())
+            if (val.is_string()) { context.variables[key] = factory::parse_double(val.get<std::string>(), context.variables); }
+            else if (val.is_number()) { context.variables[key] = val.get<double>(); }
+            else
             {
-                if (val.is_string()) { context.variables[key] = factory::parse_double(val.get<std::string>(), context.variables); }
-                else if (val.is_number()) { context.variables[key] = val.get<double>(); }
-                else
-                {
-                    throw SimulationError("Invalid type '{}' of variable '{}'", val.type_name(), key);
-                }
-                std::println("Define variable {}={:.15g}", key, context.variables[key]);
+                throw SimulationError("Invalid type '{}' of variable '{}'", val.type_name(), key);
             }
+            std::println("Define variable {}={:.15g}", key, context.variables[key]);
         }
+        context.desc.erase("variables");
     }
 
     void extract_references(factory::Context& context)
     {
         context.references.emplace_back("", nullptr, pos_t(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
-        if (context.desc.contains("references"))
+        if (!context.desc.contains("references")) { return; }
+        for (auto& references = json_get(context.desc, "references"); auto& reference_desc : references)
         {
-            for (auto& reference_desc : json_get(context.desc, "references"))
-            {
-                factory::make_reference(reference_desc, context.references, context.variables);
-                factory::assert_empty(reference_desc);
-            }
+            factory::make_reference(reference_desc, context.references, context.variables);
+            factory::assert_empty(reference_desc);
         }
+        context.desc.erase("references");
     }
 
     void extract_antennas(factory::Context& context)
     {
-        if (context.desc.contains("antennas"))
+        if (!context.desc.contains("antennas")) { return; }
+        for (auto& antennas = json_get(context.desc, "antennas"); auto& desc : antennas)
         {
-            for (auto& radiator_desc : json_get(context.desc, "antennas"))
-            {
-                Antenna ant = factory::make_antenna(radiator_desc, context);
-                context.antennas.emplace(antenna::get_id(ant), std::move(ant));
-                factory::assert_empty(radiator_desc);
-            }
+            Antenna ant = factory::make_antenna(desc, context);
+            context.antennas.emplace(antenna::get_id(ant), std::move(ant));
+            factory::assert_empty(desc);
         }
+        context.desc.erase("antennas");
     }
 
     void extract_tasks(factory::Context& context)
     {
-        auto& setup_desc = context.desc;
-        auto& variables = context.variables;
-        auto& references = context.references;
-        auto& radiators = context.antennas;
-        auto& tasks = context.tasks;
-        if (setup_desc.contains("tasks"))
+        if (!context.desc.contains("tasks")) { return; }
+        for (auto& tasks = json_get(context.desc, "tasks"); auto& task_desc : tasks)
         {
-            for (auto& task_desc : json_get(setup_desc, "tasks"))
+            auto const type = factory::get_string(task_desc, "type");
+            std::println("Found task of type '{}'", type);
+            std::string task_name;
+            if (type == "builtin")
             {
-                auto const type = factory::get_string(task_desc, "type");
-                std::println("Found task of type '{}'", type);
-                std::string task_name;
-                if (type == "builtin")
-                {
-                    auto const key = factory::get_string(task_desc, "key");
-                    task_name = std::format("builtin.{}", key);
-                    tasks.emplace_back(task_name, nullptr);
-                }
-                else if (type == "plot_directivity_over_polar")
-                {
-                    auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
-                    Antenna const& radiator = radiators.at(factory::get_string(task_desc, "radiator"));
-                    task_name = std::format("{}.{}", type, antenna::get_id(radiator));
-                    tasks.emplace_back(task_name, [&radiator, azimuth_angles](std::filesystem::path const& directory)
-                                       { plot::plot_directivity_over_polar(directory, radiator, azimuth_angles); });
-                }
-                else if (type == "plot_gain_over_straight")
-                {
-                    Antenna const& source = radiators.at(factory::get_string(task_desc, "source"));
-                    Antenna const& sink = radiators.at(factory::get_string(task_desc, "sink"));
-                    Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
-                    Reference const& ref_stop = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_stop"));
-                    double wavelength = factory::get_double(task_desc, "wavelength", variables);
-                    char distance_axis = factory::get_char(task_desc, "distance_axis");
-                    task_name = std::format("{}.{}.{}", type, antenna::get_id(source), antenna::get_id(sink));
-                    tasks.emplace_back(task_name, [&source, &sink, &ref_start, &ref_stop, wavelength, distance_axis](std::filesystem::path const& directory)
-                                       { plot::plot_gain_over_straight(directory, source, sink, ref_start, ref_stop, wavelength, distance_axis); });
-                }
-                else if (type == "plot_gain_over_plane")
-                {
-                    auto const source_id = factory::get_string(task_desc, "source");
-                    Antenna& source = context.antennas.at(source_id);
-                    Antenna const& sink = context.antennas.at(factory::get_string(task_desc, "sink"));
-                    Reference& ref_start = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_start"));
-                    Reference const& ref_axis1_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis1_max"));
-                    Reference const& ref_axis2_max = factory::find_reference_by_id(references, factory::get_string(task_desc, "ref_axis2_max"));
-                    double wavelength = factory::get_double(task_desc, "wavelength", variables);
-                    std::uint32_t n_points_axis1 = factory::get_uint(task_desc, "n_points_axis1", variables);
-                    std::uint32_t n_points_axis2 = factory::get_uint(task_desc, "n_points_axis2", variables);
-                    auto label_axis1 = factory::get_string(task_desc, "label_axis1");
-                    auto label_axis2 = factory::get_string(task_desc, "label_axis2");
-                    task_name = std::format("{}.{}.{}", type, source_id, antenna::get_id(sink));
-                    tasks.emplace_back(task_name,
-                                       [&source, &sink, &ref_start, &ref_axis1_max, &ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1,
-                                        label_axis2](std::filesystem::path const& directory)
-                                       {
-                                           plot::plot_gain_over_plane(directory, source, sink, ref_start, ref_axis1_max, ref_axis2_max, wavelength,
-                                                                      n_points_axis1, n_points_axis2, label_axis1, label_axis2);
-                                       });
-                }
-                else
-                {
-                    throw SimulationError("Unknown task type \"{}\"", type);
-                }
-                std::println("Created task: {}", task_name);
-                factory::assert_empty(task_desc);
+                auto const key = factory::get_string(task_desc, "key");
+                task_name = std::format("builtin.{}", key);
+                context.tasks.emplace_back(task_name, nullptr);
             }
+            else if (type == "plot_directivity_over_polar")
+            {
+                auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
+                Antenna const& ant = context.antennas.at(factory::get_string(task_desc, "antenna"));
+                task_name = std::format("{}.{}", type, antenna::get_id(ant));
+                context.tasks.emplace_back(task_name, [&ant, azimuth_angles](std::filesystem::path const& directory)
+                                           { plot::plot_directivity_over_polar(directory, ant, azimuth_angles); });
+            }
+            else if (type == "plot_gain_over_straight")
+            {
+                Antenna const& tx = context.antennas.at(factory::get_string(task_desc, "tx"));
+                Antenna const& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
+                Reference& ref_start = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_start"));
+                Reference const& ref_stop = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_stop"));
+                double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
+                char distance_axis = factory::get_char(task_desc, "distance_axis");
+                task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
+                context.tasks.emplace_back(task_name, [&tx, &rx, &ref_start, &ref_stop, wavelength, distance_axis](std::filesystem::path const& directory)
+                                           { plot::plot_gain_over_straight(directory, tx, rx, ref_start, ref_stop, wavelength, distance_axis); });
+            }
+            else if (type == "plot_gain_over_plane")
+            {
+                auto const tx_id = factory::get_string(task_desc, "tx");
+                Antenna& tx = context.antennas.at(tx_id);
+                Antenna const& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
+                Reference& ref_start = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_start"));
+                Reference const& ref_axis1_max = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_axis1_max"));
+                Reference const& ref_axis2_max = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_axis2_max"));
+                double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
+                std::uint32_t n_points_axis1 = factory::get_uint(task_desc, "n_points_axis1", context.variables);
+                std::uint32_t n_points_axis2 = factory::get_uint(task_desc, "n_points_axis2", context.variables);
+                auto label_axis1 = factory::get_string(task_desc, "label_axis1");
+                auto label_axis2 = factory::get_string(task_desc, "label_axis2");
+                task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
+                context.tasks.emplace_back(task_name,
+                                           [&tx, &rx, &ref_start, &ref_axis1_max, &ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1,
+                                            label_axis2](std::filesystem::path const& directory)
+                                           {
+                                               plot::plot_gain_over_plane(directory, tx, rx, ref_start, ref_axis1_max, ref_axis2_max, wavelength,
+                                                                          n_points_axis1, n_points_axis2, label_axis1, label_axis2);
+                                           });
+            }
+            else
+            {
+                throw SimulationError("Unknown task type \"{}\"", type);
+            }
+            std::println("Created task: {}", task_name);
+            factory::assert_empty(task_desc);
         }
+        context.desc.erase("tasks");
     }
 } // namespace
 
@@ -148,14 +139,17 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
 {
     ojson setup_desc = js; // create a copy of the json object in order to decompose it
     auto& metadata = json_get(setup_desc, "metadata");
-    std::string_view const setup_name = json_get(metadata, "setup_name").get<std::string_view>();
+    auto const setup_name = factory::get_string(metadata, "setup_name");
     std::println("Setup name: {}", setup_name);
+    factory::assert_empty(metadata);
+    setup_desc.erase("metadata");
 
     factory::Context context{.desc = setup_desc};
     extract_variables(context);
     extract_references(context);
     extract_antennas(context);
     extract_tasks(context);
+    factory::assert_empty(context.desc);
 
     // ReSharper disable once CppDFAMemoryLeak
     return std::unique_ptr<Setup>(new Setup(setup_name, timestamp, std::move(context)));
@@ -163,7 +157,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
 
 std::unique_ptr<Setup> Setup::from_file(std::filesystem::path const& p)
 {
-    std::println("Loading setup file '{}'", p.string());
+    std::println("{}Loading setup file '{}'{}", ansi_color::fg4::cyan, p.string(), ansi_color::reset);
     std::ifstream file(p);
     if (!file.is_open()) { throw SimulationError("Could not open setup file '{}'", p.string()); }
     auto const js = nlohmann::ordered_json::parse(file);
@@ -283,14 +277,14 @@ complex_t Setup::calc_voltage_gain(Antenna const& tx, Antenna const& rx, double 
 {
     Radiator const& radiator_rx = antenna::cast<Radiator>(rx);
     return std::visit(
-        [&](auto const& radiator_tx)
+        [&](auto const& ant_tx)
         {
-            using Type = std::decay_t<decltype(radiator_tx)>;
-            if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(radiator_tx, radiator_rx, wavelength, num_params); }
+            using Type = std::decay_t<decltype(ant_tx)>;
+            if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(ant_tx, radiator_rx, wavelength, num_params); }
             else if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
             {
                 complex_t gain = 0;
-                for (auto const& element : radiator_tx.elements) { gain += calc_voltage_gain_direct(element, radiator_rx, wavelength, num_params); }
+                for (auto const& element : ant_tx.elements) { gain += calc_voltage_gain_direct(element, radiator_rx, wavelength, num_params); }
                 return gain;
             }
             else
@@ -312,12 +306,6 @@ bool Setup::isUpToDate(std::filesystem::path const& path_timestamp) const
     // zero timestamps are used by the testing framework to force setup's tasks execution
     return saved_timestamp && saved_timestamp == timestamp;
 }
-
-// Setup::VoltageField::VoltageField(RadiatorArray const& radiator_array_tx, Radiator& radiator_rx) :
-//     radiator_array_tx(radiator_array_tx), radiator_rx(radiator_rx)
-// {}
-//
-// complex_t Setup::VoltageField::calc_voltage_gain(pos_t pos, double wavelength) {}
 
 Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, factory::Context&& context) :
     name(name), timestamp(timestamp), variables(std::move(context.variables)), references(std::move(context.references)), antennas(std::move(context.antennas)),

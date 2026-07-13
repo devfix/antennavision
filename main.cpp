@@ -3,7 +3,7 @@
 #include <execution>
 #include <ranges>
 #include "bitmap.hpp"
-#include "builtin/t00.hpp"
+#include "builtin.hpp"
 #include "include/setup.hpp"
 #include "manifest.hpp"
 #include "plot.hpp"
@@ -22,11 +22,13 @@ namespace
 
 void run_builtin_task(Setup& setup, std::string_view key)
 {
-    if (key == "t00_compare_beamwidth") { builtin::t00_compare_beamwidth(setup); }
-    else
-    {
-        throw SimulationError("Invalid builtin task key: {}", key);
-    }
+    builtin::FunctionRegistry::instance().call(std::string(key), setup);
+    // if (key == "t00_ula_beamwidth") { builtin::t00_ula_beamwidth(setup); }
+    // else if (key == "t00_upa_beam_shape") { builtin::t01_upa_beam_shape(setup); }
+    // else
+    // {
+    //     throw SimulationError("Invalid builtin task key: {}", key);
+    // }
 }
 
 int main(int argc, char* argv[])
@@ -68,10 +70,10 @@ int main(int argc, char* argv[])
         std::filesystem::current_path(path.parent_path());
 
         std::filesystem::path const path_timestamp = "timestamp";
-        if (setup->isUpToDate(path_timestamp)) { std::println("Setup '{}' is unchanged since {}, skipping", setup->name, timeutil::format(setup->timestamp)); }
+        if (setup->isUpToDate(path_timestamp)) { std::println("{}Setup '{}' is unchanged since {}, skipping{}", ansi_color::fg4::cyan, setup->name, timeutil::format(setup->timestamp), ansi_color::reset); }
         else
         {
-            std::println("Setup '{}' is new or updated, running", setup->name);
+            std::println("{}Setup '{}' is new or updated, running{}", ansi_color::fg4::cyan, setup->name, ansi_color::reset);
             setup->export_to_three(".");
             setup->run_tasks([&setup](std::string_view const key) { run_builtin_task(*setup, key); });
             timeutil::store_to_file(path_timestamp, setup->timestamp);

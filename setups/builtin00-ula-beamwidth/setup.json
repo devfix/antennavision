@@ -10,7 +10,7 @@
   "tasks": [
     {
       "type": "builtin",
-      "key": "t00_compare_beamwidth"
+      "key": "t00_ula_beamwidth"
     }
   ]
 }

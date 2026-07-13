@@ -2,10 +2,10 @@
 // Created by core on 21.06.26.
 //
 
-#include "../../include/builtin/t00.hpp"
 #include <nlohmann/json.hpp>
 #include <print.hpp>
 #include <vector>
+#include "builtin.hpp"
 #include "math.hpp"
 
 namespace builtin
@@ -34,13 +34,8 @@ namespace builtin
       "id": "tx",
       "type": "ULA",
       "ref": "",
-      "dir": {
-        "x": 0,
-        "y": 0,
-        "z": 1
-      },
       "spacing": "wavelength * 0.5",
-      "count": 1,
+      "size": 1,
       "radiator": {
         "type": "StandingWaveDipole",
         "dipole_length": "dipole_length"
@@ -57,7 +52,8 @@ namespace builtin
 )JSON");
     }
 
-    void t00_compare_beamwidth(Setup& setup_task)
+    [[maybe_unused]] static Registerer registerer("t00_ula_beamwidth", t00_ula_beamwidth);
+    void t00_ula_beamwidth(Setup& setup_task)
     {
         std::filesystem::path const dir_plot = std::filesystem::path(setup_task.name);
 
@@ -77,23 +73,23 @@ namespace builtin
             std::println("Calculating beamwidth for n={}", n_elements);
             ns_elements.push_back(n_elements);
             auto js_configured = js_template;
-            js_configured.at("radiators").at(0).at("count") = n_elements;
+            js_configured.at("antennas").at(0).at("size") = n_elements;
 
             math::NumParams num_params;
             num_params.n_linear = 201;
             {
                 json json_rot;
                 json_rot["roll"] = 0.0;
-                json_rot["pitch"] = 0.0;
+                json_rot["pitch"] = 0.5;
                 json_rot["yaw"] = 0.0;
-                js_configured.at("radiators").at(0)["rot"] = json_rot;
+                js_configured.at("antennas").at(0)["rot"] = json_rot;
                 auto const setup = Setup::from_json(js_configured);
                 auto const wavelength = setup->variables.at("wavelength");
                 auto const distance = setup->variables.at("distance");
                 auto& tx = setup->get_antenna("tx");
                 auto& rx = setup->get_antenna("rx");
                 auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
-                auto circle = math::get_circle(POS_ZERO, pos_t(1, 0, 0), distance, pos_t(0, 1, 0));
+                auto circle = math::get_circle(POS_ZERO, pos_t(0, 0, 1), distance, pos_t(0, 1, 0));
 
                 auto [pos_beam, beamwidth_axial] = voltage_field.calc_beamwidth(circle, sqrt2_2, wavelength);
                 beamwidths_axial.push_back(beamwidth_axial);
@@ -102,16 +98,16 @@ namespace builtin
             {
                 json json_rot;
                 json_rot["roll"] = 0.0;
-                json_rot["pitch"] = 0.5;
+                json_rot["pitch"] = 0.0;
                 json_rot["yaw"] = 0.0;
-                js_configured.at("radiators").at(0)["rot"] = json_rot;
+                js_configured.at("antennas").at(0)["rot"] = json_rot;
                 auto const setup = Setup::from_json(js_configured);
                 auto const wavelength = setup->variables.at("wavelength");
                 auto const distance = setup->variables.at("distance");
                 auto& tx = setup->get_antenna("tx");
                 auto& rx = setup->get_antenna("rx");
                 auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
-                auto circle = math::get_circle(POS_ZERO, pos_t(1, 0, 0), distance, pos_t(0, 1, 0));
+                auto circle = math::get_circle(POS_ZERO, pos_t(0, 0, 1), distance, pos_t(0, 1, 0));
 
                 auto [pos_beam, beamwidth_lateral] = voltage_field.calc_beamwidth(circle, sqrt2_2, wavelength);
                 beamwidths_lateral.push_back(beamwidth_lateral);
