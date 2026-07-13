@@ -10,14 +10,24 @@
 #include <NumCpp/NdArray/NdArrayCore.hpp>
 #include <NumCpp/Rotations/Quaternion.hpp>
 
+// single-element types
 using complex_t = std::complex<double>;
-using RealArray = nc::NdArray<double>;
-using ComplexArray = nc::NdArray<complex_t>;
 using pos_t = nc::Vec3;
 using vec_t = nc::NdArray<complex_t>; /// should be of shape 3x1
 using Quaternion = nc::rotations::Quaternion;
+
+// array types
+using RealArray = nc::NdArray<double>;
+using ComplexArray = nc::NdArray<complex_t>;
+using PositionArray = nc::NdArray<pos_t>;
+using VectorArray = nc::NdArray<vec_t>;
+using QuaternionArray = nc::NdArray<Quaternion>; // probably never used but we already define it here
+
+// other types
 using ojson = nlohmann::ordered_json;
 using json = nlohmann::json;
+
+// mathematical and physical constants
 constexpr double pi = std::numbers::pi;
 constexpr complex_t j = nc::constants::j;
 constexpr double egamma = std::numbers::egamma;

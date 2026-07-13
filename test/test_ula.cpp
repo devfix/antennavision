@@ -159,7 +159,7 @@ TEST_CASE("ULA gain", "[TestULA]")
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         ref_start.pos = ref_start.pos_initial + pos_delta * f;
         ref_start.rotation = ref_start.rotation_initial.toNdArray() + rotation_delta * f;
-        gains.at(k) = Setup::calc_voltage_gain(tx, rx, wavelength, {});
+        gains.at(k) = antenna::calc_voltage_gain(tx, rx, wavelength, {});
         distances.at(k) = *distance_ptr;
     }
     ref_start.reset();
@@ -257,7 +257,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
     auto & rx = setup->get_antenna("receiver");
     Reference const& ref_stop = setup->get_reference("ref_rx_stop");
     math::NumParams num_params;
-    auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
+    auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
 
     constexpr std::size_t n_points = 11;
     pos_t const pos_delta = ref_stop.pos - antenna::get_origin(rx).pos;

@@ -38,10 +38,6 @@ public:
     [[nodiscard]] Reference& get_reference(std::string_view id);
     [[nodiscard]] Antenna& get_antenna(std::string const& id);
 
-    [[nodiscard]] ScalarField get_voltage_field(Antenna const& radiator_array_tx, Antenna& radiator_rx, math::NumParams const& num_params);
-    [[nodiscard]] static complex_t calc_voltage_gain(Antenna const& tx, Antenna const& rx, double wavelength, math::NumParams const& num_params);
-    [[nodiscard]] static double calc_power_gain(Antenna const& tx, Antenna const& rx, double wavelength, math::NumParams const& num_params);
-
     [[nodiscard]] bool isUpToDate(std::filesystem::path const& path_timestamp) const;
 
     std::string const name;

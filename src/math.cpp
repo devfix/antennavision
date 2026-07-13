@@ -45,6 +45,21 @@ namespace math
         return circle;
     }
 
+    Rectangle get_rectangle(pos_t const& pos_zero, pos_t const& pos_width_max, pos_t const& pos_height_max)
+    {
+        pos_t const dir_width = pos_width_max - pos_zero;
+        pos_t const dir_height = pos_height_max - pos_zero;
+        Rectangle rectangle{
+            .normal = dir_width.cross(dir_height).normalize(),
+            .width = dir_width.norm(),
+            .height = dir_height.norm(),
+            .v1 = dir_width.normalize(),
+        };
+        rectangle.v2 = rectangle.normal.cross(rectangle.v1);
+        rectangle.center = pos_zero + 0.5 * dir_width + 0.5 * dir_height;
+        return rectangle;
+    }
+
     double angle_between_vectors(pos_t vec1, pos_t vec2)
     {
         double const norm1 = vec1.norm();
@@ -66,10 +81,12 @@ namespace math
             dir_initial = dir_initial.normalize();
 
             // We "search" for a viable orthogonal direction
-            std::array<std::tuple<pos_t, double>, 3> dir_orts{{{dir_initial.cross(pos_t(1, 0, 0)), 0}, {dir_initial.cross(pos_t(0, 1, 0)), 0}, {dir_initial.cross(pos_t(0, 0, 1)), 0}}};
+            std::array<std::tuple<pos_t, double>, 3> dir_orts{
+                {{dir_initial.cross(pos_t(1, 0, 0)), 0}, {dir_initial.cross(pos_t(0, 1, 0)), 0}, {dir_initial.cross(pos_t(0, 0, 1)), 0}}};
             for (auto& [dir, len] : dir_orts) { len = dir.norm(); }
-            auto const dir_ort_best = std::get<0>(
-                *std::max_element(dir_orts.begin(), dir_orts.end(), [](std::tuple<pos_t, double> const& a, std::tuple<pos_t, double> const& b) { return std::get<1>(a) < std::get<1>(b); }));
+            auto const dir_ort_best =
+                std::get<0>(*std::max_element(dir_orts.begin(), dir_orts.end(), [](std::tuple<pos_t, double> const& a, std::tuple<pos_t, double> const& b)
+                                              { return std::get<1>(a) < std::get<1>(b); }));
             return {dir_ort_best.normalize(), nc::constants::pi};
         }
         else

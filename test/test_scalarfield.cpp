@@ -86,7 +86,7 @@ TEST_CASE("ScalarField", "[TestULA]")
     auto const& tx = setup->get_antenna("ula1");
     auto & rx = setup->get_antenna("receiver");
     math::NumParams num_params;
-    auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
+    auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
     {
         auto [pos_abs_max, _] = voltage_field.argmax_line_abs(pos_t(0, distance, -0.5*distance), pos_t(0, distance, 0.5*distance), wavelength);
         REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));

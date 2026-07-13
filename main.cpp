@@ -2,13 +2,11 @@
 #include <ansi_color.hpp>
 #include <execution>
 #include <ranges>
+#include <print>
 #include "bitmap.hpp"
 #include "builtin.hpp"
 #include "include/setup.hpp"
 #include "manifest.hpp"
-#include "plot.hpp"
-#include "print.hpp"
-#include "simulationerror.hpp"
 #include "types.hpp"
 
 namespace
@@ -20,20 +18,10 @@ namespace
 #endif
 } // namespace
 
-void run_builtin_task(Setup& setup, std::string_view key)
-{
-    builtin::FunctionRegistry::instance().call(std::string(key), setup);
-    // if (key == "t00_ula_beamwidth") { builtin::t00_ula_beamwidth(setup); }
-    // else if (key == "t00_upa_beam_shape") { builtin::t01_upa_beam_shape(setup); }
-    // else
-    // {
-    //     throw SimulationError("Invalid builtin task key: {}", key);
-    // }
-}
-
 int main(int argc, char* argv[])
 {
     ansi_color::enable_windows_ansi();
+
     std::println("{}{}{} v.{}{}\n", ansi_color::fg4::cyan, BANNER, APPLICATION_NAME, APPLICATION_VERSION, ansi_color::reset);
 
     if (DEBUG_MODE)
@@ -75,7 +63,7 @@ int main(int argc, char* argv[])
         {
             std::println("{}Setup '{}' is new or updated, running{}", ansi_color::fg4::cyan, setup->name, ansi_color::reset);
             setup->export_to_three(".");
-            setup->run_tasks([&setup](std::string_view const key) { run_builtin_task(*setup, key); });
+            setup->run_tasks([&setup](std::string_view const key) { builtin::FunctionRegistry::instance().call(std::string(key), *setup); });
             timeutil::store_to_file(path_timestamp, setup->timestamp);
             std::println("{}All tasks completed.{}", ansi_color::fg4::cyan, ansi_color::reset);
         }

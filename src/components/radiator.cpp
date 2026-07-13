@@ -9,10 +9,10 @@
 #include <NumCpp/Functions/sum.hpp>
 #include <string>
 #include <utility>
+#include <print>
 #include "factory/get.hpp"
 #include "factory/make.hpp"
 #include "math.hpp"
-#include "print.hpp"
 #include "simulationerror.hpp"
 
 Radiator Radiator::HertzianDipole::create(std::string_view id, Reference& origin) { return {id, origin, elv_spherical, ms_elv}; }

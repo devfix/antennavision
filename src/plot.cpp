@@ -4,9 +4,9 @@
 
 #include "plot.hpp"
 #include <variant>
+#include <print>
 #include "NumCpp/Functions/linspace.hpp"
 #include "jsonutil.hpp"
-#include "print.hpp"
 #include "setup.hpp"
 #include "simulationerror.hpp"
 
@@ -161,7 +161,7 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Antenn
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         ref_start.pos = ref_start.pos_initial + pos_delta * f;
         ref_start.rotation = ref_start.rotation_initial.toNdArray() + rotation_delta * f;
-        gains[k] = Setup::calc_power_gain(source, sink, wave_length, {});
+        gains[k] = antenna::calc_power_gain(source, sink, wave_length, {});
         distance = f * length;
         distances[k] = *distance_ptr;
     }
@@ -177,41 +177,16 @@ void plot::plot_gain_over_straight(std::filesystem::path const& dir_plot, Antenn
     ofs << js.dump(2) << '\n';
 }
 
-void plot::plot_gain_over_plane(std::filesystem::path const& dir_plot, Antenna const& source, Antenna const& sink, Reference& ref_zero, Reference const& ref_axis1_max,
-                                Reference const& ref_axis2_max, double wavelength, std::uint32_t n_points_axis1, std::uint32_t n_points_axis2, std::string const& label_axis1,
+void plot::plot_gain_over_plane(std::filesystem::path const& dir_plot, ScalarField const& scalar_field, math::Rectangle const& rectangle, double wavelength, std::uint32_t n_points_axis1, std::uint32_t n_points_axis2, std::string const& label_axis1,
                                 std::string const& label_axis2)
 {
-    std::string name = std::format("{}.{}.{}.{}.{}.{}.{}", __func__, antenna::get_id(source), antenna::get_id(sink), n_points_axis1, n_points_axis2, label_axis1, label_axis2);
+    std::string name = std::format("{}.{}.{}.{}.{}.{}", __func__, scalar_field.id, n_points_axis1, n_points_axis2, label_axis1, label_axis2);
     std::println("Creating plot: {}", name);
+
+    auto const[positions, gains] = scalar_field.eval_plane(rectangle, wavelength, n_points_axis1, n_points_axis2);
 
     ojson js;
     js["name"] = name;
-
-    pos_t const pos_delta_axis1 = ref_axis1_max.pos - ref_zero.pos_initial;
-    RealArray const rotation_delta_axis1 = ref_axis1_max.rotation.toNdArray() - ref_zero.rotation_initial.toNdArray();
-    double const length_axis1 = pos_delta_axis1.norm();
-
-    pos_t const pos_delta_axis2 = ref_axis2_max.pos - ref_zero.pos_initial;
-    RealArray const rotation_delta_axis2 = ref_axis2_max.rotation.toNdArray() - ref_zero.rotation_initial.toNdArray();
-    double const length_axis2 = pos_delta_axis2.norm();
-
-    ComplexArray gains(n_points_axis2, n_points_axis1);
-    nc::NdArray<pos_t> positions(n_points_axis2, n_points_axis1);
-    for (RealArray::index_type k_ax2 = 0; k_ax2 < n_points_axis2; k_ax2++)
-    {
-        std::print("k_ax2 = {:04d} / {:04d}\n", k_ax2, n_points_axis2);
-        double const f_ax2 = static_cast<double>(k_ax2) / static_cast<double>(n_points_axis2 - 1);
-        for (RealArray::index_type k_ax1 = 0; k_ax1 < n_points_axis1; k_ax1++)
-        {
-            double const f_ax1 = static_cast<double>(k_ax1) / static_cast<double>(n_points_axis1 - 1);
-            ref_zero.pos = ref_zero.pos_initial + pos_delta_axis1 * f_ax1 + pos_delta_axis2 * f_ax2;
-            ref_zero.rotation = ref_zero.rotation_initial.toNdArray() + rotation_delta_axis1 * f_ax2;
-            gains(k_ax2, k_ax1) = Setup::calc_voltage_gain(source, sink, wavelength, {});
-            positions(k_ax2, k_ax1) = ref_zero.pos;
-        }
-    }
-    ref_zero.reset();
-
     js["label_axis1"] = label_axis1;
     js["label_axis2"] = label_axis2;
     js["n_points_axis1"] = n_points_axis1;

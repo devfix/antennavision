@@ -4,16 +4,16 @@
 
 #include "setup.hpp"
 #include <algorithm>
-#include <ansi_color.hpp>
 #include <fstream>
 #include <memory>
+#include <print>
+#include <ansi_color.hpp>
 #include <nlohmann/json.hpp>
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
 #include "factory/parse.hpp"
 #include "plot.hpp"
-#include "print.hpp"
 #include "simulationerror.hpp"
 #include "three.hpp"
 
@@ -105,9 +105,9 @@ namespace
             else if (type == "plot_gain_over_plane")
             {
                 auto const tx_id = factory::get_string(task_desc, "tx");
-                Antenna& tx = context.antennas.at(tx_id);
-                Antenna const& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
-                Reference& ref_start = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_start"));
+                Antenna const& tx = context.antennas.at(tx_id);
+                Antenna & rx = context.antennas.at(factory::get_string(task_desc, "rx"));
+                Reference& ref_zero = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_zero"));
                 Reference const& ref_axis1_max = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_axis1_max"));
                 Reference const& ref_axis2_max = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_axis2_max"));
                 double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
@@ -115,13 +115,18 @@ namespace
                 std::uint32_t n_points_axis2 = factory::get_uint(task_desc, "n_points_axis2", context.variables);
                 auto label_axis1 = factory::get_string(task_desc, "label_axis1");
                 auto label_axis2 = factory::get_string(task_desc, "label_axis2");
+
+                pos_t const pos_zero = ref_zero.global_from_local_pos(POS_ZERO);
+                pos_t const pos_axis1_max = ref_axis1_max.global_from_local_pos(POS_ZERO);
+                pos_t const pos_axis2_max = ref_axis2_max.global_from_local_pos(POS_ZERO);
+                math::Rectangle rectangle = math::get_rectangle(pos_zero, pos_axis1_max, pos_axis2_max);
+
+                auto voltage_field = antenna::get_voltage_field(tx, rx, {});
                 task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
                 context.tasks.emplace_back(task_name,
-                                           [&tx, &rx, &ref_start, &ref_axis1_max, &ref_axis2_max, wavelength, n_points_axis1, n_points_axis2, label_axis1,
-                                            label_axis2](std::filesystem::path const& directory)
+                                           [&tx, &rx, voltage_field, rectangle, wavelength, n_points_axis1, n_points_axis2, label_axis1, label_axis2](std::filesystem::path const& directory)
                                            {
-                                               plot::plot_gain_over_plane(directory, tx, rx, ref_start, ref_axis1_max, ref_axis2_max, wavelength,
-                                                                          n_points_axis1, n_points_axis2, label_axis1, label_axis2);
+                                               plot::plot_gain_over_plane(directory, voltage_field, rectangle, wavelength, n_points_axis1, n_points_axis2, label_axis1, label_axis2);
                                            });
             }
             else
@@ -235,68 +240,6 @@ void Setup::run_tasks(std::function<void(std::string_view)> const& builtin_handl
 Reference& Setup::get_reference(std::string_view const id) { return factory::find_reference_by_id(references, id); }
 
 Antenna& Setup::get_antenna(std::string const& id) { return antennas.at(id); }
-
-ScalarField Setup::get_voltage_field(Antenna const& tx, Antenna& rx, math::NumParams const& num_params)
-{
-    return {[&tx, &rx, num_params](pos_t const& pos, double const wavelength) -> complex_t
-            {
-                antenna::get_origin(rx).pos = pos;
-                return calc_voltage_gain(tx, rx, wavelength, num_params);
-            },
-            [&rx] { antenna::get_origin(rx).reset(); }, num_params};
-}
-
-namespace
-{
-    complex_t calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, double const wavelength, math::NumParams const& num_params)
-    {
-        double const r = (tx.origin.global_from_local_pos(POS_ZERO) - rx.origin.global_from_local_pos(POS_ZERO)).norm();
-        if (r < wavelength / 10) { std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength); }
-
-        auto const pos_local_tx = tx.origin.localize(rx.origin); // position of rx radiator in tx coordinate
-        auto const pos_local_rx = rx.origin.localize(tx.origin); // position of tx radiator in rx coordinate
-        auto const rot_mat_tx = math::get_rot_mat_from_cartesian(pos_local_tx);
-        auto const rot_mat_rx = math::get_rot_mat_from_cartesian(pos_local_rx);
-        auto const elv_spherical_tx = tx.get_elv_spherical_from_cartesian(pos_local_tx, wavelength);
-        auto const elv_spherical_rx = rx.get_elv_spherical_from_cartesian(pos_local_rx, wavelength);
-        auto const elv_cartesian_tx = nc::dot(rot_mat_tx, elv_spherical_tx);
-        auto const elv_cartesian_rx = nc::dot(rot_mat_rx, elv_spherical_rx);
-        auto const elv_global_tx = tx.origin.global_from_local_vec(elv_cartesian_tx);
-        auto const elv_global_rx = rx.origin.global_from_local_vec(elv_cartesian_rx);
-        auto const g = elv_global_tx.dot(elv_global_rx).item();
-        auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * wavelength / (4.0 * pi * r);
-        auto const mean_squared_elv_tx =
-            tx.mean_squared_elv ? tx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(tx.elv_spherical, wavelength, num_params);
-        auto const mean_squared_elv_rx =
-            rx.mean_squared_elv ? rx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(rx.elv_spherical, wavelength, num_params);
-        return -j * g / std::sqrt(mean_squared_elv_tx * mean_squared_elv_rx) * propagation;
-    }
-} // namespace
-
-complex_t Setup::calc_voltage_gain(Antenna const& tx, Antenna const& rx, double wavelength, math::NumParams const& num_params)
-{
-    Radiator const& radiator_rx = antenna::cast<Radiator>(rx);
-    return std::visit(
-        [&](auto const& ant_tx)
-        {
-            using Type = std::decay_t<decltype(ant_tx)>;
-            if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(ant_tx, radiator_rx, wavelength, num_params); }
-            else if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
-            {
-                complex_t gain = 0;
-                for (auto const& element : ant_tx.elements) { gain += calc_voltage_gain_direct(element, radiator_rx, wavelength, num_params); }
-                return gain;
-            }
-            else
-            {
-                throw SimulationError("Invalid antenna type");
-            }
-        },
-        tx);
-}
-
-double Setup::calc_power_gain(Antenna const& tx, Antenna const& rx, double wavelength, math::NumParams const& num_params)
-{ return math::square(std::abs(calc_voltage_gain(tx, rx, wavelength, num_params))); }
 
 bool Setup::isUpToDate(std::filesystem::path const& path_timestamp) const
 {

@@ -55,7 +55,30 @@ namespace math
         void rotate_base(double angle);
     };
 
+    //         <---- width ---->
+    //         +---------------+   ^
+    //         |               |   |
+    //         |               |   |      ⊙ normal (up in the rectangle's plane)
+    //         |               |   |
+    //         |       *       | height
+    //         ^     center    |   |
+    //         I               |   |
+    //  vec v2 I               |   |
+    //         O==> -----------+   v
+    //        vec v1
+    struct Rectangle
+    {
+        pos_t center; /// center position
+        pos_t normal; /// normal direction, together with center defines rectangle plane
+        double width{}; /// rectangle width, view from above if normal is pointing up
+        double height{}; /// rectangle height, view from above if normal is pointing up
+        pos_t v1; /// first base vector (see ascii sketch)
+        pos_t v2; /// first base vector (see ascii sketch)
+    };
+
     Circle get_circle(pos_t const& center, pos_t const& normal, double radius, pos_t const& dir_start);
+
+    Rectangle get_rectangle(pos_t const& pos_zero, pos_t const& pos_width_max, pos_t const& pos_height_max);
 
     template <typename R, typename T1, typename T2, typename T3>
     nc::NdArray<R> constexpr vec(T1 a, T2 b, T3 c)

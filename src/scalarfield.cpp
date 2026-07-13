@@ -6,8 +6,9 @@
 #include <ansi_color.hpp>
 #include <nlopt.hpp>
 #include <utility>
+#include <print>
 
-ScalarField::ScalarField(field_t&& field, reset_t&& reset, math::NumParams const& num_params) : field(std::move(field)), num_params(num_params), reset(std::move(reset)) {}
+ScalarField::ScalarField(std::string_view id, field_t&& field, reset_t&& reset, math::NumParams const& num_params) : id(id), field(std::move(field)), num_params(num_params), reset(std::move(reset)) {}
 
 ScalarField::~ScalarField()
 {
@@ -56,4 +57,23 @@ std::pair<pos_t, double> ScalarField::calc_beamwidth(math::Circle const& circle,
     double angle2 = pi/4.0 - angle2_inv;
 
     return {pos_beam, angle1 + angle2};
+}
+
+std::tuple<PositionArray, ComplexArray> ScalarField::eval_plane(math::Rectangle const& rectangle, double wavelength, std::size_t const n_points_axis1, std::size_t const n_points_axis2) const
+{
+    ComplexArray gains(n_points_axis2, n_points_axis1);
+    PositionArray positions(n_points_axis2, n_points_axis1);
+    for (RealArray::index_type k_ax2 = 0; k_ax2 < n_points_axis2; k_ax2++)
+    {
+        std::print("k_ax2 = {:04d} / {:04d}\n", k_ax2, n_points_axis2);
+        double const f_ax2 = static_cast<double>(k_ax2) / static_cast<double>(n_points_axis2 - 1);
+        for (RealArray::index_type k_ax1 = 0; k_ax1 < n_points_axis1; k_ax1++)
+        {
+            double const f_ax1 = static_cast<double>(k_ax1) / static_cast<double>(n_points_axis1 - 1);
+            auto const pos = rectangle.center + (f_ax1 - 0.5) * rectangle.width * rectangle.v1 + (f_ax2 - 0.5) * rectangle.height * rectangle.v2;
+            positions(k_ax2, k_ax1) = pos;
+            gains(k_ax2, k_ax1) = field(pos, wavelength);
+        }
+    }
+    return {positions, gains};
 }

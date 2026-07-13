@@ -2,9 +2,9 @@
 // Created by core on 21.06.26.
 //
 
-#include <nlohmann/json.hpp>
-#include <print.hpp>
 #include <vector>
+#include <print>
+#include <nlohmann/json.hpp>
 #include "builtin.hpp"
 #include "math.hpp"
 
@@ -52,8 +52,7 @@ namespace builtin
 )JSON");
     }
 
-    [[maybe_unused]] static Registerer registerer("t00_ula_beamwidth", t00_ula_beamwidth);
-    void t00_ula_beamwidth(Setup& setup_task)
+    BUILTIN_FUNCTION(t00_ula_beamwidth, Setup& setup_task)
     {
         std::filesystem::path const dir_plot = std::filesystem::path(setup_task.name);
 
@@ -88,7 +87,7 @@ namespace builtin
                 auto const distance = setup->variables.at("distance");
                 auto& tx = setup->get_antenna("tx");
                 auto& rx = setup->get_antenna("rx");
-                auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
+                auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
                 auto circle = math::get_circle(POS_ZERO, pos_t(0, 0, 1), distance, pos_t(0, 1, 0));
 
                 auto [pos_beam, beamwidth_axial] = voltage_field.calc_beamwidth(circle, sqrt2_2, wavelength);
@@ -106,7 +105,7 @@ namespace builtin
                 auto const distance = setup->variables.at("distance");
                 auto& tx = setup->get_antenna("tx");
                 auto& rx = setup->get_antenna("rx");
-                auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
+                auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
                 auto circle = math::get_circle(POS_ZERO, pos_t(0, 0, 1), distance, pos_t(0, 1, 0));
 
                 auto [pos_beam, beamwidth_lateral] = voltage_field.calc_beamwidth(circle, sqrt2_2, wavelength);

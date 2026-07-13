@@ -6,8 +6,10 @@
 
 #include <variant>
 #include <magic_enum/magic_enum.hpp>
+
 #include "components/uniformlineararray.hpp"
 #include "components/uniformplanararray.hpp"
+#include "scalarfield.hpp"
 #include "simulationerror.hpp"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -63,4 +65,17 @@ namespace antenna
         throw SimulationError("Antenna cast failed: {} has type {}, but {} was requested", static_cast<const void*>(&antenna), get_type_name(antenna),
                               magic_enum::enum_name(static_cast<AntennaType>(get_variant_index<T, Antenna>())));
     }
+
+    [[nodiscard]] complex_t calc_voltage_gain(Antenna const& tx, Antenna const& rx, double wavelength, math::NumParams const& num_params);
+    [[nodiscard]] double calc_power_gain(Antenna const& tx, Antenna const& rx, double wavelength, math::NumParams const& num_params);
+
+    /**
+     * Creates new scalar field that is the voltage field if the tx is fixed in space and the rx is moved around
+     * @param tx transmitter antenna
+     * @param rx receiver antenna
+     * @param num_params numerical parameters
+     * @return voltage field between tx and rx
+     */
+    [[nodiscard]] ScalarField get_voltage_field(Antenna const& tx, Antenna& rx, math::NumParams const& num_params);
+
 } // namespace antenna

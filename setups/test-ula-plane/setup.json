@@ -76,7 +76,7 @@
       "type": "plot_gain_over_plane",
       "tx": "ula1",
       "rx": "receiver",
-      "ref_start": "ref_rx_start",
+      "ref_zero": "ref_rx_start",
       "ref_axis1_max": "ref_axis1_max",
       "ref_axis2_max": "ref_axis2_max",
       "wavelength": "wavelength",
