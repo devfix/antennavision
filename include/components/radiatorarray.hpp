@@ -12,11 +12,18 @@ template <typename Derived>
 struct RadiatorArray
 {
     RadiatorArray(std::string_view const id, Reference& origin, std::list<Radiator>&& elements) :
-        id(id), origin(origin), elements(std::move(elements))
-    {}
+        id(id), origin(origin), size(elements.size()), elements(std::move(elements)), element_lookup(size, nullptr)
+    {
+        // important: use this->elements since elements is already moved and its size zero
+        for (std::size_t idx = 0; auto& element : this->elements) { element_lookup[idx++] = &element; }
+    }
+
+    constexpr Radiator& operator()(std::size_t const idx) const { return *element_lookup[idx]; }
 
     // the member variables must be non-const, otherwise the object cannot be moved which is required for returning a std::variant
-    std::string id;
+    std::string const id;
     Reference& origin;
+    std::size_t const size;
     std::list<Radiator> elements;
+    std::vector<Radiator*> element_lookup;
 };

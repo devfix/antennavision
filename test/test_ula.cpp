@@ -7,7 +7,6 @@
 #include <nlohmann/json.hpp>
 #include "components/radiator.hpp"
 #include "math.hpp"
-#include "print.hpp"
 #include "setup.hpp"
 #include "testutil.hpp"
 
@@ -43,7 +42,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
         "yaw": 0.5
       },
       "spacing": "wavelength * 0.5",
-      "count": 8,
+      "size": 8,
       "radiator": {
         "type": "HertzianDipole"
       }
@@ -115,7 +114,7 @@ TEST_CASE("ULA gain", "[TestULA]")
       "id": "ula1",
       "ref": "ref_ula",
       "spacing": "wavelength * 0.5",
-      "count": 3,
+      "size": 3,
       "rot": {
         "yaw": 0.0,
         "pitch": 0.5,
@@ -228,7 +227,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
       "id": "ula1",
       "ref": "ref_ula",
       "spacing": "wavelength * 0.5",
-      "count": 3,
+      "size": 3,
       "rot": {
         "yaw": 0.0,
         "pitch": 0.5,

@@ -56,7 +56,7 @@ TEST_CASE("ScalarField", "[TestULA]")
       "id": "ula1",
       "ref": "ref_ula",
       "spacing": "wavelength * 0.5",
-      "count": 16,
+      "size": 16,
       "rot": {
         "roll": 0.0,
         "pitch": -0.5,

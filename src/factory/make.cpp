@@ -84,18 +84,18 @@ namespace factory
             auto const type = get_string(desc, "type");
             Reference& origin = find_reference_by_id(context.references, origin_id);
             auto const spacing = get_double(desc, "spacing", context.variables);
-            auto const count = get_uint(desc, "count", context.variables);
+            auto const size = get_uint(desc, "size", context.variables);
             auto const path_codebook = get_string(desc, "codebook", true, true);
             auto const rot = get_quaternion(desc, "rot", context.variables, true, true);
             auto const prototype_desc = desc.at("radiator");
             desc.erase("radiator");
 
             pos_t constexpr dir(1.0, 0.0, 0.0);
-            double const length = spacing * (count - 1);
+            double const length = spacing * (size - 1);
             std::list<Radiator> array_radiators;
-            for (std::remove_const_t<decltype(count)> i = 0; i < count; i++)
+            for (std::decay_t<decltype(size)> i = 0; i < size; i++)
             {
-                double const f = static_cast<double>(i) / static_cast<double>(count - 1);
+                double const f = static_cast<double>(i) / static_cast<double>(size - 1);
                 pos_t const pos = dir * (f - 0.5) * length;
                 const auto& ref = context.references.emplace_back(std::format("{}:ref:{}", id, i), &origin, pos, rot);
 
@@ -116,34 +116,37 @@ namespace factory
             auto const origin_id = get_string(desc, "ref", true, true);
             auto const type = get_string(desc, "type");
             Reference& origin = find_reference_by_id(context.references, origin_id);
-            auto const spacing = get_double(desc, "spacing", context.variables);
-            auto const count = get_uint(desc, "count", context.variables);
+            auto const spacing_x = get_double(desc, "spacing_x", context.variables);
+            auto const spacing_y = get_double(desc, "spacing_y", context.variables);
+            auto const size_x = get_uint(desc, "size_x", context.variables);
+            auto const size_y = get_uint(desc, "size_y", context.variables);
             auto const path_codebook = get_string(desc, "codebook", true, true);
-            auto dir = get_pos(desc, "dir", context.variables);
             auto const rot = get_quaternion(desc, "rot", context.variables, true, true);
             auto const prototype_desc = desc.at("radiator");
             desc.erase("radiator");
 
-            if (dir.norm() < NUMERICAL_MARGIN) { throw SimulationError("Invalid direction for ULA '{}'", id); }
-            dir = dir.normalize();
-
-            double const length = spacing * (count - 1);
+            double const length_x = spacing_x * (size_x - 1);
+            double const length_y = spacing_y * (size_y - 1);
             std::list<Radiator> array_radiators;
-            for (std::remove_const_t<decltype(count)> i = 0; i < count; i++)
+            for (std::decay_t<decltype(size_y)> y = 0; y < size_y; y++)
             {
-                double const f = static_cast<double>(i) / static_cast<double>(count - 1);
-                pos_t const pos = dir * (f - 0.5) * length;
-                const auto& ref = context.references.emplace_back(std::format("{}:ref:{}", id, i), &origin, pos, rot);
+                for (std::decay_t<decltype(size_x)> x = 0; x < size_x; x++)
+                {
+                    double const fx = static_cast<double>(x) / static_cast<double>(size_x - 1);
+                    double const fy = static_cast<double>(y) / static_cast<double>(size_y - 1);
+                    pos_t const pos = pos_t(1.0, 0.0, 0.0) * (fx - 0.5) * length_x + pos_t(0.0, 1.0, 0.0) * (fy - 0.5) * length_y;
+                    const auto& ref = context.references.emplace_back(std::format("{}:ref:{}:{}", id, x, y), &origin, pos, rot);
 
-                // We make a copy of the "backup" description and adapt it for the current element of the ULA
-                ojson ula_element_desc = prototype_desc;
-                ula_element_desc["id"] = std::format("{}:radiator:{}", id, i);
-                ula_element_desc["ref"] = ref.id;
+                    // We make a copy of the "backup" description and adapt it for the current element of the ULA
+                    ojson ula_element_desc = prototype_desc;
+                    ula_element_desc["id"] = std::format("{}:radiator:{}:{}", id, x, y);
+                    ula_element_desc["ref"] = ref.id;
 
-                // call the make function recursively and append the Radiators to array_radiators
-                array_radiators.push_back(make_radiator(ula_element_desc, context));
+                    // call the make function recursively and append the Radiators to array_radiators
+                    array_radiators.push_back(make_radiator(ula_element_desc, context));
+                }
             }
-            return UniformLinearArray(id, origin, std::move(array_radiators));
+            return UniformPlanarArray(id, origin, std::move(array_radiators), size_x, size_y);
         }
     } // namespace
 

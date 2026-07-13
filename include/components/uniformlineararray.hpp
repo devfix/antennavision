@@ -9,7 +9,5 @@
 struct UniformLinearArray : RadiatorArray<UniformLinearArray>
 {
     UniformLinearArray(std::string_view id, Reference& origin, std::list<Radiator>&& elements);
-
-    Radiator& get_element(std::size_t idx);
-    Reference& get_reference(std::size_t idx);
+    constexpr Reference& get_reference(std::size_t const idx) const { return (*this)(idx).origin; }
 };
