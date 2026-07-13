@@ -96,7 +96,7 @@ TEST_CASE("HalfWaveDipole via setup", "[Radiator]")
       "origin": ""
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "type": "StandingWaveDipole",
       "id": "DUT",
@@ -136,7 +136,7 @@ TEST_CASE("FullWaveDipole via setup", "[Radiator]")
   "variables": {
     "wavelength": 0.1
   },
-  "radiators": [
+  "antennas": [
     {
       "type": "StandingWaveDipole",
       "id": "DUT",
@@ -182,7 +182,7 @@ TEST_CASE("3/2-WaveDipole via setup", "[Radiator]")
       "origin": ""
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "type": "StandingWaveDipole",
       "id": "DUT",

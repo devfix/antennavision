@@ -32,7 +32,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
       }
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "type": "ULA",
       "id": "ula1",
@@ -53,11 +53,12 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
 )JSON");
     auto const setup = Setup::from_json(js);
     auto const wavelength = setup->variables.at("wavelength");
+    auto &ula = antenna::cast<UniformLinearArray>(setup->get_antenna("ula1"));
 
     // check ULA element references
     for (std::size_t i = 0; i < 8; i++)
     {
-        auto const& ref_element = setup->get_reference(std::format("ula1:ref:{}", i));
+        auto const& ref_element = ula.get_reference(i);
         double const x = (static_cast<double>(i) - 3.5) * 0.5 * wavelength;
         double const y = 2.0 * wavelength;
         double const z = 2.0 * wavelength;
@@ -108,7 +109,7 @@ TEST_CASE("ULA gain", "[TestULA]")
       }
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "type": "ULA",
       "id": "ula1",
@@ -221,7 +222,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
       }
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "type": "ULA",
       "id": "ula1",

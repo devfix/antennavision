@@ -37,7 +37,7 @@ TEST_CASE("UPA position and rotation", "[TestUPA]")
       }
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "type": "UPA",
       "id": "upa1",
@@ -125,7 +125,7 @@ TEST_CASE("UPA gain", "[TestUPA]")
       }
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "type": "UPA",
       "id": "upa1",
@@ -233,7 +233,7 @@ TEST_CASE("UPA gain using ScalarField", "[TestUPA]")
       }
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "type": "UPA",
       "id": "upa1",

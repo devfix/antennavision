@@ -50,7 +50,7 @@ TEST_CASE("ScalarField", "[TestULA]")
       }
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "type": "ULA",
       "id": "ula1",

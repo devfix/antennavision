@@ -60,9 +60,9 @@ namespace
 
     void extract_antennas(factory::Context& context)
     {
-        if (context.desc.contains("radiators"))
+        if (context.desc.contains("antennas"))
         {
-            for (auto& radiator_desc : json_get(context.desc, "radiators"))
+            for (auto& radiator_desc : json_get(context.desc, "antennas"))
             {
                 Antenna ant = factory::make_antenna(radiator_desc, context);
                 context.antennas.emplace(antenna::get_id(ant), std::move(ant));
@@ -281,17 +281,16 @@ namespace
 
 complex_t Setup::calc_voltage_gain(Antenna const& tx, Antenna const& rx, double wavelength, math::NumParams const& num_params)
 {
-    Radiator const* const radiator_rx = std::get_if<Radiator>(&rx);
-    assert(radiator_rx);
+    Radiator const& radiator_rx = antenna::cast<Radiator>(rx);
     return std::visit(
         [&](auto const& radiator_tx)
         {
             using Type = std::decay_t<decltype(radiator_tx)>;
-            if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(radiator_tx, *radiator_rx, wavelength, num_params); }
+            if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(radiator_tx, radiator_rx, wavelength, num_params); }
             else if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
             {
                 complex_t gain = 0;
-                for (auto const& element : radiator_tx.elements) { gain += calc_voltage_gain_direct(element, *radiator_rx, wavelength, num_params); }
+                for (auto const& element : radiator_tx.elements) { gain += calc_voltage_gain_direct(element, radiator_rx, wavelength, num_params); }
                 return gain;
             }
             else

@@ -29,7 +29,7 @@ namespace builtin
       "origin": ""
     }
   ],
-  "radiators": [
+  "antennas": [
     {
       "id": "tx",
       "type": "ULA",

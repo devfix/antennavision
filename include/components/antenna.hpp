@@ -4,17 +4,21 @@
 
 #pragma once
 
-#include <magic_enum/magic_enum.hpp>
 #include <variant>
+#include <magic_enum/magic_enum.hpp>
 #include "components/uniformlineararray.hpp"
+#include "components/uniformplanararray.hpp"
 #include "simulationerror.hpp"
 
-using Antenna = std::variant<Radiator, UniformLinearArray>;
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+using Antenna = std::variant<Radiator, UniformLinearArray, UniformPlanarArray>;
 enum struct AntennaType // must be same order as in Antenna
 {
     Radiator,
-    UniformLinearArray
+    UniformLinearArray,
+    UniformPlanarArray
 };
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename T, typename Variant>
 constexpr std::size_t get_variant_index()
@@ -55,12 +59,8 @@ namespace antenna
     template <typename T, IsAntenna A>
     constexpr decltype(auto) cast(A& antenna)
     {
-        auto specified = std::get_if<T>(&antenna);
-        if (!specified)
-        {
-            throw SimulationError("Antenna cast failed: {} has type {}, but {} was requested", static_cast<const void*>(&antenna), get_type_name(antenna),
-                                  magic_enum::enum_name(static_cast<AntennaType>(get_variant_index<T, Antenna>())));
-        }
-        return *specified;
+        if (auto specified = std::get_if<T>(&antenna); specified) { return *specified; }
+        throw SimulationError("Antenna cast failed: {} has type {}, but {} was requested", static_cast<const void*>(&antenna), get_type_name(antenna),
+                              magic_enum::enum_name(static_cast<AntennaType>(get_variant_index<T, Antenna>())));
     }
 } // namespace antenna
