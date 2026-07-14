@@ -44,7 +44,13 @@ def detect_axes_from_positions(positions_array):
     return axis1_name, axis2_name
 
 # 3. Load raw positions matrix
-positions = np.array(data["positions"], dtype=np.float64)
+positions_raw = np.array(data["positions"])
+# If positions is flat/2D, reshape it to the 3D grid layout (N1, N2, 3 coordinates)
+if positions_raw.ndim == 2:
+    positions = positions_raw.reshape(n_points_1, n_points_2, 3)
+else:
+    positions = positions_raw
+
 
 # Automatically detect active axes
 axis1_name, axis2_name = detect_axes_from_positions(positions)
