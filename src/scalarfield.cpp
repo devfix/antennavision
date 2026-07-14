@@ -5,11 +5,13 @@
 #include "scalarfield.hpp"
 #include <ansi_color.hpp>
 #include <nlopt.hpp>
-#include <utility>
 #include <print>
+#include <utility>
 
 template <typename ScalarType>
-ScalarField<ScalarType>::ScalarField(std::string_view id, field_t&& field, reset_t&& reset, math::NumParams const& num_params) : id(id), field(std::move(field)), num_params(num_params), reset(std::move(reset)) {}
+ScalarField<ScalarType>::ScalarField(std::string_view id, field_t&& field, reset_t&& reset, math::NumParams const& num_params) :
+    id(id), field(std::move(field)), num_params(num_params), reset(std::move(reset))
+{}
 
 template <typename ScalarType>
 ScalarField<ScalarType>::~ScalarField()
@@ -21,45 +23,45 @@ template <typename ScalarType>
 std::pair<pos_t, double> ScalarField<ScalarType>::argmax_line_abs(pos_t const& pos_a, pos_t const& pos_b) const
 {
     pos_t const delta = pos_b - pos_a;
-    math::OptParams const params{[this, &pos_a, &delta](double const x) -> double { return -std::abs(field(pos_a + x * delta, num_params.wavelength)); }, 0.0, 1.0, num_params};
+    math::OptParams const params{[this, &pos_a, &delta](double const x) -> double { return -std::abs(field(pos_a + x * delta, num_params.wavelength)); }, 0.0,
+                                 1.0, num_params};
     auto [x_min, f_min] = math::f_min(params);
     pos_t pos_max = pos_a + x_min * delta;
     return {pos_max, std::abs(field(pos_max, num_params.wavelength))};
 }
 
 template <typename ScalarType>
-std::pair<pos_t, double> ScalarField<ScalarType>::argmax_circle_abs(math::Circle const& circle, double const angle) const
+std::pair<pos_t, double> ScalarField<ScalarType>::argmax_circle_abs(geometry::Circle const& circle, double const angle) const
 {
     math::OptParams const params{[&](double const x) -> double
                                  {
-                                     pos_t const pos = circle.center + circle.radius * (std::cos(x) * circle.v1 + std::sin(x) * circle.v2);
+                                     pos_t const pos = circle.center + circle.radius * (std::cos(x) * circle.e1 + std::sin(x) * circle.e2);
                                      return -std::abs(field(pos, num_params.wavelength));
                                  },
                                  0.0, angle, num_params};
     auto [angle_min, f_min] = math::f_min(params);
-    pos_t pos_max = circle.center + circle.radius * (std::cos(angle_min) * circle.v1 + std::sin(angle_min) * circle.v2);
+    pos_t pos_max = circle.center + circle.radius * (std::cos(angle_min) * circle.e1 + std::sin(angle_min) * circle.e2);
     return {pos_max, std::abs(field(pos_max, num_params.wavelength))};
 }
 
 template <typename ScalarType>
-std::pair<pos_t, double> ScalarField<ScalarType>::calc_beamwidth(math::Circle const& circle, double const ratio) const
+std::pair<pos_t, double> ScalarField<ScalarType>::calc_beamwidth(geometry::Circle const& circle, double const ratio) const
 {
-    math::Circle circle_rot(circle);
-    circle_rot.rotate_base(-pi / 4.0);
+    geometry::Circle circle_rot = circle.rotate_base(-pi / 4.0);
     auto [pos_beam, intensity] = argmax_circle_abs(circle_rot, pi / 2.0);
 
-    auto circle_hpbw = math::get_circle(circle.center, circle.normal, circle.radius, pos_beam - circle.center);
+    auto circle_hpbw = geometry::Circle::make(circle.center, circle.normal, circle.radius, pos_beam - circle.center);
     math::OptParams const params{[&](double const x) -> double
                                  {
-                                     pos_t const pos = circle_hpbw.center + circle_hpbw.radius * (std::cos(x) * circle_hpbw.v1 + std::sin(x) * circle_hpbw.v2);
+                                     pos_t const pos = circle_hpbw.center + circle_hpbw.radius * (std::cos(x) * circle_hpbw.e1 + std::sin(x) * circle_hpbw.e2);
                                      return math::square(std::abs(field(pos, num_params.wavelength)) - ratio * intensity);
                                  },
                                  0.0, pi / 4.0, num_params};
     auto [angle1, eps1] = math::f_min(params);
 
-    circle_hpbw.rotate_base(-pi / 4.0);
+    circle_hpbw = circle_hpbw.rotate_base(-pi / 4.0);
     auto [angle2_inv, eps2] = math::f_min(params);
-    double angle2 = pi/4.0 - angle2_inv;
+    double angle2 = pi / 4.0 - angle2_inv;
 
     return {pos_beam, angle1 + angle2};
 }
@@ -80,7 +82,7 @@ std::pair<PositionArray, std::variant<RealArray, ComplexArray>> ScalarField<Scal
 }
 
 template <typename ScalarType>
-std::pair<PositionArray, std::variant<RealArray, ComplexArray>> ScalarField<ScalarType>::eval_plane(math::Rectangle const& rectangle) const
+std::pair<PositionArray, std::variant<RealArray, ComplexArray>> ScalarField<ScalarType>::eval_plane(geometry::Rectangle const& rectangle) const
 {
     PositionArray positions(num_params.n_linear2, num_params.n_linear1);
     nc::NdArray<ScalarType> values(num_params.n_linear2, num_params.n_linear1);
@@ -91,9 +93,49 @@ std::pair<PositionArray, std::variant<RealArray, ComplexArray>> ScalarField<Scal
         for (RealArray::index_type k_ax1 = 0; k_ax1 < num_params.n_linear1; k_ax1++)
         {
             double const f_ax1 = static_cast<double>(k_ax1) / static_cast<double>(num_params.n_linear1 - 1);
-            auto const pos = rectangle.center + (f_ax1 - 0.5) * rectangle.width * rectangle.v1 + (f_ax2 - 0.5) * rectangle.height * rectangle.v2;
+            auto const pos = rectangle.center + (f_ax1 - 0.5) * rectangle.width * rectangle.e1 + (f_ax2 - 0.5) * rectangle.height * rectangle.e2;
             positions(k_ax2, k_ax1) = pos;
             values(k_ax2, k_ax1) = field(pos, num_params.wavelength);
+        }
+    }
+    return {positions, values};
+}
+
+template <typename ScalarType>
+std::pair<nc::NdArray<nc::Vec2>, std::variant<RealArray, ComplexArray>> ScalarField<ScalarType>::eval_sphere(geometry::SphericalRectangle const& sr) const
+{
+    nc::NdArray<nc::Vec2> positions(num_params.n_polar, num_params.n_azimuth);
+    nc::NdArray<ScalarType> values(num_params.n_polar, num_params.n_azimuth);
+    for (ComplexArray::index_type k_polar = 0; k_polar < num_params.n_polar; k_polar++)
+    {
+        std::print("k_ax2 = {:04d} / {:04d}\n", k_polar, num_params.n_polar);
+
+        // Normalized coordinate from 0.0 to 1.0 along the polar axis (e2 / axis 2)
+        double const f_polar = static_cast<double>(k_polar) / static_cast<double>(num_params.n_polar - 1);
+
+        // Map to polar angle offset: theta in [-polar/2, polar/2]
+        double const polar = (f_polar - 0.5) * sr.polar;
+        double const sin_polar = std::sin(polar);
+        double const cos_polar = std::cos(polar);
+
+        for (RealArray::index_type k_azimuth = 0; k_azimuth < num_params.n_azimuth; k_azimuth++)
+        {
+            // Normalized coordinate from 0.0 to 1.0 along the azimuthal axis (e1 / axis 1)
+            double const f_azimuth = static_cast<double>(k_azimuth) / static_cast<double>(num_params.n_azimuth - 1);
+
+            // Map to azimuthal angle offset: phi in [-azimuth/2, azimuth/2]
+            double const azimuth = (f_azimuth - 0.5) * sr.azimuth;
+            double const sin_azimuth = std::sin(azimuth);
+            double const cos_azimuth = std::cos(azimuth);
+
+            // Compute local unit vector on the sphere's surface relative to the sphere center
+            auto const local_normal = cos_polar * cos_azimuth * sr.normal + cos_polar * sin_azimuth * sr.e1 + sin_polar * sr.e2;
+
+            // Project outward to the sphere's surface
+            auto const pos = sr.center + sr.radius * local_normal;
+
+            positions(k_polar, k_azimuth) = {azimuth, polar};
+            values(k_polar, k_azimuth) = field(pos, num_params.wavelength);
         }
     }
     return {positions, values};

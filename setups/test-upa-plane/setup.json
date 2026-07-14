@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "setup_name": "upa-plane"
+  },
+  "variables": {
+    "system_wavelength": 0.1,
+    "wavelength": "system_wavelength",
+    "distance": "1*wavelength",
+    "dipole_length": "0.5*wavelength"
+  },
+  "references": [
+    {
+      "id": "ref_rx",
+      "origin": "",
+      "pos": {"x": 0, "y": 0, "z": "distance"},
+      "rot": {"yaw": 0, "pitch": 0.5, "roll": 0}
+    },
+    {
+      "id": "ref_rect",
+      "origin": "",
+      "pos": {"x": 0, "y": 0, "z": "distance"}
+    }
+  ],
+  "antennas": [
+    {
+      "id": "tx",
+      "type": "UPA",
+      "ref": "",
+      "spacing_x": "wavelength * 0.5",
+      "spacing_y": "wavelength * 0.5",
+      "size_x": 8,
+      "size_y": 8,
+      "rot": {"yaw": 0, "pitch": 0.5, "roll": 0},
+      "radiator": {
+        "type": "StandingWaveDipole",
+        "dipole_length": "dipole_length"
+      }
+    },
+    {
+      "id": "rx",
+      "ref": "ref_rx",
+      "type": "StandingWaveDipole",
+      "dipole_length": "dipole_length"
+    }
+  ],
+  "tasks": [
+    {
+      "type": "plot_gain_over_sphere",
+      "tx": "tx",
+      "rx": "rx",
+      "ref_center": "",
+      "ref_rect": "ref_rect",
+      "wavelength": "wavelength",
+      "polar": 0.5,
+      "azimuth": 0.5,
+      "n_points_polar": 201,
+      "n_points_azimuth": 201,
+      "dir_north": {
+        "x": 0, "y": 1, "z": 0
+      }
+    }
+  ]
+}

@@ -89,12 +89,12 @@ TEST_CASE("ScalarField", "[ScalarField]")
         REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
     }
     {
-        math::Circle circle = math::get_circle(POS_ZERO, pos_t(1.0, 0.0, 0.0), distance, pos_t(0.0, distance, -0.5*distance));
+        math::Circle circle = math::Circle::make(POS_ZERO, pos_t(1.0, 0.0, 0.0), distance, pos_t(0.0, distance, -0.5*distance));
         auto [pos_abs_max, _] = voltage_field.argmax_circle_abs(circle, 0.5*pi);
         REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
     }
     {
-        math::Circle circle = math::get_circle(POS_ZERO, pos_t(1.0, 0.0, 0.0), distance, pos_t(0.0, 1.0, 0.0));
+        math::Circle circle = math::Circle::make(POS_ZERO, pos_t(1.0, 0.0, 0.0), distance, pos_t(0.0, 1.0, 0.0));
         auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(circle, sqrt2_2);
         REQUIRE(beamwidth == Catch::Approx(0.11053292584412225));
     }

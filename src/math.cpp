@@ -5,6 +5,7 @@
 #include "math.hpp"
 #include <cmath>
 #include <magic_enum/magic_enum.hpp>
+#include <nlohmann/json.hpp>
 #include <nlopt.h>
 #include "simulationerror.hpp"
 
@@ -24,40 +25,24 @@ namespace math
         }
     } // namespace
 
-    void Circle::rotate_base(double angle)
+    template <typename BasicJsonType>
+    void to_json(BasicJsonType& j, NumParams const& num_params)
     {
-        pos_t const v1_new = std::cos(angle) * v1 + std::sin(angle) * v2;
-        pos_t const v2_new = -std::sin(angle) * v1 + std::cos(angle) * v2;
-        v1 = v1_new;
-        v2 = v2_new;
+        j = nlohmann::json{{"wavelength", num_params.wavelength}, {"n_polar", num_params.n_polar},     {"n_azimuth", num_params.n_azimuth},
+                           {"n_linear1", num_params.n_linear1},   {"n_linear2", num_params.n_linear2}, {"xtol_rel", num_params.xtol_rel},
+                           {"ftol_rel", num_params.ftol_rel}};
     }
 
-    Circle get_circle(pos_t const& center, pos_t const& normal, double radius, pos_t const& dir_start)
+    template <typename BasicJsonType>
+    void from_json(BasicJsonType const& j, NumParams& num_params)
     {
-        Circle circle{
-            .center = center,
-            .normal = normal.normalize(),
-            .radius = radius,
-        };
-        // Project start_direction onto the plane to ensure it's perfectly perpendicular to the normal Vector projection: v1 = v - (v . n) * n
-        circle.v1 = (dir_start - dir_start.dot(circle.normal) * circle.normal).normalize();
-        circle.v2 = circle.normal.cross(circle.v1);
-        return circle;
-    }
-
-    Rectangle get_rectangle(pos_t const& pos_zero, pos_t const& pos_width_max, pos_t const& pos_height_max)
-    {
-        pos_t const dir_width = pos_width_max - pos_zero;
-        pos_t const dir_height = pos_height_max - pos_zero;
-        Rectangle rectangle{
-            .normal = dir_width.cross(dir_height).normalize(),
-            .width = dir_width.norm(),
-            .height = dir_height.norm(),
-            .v1 = dir_width.normalize(),
-        };
-        rectangle.v2 = rectangle.normal.cross(rectangle.v1);
-        rectangle.center = pos_zero + 0.5 * dir_width + 0.5 * dir_height;
-        return rectangle;
+        j.at("wavelength").get_to(num_params.wavelength);
+        j.at("n_polar").get_to(num_params.n_polar);
+        j.at("n_azimuth").get_to(num_params.n_azimuth);
+        j.at("n_linear1").get_to(num_params.n_linear1);
+        j.at("n_linear2").get_to(num_params.n_linear2);
+        j.at("xtol_rel").get_to(num_params.xtol_rel);
+        j.at("ftol_rel").get_to(num_params.ftol_rel);
     }
 
     double angle_between_vectors(pos_t vec1, pos_t vec2)
@@ -147,3 +132,8 @@ namespace math
         return {x, min_f};
     }
 } // namespace math
+
+template void math::to_json(nlohmann::json&, math::NumParams const&);
+template void math::to_json(nlohmann::ordered_json&, math::NumParams const&);
+template void math::from_json(nlohmann::json const&, math::NumParams&);
+template void math::from_json(nlohmann::ordered_json const&, math::NumParams&);

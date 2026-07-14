@@ -21,29 +21,6 @@ namespace three
         std::list<json> objects;
     };
 
-    /*
-    union Color
-    {
-        std::uint32_t hex; // Allows setting Color::white directly
-
-        struct
-        {
-            // On Little-Endian (X86/ARM), bytes are stored Blue, Green, Red, Alpha.
-            std::uint8_t b;
-            std::uint8_t g;
-            std::uint8_t r;
-            std::uint8_t a; // usually unused
-        };
-
-        Color() : hex(0) {}
-
-        // ReSharper disable once CppNonExplicitConvertingConstructor
-        Color(std::uint32_t const val) : hex(val) {}
-
-        Color(std::uint8_t const red, std::uint8_t const green, std::uint8_t const blue, std::uint8_t const alpha = 0) : b(blue), g(green), r(red), a(alpha) {}
-    };
-    */
-
     [[nodiscard]] json make_line(std::vector<pos_t> const& points, double width, Color color = Color::white);
     [[nodiscard]] json make_line(pos_t pos_a, pos_t pos_b, double width, Color color = Color::white);
     [[nodiscard]] json make_sphere(pos_t const& pos, double radius, Color color = Color::white, std::uint16_t segments_width = 16, std::uint16_t segments_height = 8);

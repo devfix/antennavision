@@ -7,6 +7,8 @@
 #include <NumCpp/Functions/abs.hpp>
 #include <functional>
 #include <variant>
+
+#include "geometry.hpp"
 #include "math.hpp"
 #include "types.hpp"
 
@@ -20,9 +22,9 @@ struct ScalarField
 
     [[nodiscard]] std::pair<pos_t, double> argmax_line_abs(pos_t const& pos_a, pos_t const& pos_b) const;
 
-    [[nodiscard]] std::pair<pos_t, double> argmax_circle_abs(math::Circle const& circle, double angle) const;
+    [[nodiscard]] std::pair<pos_t, double> argmax_circle_abs(geometry::Circle const& circle, double angle) const;
 
-    [[nodiscard]] std::pair<pos_t, double> calc_beamwidth(math::Circle const& circle, double ratio) const;
+    [[nodiscard]] std::pair<pos_t, double> calc_beamwidth(geometry::Circle const& circle, double ratio) const;
 
     [[nodiscard]] std::pair<PositionArray, std::variant<RealArray, ComplexArray>> eval_line(pos_t const& pos_start, pos_t const& pos_end) const;
 
@@ -32,13 +34,15 @@ struct ScalarField
         return {positions, std::visit([](auto const& v) -> RealArray { return nc::abs(v); }, values)};
     }
 
-    [[nodiscard]] std::pair<PositionArray, std::variant<RealArray, ComplexArray>> eval_plane(math::Rectangle const& rectangle) const;
+    [[nodiscard]] std::pair<PositionArray, std::variant<RealArray, ComplexArray>> eval_plane(geometry::Rectangle const& rectangle) const;
 
-    [[nodiscard]] std::pair<PositionArray, RealArray> eval_plane_abs(math::Rectangle const& rectangle) const
+    [[nodiscard]] std::pair<PositionArray, RealArray> eval_plane_abs(geometry::Rectangle const& rectangle) const
     {
         auto const [positions, values] = eval_plane(rectangle);
         return {positions, std::visit([](auto const& v) -> RealArray { return nc::abs(v); }, values)};
     }
+
+    [[nodiscard]] std::pair<nc::NdArray<nc::Vec2>, std::variant<RealArray, ComplexArray>> eval_sphere(geometry::SphericalRectangle const& sr) const;
 
     std::string const id;
     field_t const field;

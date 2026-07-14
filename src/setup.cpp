@@ -117,11 +117,32 @@ namespace
                 pos_t const pos_zero = ref_zero.global_pos();
                 pos_t const pos_axis1_max = ref_axis1_max.global_pos();
                 pos_t const pos_axis2_max = ref_axis2_max.global_pos();
-                math::Rectangle rectangle = math::get_rectangle(pos_zero, pos_axis1_max, pos_axis2_max);
+                auto rectangle = geometry::Rectangle::make(pos_zero, pos_axis1_max, pos_axis2_max);
                 math::NumParams num_params{.wavelength = wavelength, .n_linear1 = n_points_axis1, .n_linear2 = n_points_axis2};
                 auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
                 task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
                 context.tasks.emplace_back(task_name, [voltage_field, rectangle] { plot::plot_gain_over_plane(voltage_field, rectangle); });
+            }
+            else if (type == "plot_gain_over_sphere")
+            {
+                auto const tx_id = factory::get_string(task_desc, "tx");
+                Antenna const& tx = context.antennas.at(tx_id);
+                Antenna& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
+                Reference& ref_center = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_center"));
+                Reference& ref_rect = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_rect"));
+                double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
+                double const polar = factory::get_double(task_desc, "polar", context.variables);
+                double const azimuth = factory::get_double(task_desc, "azimuth", context.variables);
+                std::uint32_t const n_points_polar = factory::get_uint(task_desc, "n_points_polar", context.variables);
+                std::uint32_t const n_points_azimuth = factory::get_uint(task_desc, "n_points_azimuth", context.variables);
+                auto const dir_north = factory::get_pos(task_desc, "dir_north", context.variables);
+                pos_t const center = ref_center.global_pos();
+                pos_t const pos_rect = ref_rect.global_pos();
+                auto sr = geometry::SphericalRectangle::make(center, pos_rect, polar * pi, azimuth * pi, dir_north);
+                math::NumParams num_params{.wavelength = wavelength, .n_polar = n_points_polar, .n_azimuth = n_points_azimuth};
+                auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
+                task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
+                context.tasks.emplace_back(task_name, [voltage_field, sr] { plot::plot_gain_over_sphere(voltage_field, sr); });
             }
             else
             {

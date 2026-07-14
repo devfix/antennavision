@@ -88,7 +88,7 @@ namespace builtin
                 auto& tx = setup->get_antenna("tx");
                 auto& rx = setup->get_antenna("rx");
                 auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
-                auto circle = math::get_circle(POS_ZERO, pos_t(0, 0, 1), distance, pos_t(0, 1, 0));
+                auto circle = geometry::Circle::make(POS_ZERO, pos_t(0, 0, 1), distance, pos_t(0, 1, 0));
 
                 auto [pos_beam, beamwidth_axial] = voltage_field.calc_beamwidth(circle, sqrt2_2);
                 beamwidths_axial.push_back(beamwidth_axial);
@@ -106,7 +106,7 @@ namespace builtin
                 auto& tx = setup->get_antenna("tx");
                 auto& rx = setup->get_antenna("rx");
                 auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
-                auto circle = math::get_circle(POS_ZERO, pos_t(0, 0, 1), distance, pos_t(0, 1, 0));
+                auto circle = geometry::Circle::make(POS_ZERO, pos_t(0, 0, 1), distance, pos_t(0, 1, 0));
 
                 auto [pos_beam, beamwidth_lateral] = voltage_field.calc_beamwidth(circle, sqrt2_2);
                 beamwidths_lateral.push_back(beamwidth_lateral);

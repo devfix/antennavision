@@ -67,7 +67,7 @@ void plot::plot_gain_over_line(GenericScalarField const& scalar_field, pos_t con
     ofs << js.dump(2) << '\n';
 }
 
-void plot::plot_gain_over_plane(GenericScalarField const& scalar_field, math::Rectangle const& rectangle)
+void plot::plot_gain_over_plane(GenericScalarField const& scalar_field, geometry::Rectangle const& rectangle)
 {
     std::string name = std::format("{}.{}", __func__, scalarfield::get_id(scalar_field));
     std::println("Creating plot: {}", name);
@@ -82,11 +82,30 @@ void plot::plot_gain_over_plane(GenericScalarField const& scalar_field, math::Re
         throw SimulationError("Invalid type of scalar field");
     }
     js["positions"] = positions.toStlVector();
+    js["num_params"] = scalarfield::get_num_params(scalar_field);
+    js["rectangle"] = rectangle;
 
-    auto const& num_params = scalarfield::get_num_params(scalar_field);
-    js["wavelength"] = num_params.wavelength;
-    js["n_points_axis1"] = num_params.n_linear1;
-    js["n_points_axis2"] = num_params.n_linear2;
+    std::ofstream ofs(std::format("{}.result.json", name));
+    ofs << js.dump(2) << '\n';
+}
+
+void plot::plot_gain_over_sphere(GenericScalarField const& scalar_field, geometry::SphericalRectangle const& sr)
+{
+    std::string name = std::format("{}.{}", __func__, scalarfield::get_id(scalar_field));
+    std::println("Creating plot: {}", name);
+
+    ojson js;
+    js["name"] = name;
+    auto const [positions, gains] = std::visit([&](auto const& field) { return field.eval_sphere(sr); }, scalar_field);
+    if (auto ra = std::get_if<RealArray>(&gains); ra) { js["gains"] = ra->toStlVector(); }
+    else if (auto ca = std::get_if<ComplexArray>(&gains); ca) { js["gains"] = ca->toStlVector(); }
+    else
+    {
+        throw SimulationError("Invalid type of scalar field");
+    }
+    js["positions"] = positions.toStlVector();
+    js["num_params"] = scalarfield::get_num_params(scalar_field);
+    js["spherical_rectangle"] = sr;
 
     std::ofstream ofs(std::format("{}.result.json", name));
     ofs << js.dump(2) << '\n';

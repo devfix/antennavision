@@ -20,7 +20,9 @@ namespace plot
 
     void plot_gain_over_line(GenericScalarField const& scalar_field, pos_t const& pos_start, pos_t const& pos_end);
 
-    void plot_gain_over_plane(GenericScalarField const& scalar_field, math::Rectangle const& rectangle);
+    void plot_gain_over_plane(GenericScalarField const& scalar_field, geometry::Rectangle const& rectangle);
+
+    void plot_gain_over_sphere(GenericScalarField const& scalar_field, geometry::SphericalRectangle const& sr);
 
     void gain_over_phase(RealArray const& phases, std::vector<std::tuple<std::reference_wrapper<const RealArray>, std::string>> const& gains, std::string_view name,
                          std::string_view title);
