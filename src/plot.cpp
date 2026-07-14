@@ -103,6 +103,7 @@ void plot::plot_gain_over_sphere(GenericScalarField const& scalar_field, geometr
     {
         throw SimulationError("Invalid type of scalar field");
     }
+    auto v = positions.toStlVector();
     js["positions"] = positions.toStlVector();
     js["num_params"] = scalarfield::get_num_params(scalar_field);
     js["spherical_rectangle"] = sr;

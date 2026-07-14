@@ -4,16 +4,7 @@
 
 #pragma once
 
-#include <nlohmann/json_fwd.hpp> // Lightweight forward-declarations for nlohmann::json
 #include "types.hpp"
-
-namespace nc {
-    template <typename BasicJsonType>
-    void to_json(nlohmann::json& j, pos_t const& v);
-
-    template <typename BasicJsonType>
-    void from_json(nlohmann::json const& j, Vec3& v);
-}
 
 
 namespace geometry
@@ -37,7 +28,7 @@ namespace geometry
     {
         pos_t center; /// center position
         pos_t normal; /// normal direction, together with center defines circle plane
-        double radius; /// circle radius
+        double radius{}; /// circle radius
         pos_t e1; /// first unit vector (see ascii sketch)
         pos_t e2; /// second unit vector (see ascii sketch)
 
@@ -66,8 +57,8 @@ namespace geometry
     {
         pos_t center; /// center position
         pos_t normal; /// normal direction, together with center defines rectangle plane
-        double width; /// rectangle width, view from above if normal is pointing up
-        double height; /// rectangle height, view from above if normal is pointing up
+        double width{}; /// rectangle width, view from above if normal is pointing up
+        double height{}; /// rectangle height, view from above if normal is pointing up
         pos_t e1; /// first unit vector (see ascii sketch)
         pos_t e2; /// second unit vector (see ascii sketch)
         static Rectangle make(pos_t const& pos_zero, pos_t const& pos_width_max, pos_t const& pos_height_max);
@@ -83,9 +74,9 @@ namespace geometry
     {
         pos_t center; /// center position of the sphere
         pos_t normal; /// surface normal at the center of the curved surface
-        double radius; /// sphere radius
-        double polar; /// total span of polar angle
-        double azimuth; /// total span of azimuthal angle
+        double radius{}; /// sphere radius
+        double polar{}; /// total span of polar angle
+        double azimuth{}; /// total span of azimuthal angle
         pos_t e1; /// first tangent unit vector
         pos_t e2; /// second tangent unit vector
         static SphericalRectangle make(pos_t const& center, pos_t const& pos_rect, double polar, double azimuth, pos_t const& dir_north);

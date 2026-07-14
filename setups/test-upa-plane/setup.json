@@ -5,7 +5,7 @@
   "variables": {
     "system_wavelength": 0.1,
     "wavelength": "system_wavelength",
-    "distance": "1*wavelength",
+    "distance": "4*wavelength",
     "dipole_length": "0.5*wavelength"
   },
   "references": [
@@ -53,8 +53,8 @@
       "wavelength": "wavelength",
       "polar": 0.5,
       "azimuth": 0.5,
-      "n_points_polar": 201,
-      "n_points_azimuth": 201,
+      "n_points_polar": 21,
+      "n_points_azimuth": 21,
       "dir_north": {
         "x": 0, "y": 1, "z": 0
       }

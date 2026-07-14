@@ -5,7 +5,7 @@
 #pragma once
 
 #include <complex>
-#include <nlohmann/json_fwd.hpp>
+#include <nlohmann/json_fwd.hpp> // Lightweight forward-declarations for nlohmann::json
 #include <NumCpp/Vector/Vec3.hpp>
 #include <NumCpp/NdArray/NdArrayCore.hpp>
 #include <NumCpp/Rotations/Quaternion.hpp>
@@ -35,3 +35,17 @@ constexpr auto sqrt2_2 = std::numbers::sqrt2 / 2.0;
 constexpr auto POS_ZERO = pos_t(0, 0, 0);
 constexpr double SPEED_OF_LIGHT = 299'792'458;
 constexpr double NUMERICAL_MARGIN = 1e-9;
+
+namespace nc {
+    template <typename BasicJsonType>
+    void to_json(BasicJsonType& j, Vec3 const& v);
+
+    template <typename BasicJsonType>
+    void from_json(BasicJsonType const& j, Vec3& v);
+
+    template <typename BasicJsonType>
+    void to_json(BasicJsonType& j, Vec2 const& v);
+
+    template <typename BasicJsonType>
+    void from_json(BasicJsonType const& j, Vec2& v);
+}

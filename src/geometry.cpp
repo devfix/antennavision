@@ -6,24 +6,6 @@
 #include <nlohmann/json.hpp>
 #include "simulationerror.hpp"
 
-namespace nc {
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, pos_t const& v) {
-        j = nlohmann::json{ v.x, v.y, v.z };
-    }
-
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, pos_t& v) {
-        // If the JSON is a 3-element array [x, y, z]
-        if (j.is_array() && j.size() == 3) {
-            v.x = j.at(0).template get<double>();
-            v.y = j.at(1).template get<double>();
-            v.z = j.at(2).template get<double>();
-        } else {
-            throw nlohmann::json::type_error::create(302, "Validation failed: expected a 3-element array for nc::Vec3", &j);
-        }
-    }
-} // namespace nc
 
 namespace geometry
 {
@@ -142,12 +124,6 @@ namespace geometry
         return sr;
     }
 } // namespace geometry
-
-// nc::Vec3 Instantiations
-template void nc::to_json(nlohmann::json&, pos_t const&);
-template void nc::to_json(nlohmann::ordered_json&, pos_t const&);
-template void nc::from_json(nlohmann::json const&, pos_t&);
-template void nc::from_json(nlohmann::ordered_json const&, pos_t&);
 
 // Circle Instantiations
 template void geometry::to_json(nlohmann::json&, geometry::Circle const&);
