@@ -5,14 +5,12 @@
 #pragma once
 
 #include <map>
-#include <memory>
 #include "components/antenna.hpp"
 #include "components/radiator.hpp"
-#include "components/radiatorarray.hpp"
 
 namespace factory
 {
-    using task_t = std::function<void(std::filesystem::path const& directory)>;
+    using task_t = std::function<void()>;
     struct Context
     {
         ojson &desc;

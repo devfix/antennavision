@@ -51,7 +51,7 @@ vec_t Radiator::get_elv_spherical_standing_wave(double const dipole_length, doub
     return {0.0, polar_comp, 0.0};
 }
 
-double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, double wavelength, math::NumParams const& num_params)
+double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, math::NumParams const& num_params)
 {
     auto const polar_edges = nc::linspace(0.0, pi, num_params.n_polar + 1);
     auto const azimuth_edges = nc::linspace(0.0, 2.0 * pi, num_params.n_azimuth + 1);
@@ -68,7 +68,7 @@ double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_s
 
     RealArray squared_norms(polar_grid.shape());
     std::ranges::transform(polar_grid, azimuth_grid, squared_norms.begin(),
-                           [&elv_spherical, wavelength](double const polar, double const azimuth) -> double { return math::square(math::norm(elv_spherical(polar, azimuth, wavelength))); });
+                           [&elv_spherical, num_params](double const polar, double const azimuth) -> double { return math::square(math::norm(elv_spherical(polar, azimuth, num_params.wavelength))); });
 
     // Reshape squared_norms back to match the grid shape (num_azimuth x num_polar)
     squared_norms = squared_norms.reshape(polar_grid.shape());
@@ -86,13 +86,13 @@ vec_t Radiator::get_elv_spherical_from_cartesian(pos_t const& pos_local, double 
     return elv_spherical(polar, azimuth, wavelength);
 }
 
-double Radiator::calc_directivity_from_spherical(double polar, double azimuth, double const wavelength, math::NumParams const& num_params) const
-{ return math::square(math::norm(elv_spherical(polar, azimuth, wavelength))) / calc_mean_squared_effective_length(elv_spherical, wavelength, num_params); }
+double Radiator::calc_directivity_from_spherical(double polar, double azimuth, math::NumParams const& num_params) const
+{ return math::square(math::norm(elv_spherical(polar, azimuth, num_params.wavelength))) / calc_mean_squared_effective_length(elv_spherical, num_params); }
 
-double Radiator::calc_directivity_from_cartesian(pos_t const& pos_local, double const wavelength, math::NumParams const& num_params) const
+double Radiator::calc_directivity_from_cartesian(pos_t const& pos_local, math::NumParams const& num_params) const
 {
     auto const [r, polar, azimuth] = math::spherical_from_cartesian(pos_local);
-    return calc_directivity_from_spherical(polar, azimuth, wavelength, num_params);
+    return calc_directivity_from_spherical(polar, azimuth, num_params);
 }
 
 complex_t Radiator::calc_path(std::size_t idx_input, std::size_t idx_output) { throw SimulationError("{} should not be called on a radiator", __func__); }

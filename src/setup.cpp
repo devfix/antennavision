@@ -4,11 +4,11 @@
 
 #include "setup.hpp"
 #include <algorithm>
+#include <ansi_color.hpp>
 #include <fstream>
 #include <memory>
-#include <print>
-#include <ansi_color.hpp>
 #include <nlohmann/json.hpp>
+#include <print>
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
@@ -87,47 +87,41 @@ namespace
                 auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
                 Antenna const& ant = context.antennas.at(factory::get_string(task_desc, "antenna"));
                 task_name = std::format("{}.{}", type, antenna::get_id(ant));
-                context.tasks.emplace_back(task_name, [&ant, azimuth_angles](std::filesystem::path const& directory)
-                                           { plot::plot_directivity_over_polar(directory, ant, azimuth_angles); });
+                context.tasks.emplace_back(task_name, [&ant, azimuth_angles]{ plot::plot_directivity_over_polar(ant, azimuth_angles, {}); });
             }
             else if (type == "plot_gain_over_straight")
             {
                 Antenna const& tx = context.antennas.at(factory::get_string(task_desc, "tx"));
-                Antenna const& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
+                Antenna& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
                 Reference& ref_start = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_start"));
                 Reference const& ref_stop = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_stop"));
                 double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
-                char distance_axis = factory::get_char(task_desc, "distance_axis");
+                math::NumParams num_params{.wavelength = wavelength};
+                pos_t const pos_start = ref_start.global_pos();
+                pos_t const pos_end = ref_stop.global_pos();
+                auto power_field = antenna::get_voltage_field(tx, rx, num_params);
                 task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
-                context.tasks.emplace_back(task_name, [&tx, &rx, &ref_start, &ref_stop, wavelength, distance_axis](std::filesystem::path const& directory)
-                                           { plot::plot_gain_over_straight(directory, tx, rx, ref_start, ref_stop, wavelength, distance_axis); });
+                context.tasks.emplace_back(task_name,[power_field, pos_start, pos_end] { plot::plot_gain_over_line(power_field, pos_start, pos_end); });
             }
             else if (type == "plot_gain_over_plane")
             {
                 auto const tx_id = factory::get_string(task_desc, "tx");
                 Antenna const& tx = context.antennas.at(tx_id);
-                Antenna & rx = context.antennas.at(factory::get_string(task_desc, "rx"));
+                Antenna& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
                 Reference& ref_zero = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_zero"));
                 Reference const& ref_axis1_max = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_axis1_max"));
                 Reference const& ref_axis2_max = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_axis2_max"));
                 double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
                 std::uint32_t n_points_axis1 = factory::get_uint(task_desc, "n_points_axis1", context.variables);
                 std::uint32_t n_points_axis2 = factory::get_uint(task_desc, "n_points_axis2", context.variables);
-                auto label_axis1 = factory::get_string(task_desc, "label_axis1");
-                auto label_axis2 = factory::get_string(task_desc, "label_axis2");
-
-                pos_t const pos_zero = ref_zero.global_from_local_pos(POS_ZERO);
-                pos_t const pos_axis1_max = ref_axis1_max.global_from_local_pos(POS_ZERO);
-                pos_t const pos_axis2_max = ref_axis2_max.global_from_local_pos(POS_ZERO);
+                pos_t const pos_zero = ref_zero.global_pos();
+                pos_t const pos_axis1_max = ref_axis1_max.global_pos();
+                pos_t const pos_axis2_max = ref_axis2_max.global_pos();
                 math::Rectangle rectangle = math::get_rectangle(pos_zero, pos_axis1_max, pos_axis2_max);
-
-                auto voltage_field = antenna::get_voltage_field(tx, rx, {});
+                math::NumParams num_params{.wavelength = wavelength, .n_linear1 = n_points_axis1, .n_linear2 = n_points_axis2};
+                auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
                 task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
-                context.tasks.emplace_back(task_name,
-                                           [&tx, &rx, voltage_field, rectangle, wavelength, n_points_axis1, n_points_axis2, label_axis1, label_axis2](std::filesystem::path const& directory)
-                                           {
-                                               plot::plot_gain_over_plane(directory, voltage_field, rectangle, wavelength, n_points_axis1, n_points_axis2, label_axis1, label_axis2);
-                                           });
+                context.tasks.emplace_back(task_name, [voltage_field, rectangle] { plot::plot_gain_over_plane(voltage_field, rectangle); });
             }
             else
             {
@@ -232,7 +226,7 @@ void Setup::run_tasks(std::function<void(std::string_view)> const& builtin_handl
         else
         {
             std::println("Running task: {}", task_name);
-            task(std::filesystem::current_path());
+            task();
         }
     }
 }

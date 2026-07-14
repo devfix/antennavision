@@ -5,6 +5,9 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
+#include "NumCpp/Coordinates/Cartesian.hpp"
+#include "NumCpp/Functions/abs.hpp"
+#include "NumCpp/Functions/angle.hpp"
 #include "components/radiator.hpp"
 #include "math.hpp"
 #include "setup.hpp"
@@ -52,7 +55,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
 )JSON");
     auto const setup = Setup::from_json(js);
     auto const wavelength = setup->variables.at("wavelength");
-    auto &ula = antenna::cast<UniformLinearArray>(setup->get_antenna("ula1"));
+    auto& ula = antenna::cast<UniformLinearArray>(setup->get_antenna("ula1"));
 
     // check ULA element references
     for (std::size_t i = 0; i < 8; i++)
@@ -139,7 +142,7 @@ TEST_CASE("ULA gain", "[TestULA]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    auto const wavelength = setup->variables.at("wavelength");
+    math::NumParams num_params{.wavelength = setup->variables.at("wavelength")};
     auto const& tx = setup->get_antenna("ula1");
     auto const& rx = setup->get_antenna("receiver");
     Reference& ref_start = setup->get_reference("ref_rx_start");
@@ -159,7 +162,7 @@ TEST_CASE("ULA gain", "[TestULA]")
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         ref_start.pos = ref_start.pos_initial + pos_delta * f;
         ref_start.rotation = ref_start.rotation_initial.toNdArray() + rotation_delta * f;
-        gains.at(k) = antenna::calc_voltage_gain(tx, rx, wavelength, {});
+        gains.at(k) = antenna::calc_voltage_gain(tx, rx, num_params);
         distances.at(k) = *distance_ptr;
     }
     ref_start.reset();
@@ -172,8 +175,9 @@ TEST_CASE("ULA gain", "[TestULA]")
 
     std::vector<double> const gains_power_expected = {0.100653501560284, 0.227131737832402, 0.430093185362579, 0.684406554078239, 0.90888660875903, 1,
                                                       0.90888660875903,  0.684406554078239, 0.430093185362579, 0.227131737832402, 0.100653501560284};
-    std::vector<double> const gains_voltage_arg_expected = {-1.78360365074871963, -1.77764329249379149, -1.7634739579509644, -0.33901331302971988, -1.49312253721690102, -1.57131992547758736,
-                                                            -1.49312253721690102, -0.33901331302971988, -1.7634739579509644, -1.77764329249379149, -1.78360365074871963};
+    std::vector<double> const gains_voltage_arg_expected = {-1.78360365074871963, -1.77764329249379149, -1.7634739579509644,  -0.33901331302971988,
+                                                            -1.49312253721690102, -1.57131992547758736, -1.49312253721690102, -0.33901331302971988,
+                                                            -1.7634739579509644,  -1.77764329249379149, -1.78360365074871963};
     for (std::size_t k = 0; k < gains.size(); k++)
     {
         REQUIRE(math::square(std::abs(gains.at(k))) == Catch::Approx(gains_power_expected.at(k)));
@@ -252,39 +256,29 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    auto const wavelength = setup->variables.at("wavelength");
+    math::NumParams num_params{.wavelength = setup->variables.at("wavelength"), .n_linear1 = 11};
     auto const& tx = setup->get_antenna("ula1");
-    auto & rx = setup->get_antenna("receiver");
+    auto& rx = setup->get_antenna("receiver");
     Reference const& ref_stop = setup->get_reference("ref_rx_stop");
-    math::NumParams num_params;
     auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
 
-    constexpr std::size_t n_points = 11;
-    pos_t const pos_delta = ref_stop.pos - antenna::get_origin(rx).pos;
-    pos_t const pos_zero = antenna::get_origin(rx).pos;
-    double const length = pos_delta.norm();
+    pos_t const pos_start = antenna::get_origin(rx).global_pos();
+    pos_t const pos_end = ref_stop.global_pos();
 
-    std::vector<complex_t> gains(n_points, 0.0);
-    std::vector<double> distances(n_points, 0.0);
-
-    double* distance_ptr = &antenna::get_origin(rx).pos.z;
-    for (RealArray::index_type k = 0; k < n_points; k++)
-    {
-        double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
-        gains.at(k) = voltage_field.field(pos_zero + pos_delta * f, wavelength);
-        distances.at(k) = *distance_ptr;
-    }
-
-    complex_t const gain_votage_abs_max = std::ranges::max(gains, {}, [](complex_t const& gain) -> double { return std::abs(gain); });
-    REQUIRE(std::abs(gain_votage_abs_max) == Catch::Approx(0.00035809851155573));
-    REQUIRE(std::arg(gain_votage_abs_max) == Catch::Approx(-0.5 * pi).margin(1e-3));
-
-    std::ranges::transform(gains, gains.begin(), [gain_votage_abs_max](auto gain) -> complex_t { return gain / std::abs(gain_votage_abs_max); });
+    auto [distances, variant_gains] = voltage_field.eval_line(pos_start, pos_end);
+    auto gains = std::get<ComplexArray>(variant_gains);
+    auto const gains_abs = nc::abs(gains);
+    auto const idx_max = nc::argmax(gains_abs);
+    auto const gain_votage_abs_max = gains(idx_max, 0).item();
+    REQUIRE(nc::abs(gain_votage_abs_max) == Catch::Approx(0.00035809851155573));
+    REQUIRE(nc::angle(gain_votage_abs_max) == Catch::Approx(-0.5 * pi).margin(1e-3));
+    gains /= nc::abs(gain_votage_abs_max);
 
     std::vector<double> const gains_power_expected = {0.100653501560284, 0.227131737832402, 0.430093185362579, 0.684406554078239, 0.90888660875903, 1,
                                                       0.90888660875903,  0.684406554078239, 0.430093185362579, 0.227131737832402, 0.100653501560284};
-    std::vector<double> const gains_voltage_arg_expected = {-1.78360365074871963, -1.77764329249379149, -1.7634739579509644, -0.33901331302971988, -1.49312253721690102, -1.57131992547758736,
-                                                            -1.49312253721690102, -0.33901331302971988, -1.7634739579509644, -1.77764329249379149, -1.78360365074871963};
+    std::vector<double> const gains_voltage_arg_expected = {-1.78360365074871963, -1.77764329249379149, -1.7634739579509644,  -0.33901331302971988,
+                                                            -1.49312253721690102, -1.57131992547758736, -1.49312253721690102, -0.33901331302971988,
+                                                            -1.7634739579509644,  -1.77764329249379149, -1.78360365074871963};
     for (std::size_t k = 0; k < gains.size(); k++)
     {
         REQUIRE(math::square(std::abs(gains.at(k))) == Catch::Approx(gains_power_expected.at(k)));

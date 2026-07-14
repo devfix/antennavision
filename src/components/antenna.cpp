@@ -8,8 +8,9 @@
 
 namespace
 {
-    complex_t calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, double wavelength, math::NumParams const& num_params)
+    complex_t calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, math::NumParams const& num_params)
     {
+        auto const& wavelength = num_params.wavelength;
         double const r = (tx.origin.global_from_local_pos(POS_ZERO) - rx.origin.global_from_local_pos(POS_ZERO)).norm();
         if (r < wavelength / 10) { std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength); }
 
@@ -26,25 +27,25 @@ namespace
         auto const g = elv_global_tx.dot(elv_global_rx).item();
         auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * wavelength / (4.0 * pi * r);
         auto const mean_squared_elv_tx =
-            tx.mean_squared_elv ? tx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(tx.elv_spherical, wavelength, num_params);
+            tx.mean_squared_elv ? tx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(tx.elv_spherical, num_params);
         auto const mean_squared_elv_rx =
-            rx.mean_squared_elv ? rx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(rx.elv_spherical, wavelength, num_params);
+            rx.mean_squared_elv ? rx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(rx.elv_spherical, num_params);
         return -j * g / std::sqrt(mean_squared_elv_tx * mean_squared_elv_rx) * propagation;
     }
 } // namespace
 
-complex_t antenna::calc_voltage_gain(Antenna const& tx, Antenna const& rx, double wavelength, math::NumParams const& num_params)
+complex_t antenna::calc_voltage_gain(Antenna const& tx, Antenna const& rx, math::NumParams const& num_params)
 {
     Radiator const& radiator_rx = antenna::cast<Radiator>(rx);
     return std::visit(
         [&](auto const& ant_tx)
         {
             using Type = std::decay_t<decltype(ant_tx)>;
-            if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(ant_tx, radiator_rx, wavelength, num_params); }
+            if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(ant_tx, radiator_rx, num_params); }
             else if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
             {
                 complex_t gain = 0;
-                for (auto const& element : ant_tx.elements) { gain += calc_voltage_gain_direct(element, radiator_rx, wavelength, num_params); }
+                for (auto const& element : ant_tx.elements) { gain += calc_voltage_gain_direct(element, radiator_rx, num_params); }
                 return gain;
             }
             else
@@ -55,15 +56,25 @@ complex_t antenna::calc_voltage_gain(Antenna const& tx, Antenna const& rx, doubl
         tx);
 }
 
-double antenna::calc_power_gain(Antenna const& tx, Antenna const& rx, double wavelength, math::NumParams const& num_params)
-{ return math::square(std::abs(calc_voltage_gain(tx, rx, wavelength, num_params))); }
+double antenna::calc_power_gain(Antenna const& tx, Antenna const& rx, math::NumParams const& num_params)
+{ return math::square(std::abs(calc_voltage_gain(tx, rx, num_params))); }
 
-ScalarField antenna::get_voltage_field(Antenna const& tx, Antenna& rx, math::NumParams const& num_params)
+ScalarField<complex_t> antenna::get_voltage_field(Antenna const& tx, Antenna& rx, math::NumParams const& num_params)
 {
-    return {std::format("{}.{}", get_id(tx), get_id(rx)), [&tx, &rx, num_params](pos_t const& pos, double const wavelength) -> complex_t
+    return {std::format("voltage-field.{}.{}", get_id(tx), get_id(rx)), [&tx, &rx, num_params](pos_t const& pos, double const wavelength) -> complex_t
     {
         get_origin(rx).pos = pos;
-        return calc_voltage_gain(tx, rx, wavelength, num_params);
+        return calc_voltage_gain(tx, rx, num_params);
+    },
+    [&rx] { get_origin(rx).reset(); }, num_params};
+}
+
+ScalarField<double> antenna::get_power_field(Antenna const& tx, Antenna& rx, math::NumParams const& num_params)
+{
+    return {std::format("power-field.{}.{}", get_id(tx), get_id(rx)), [&tx, &rx, num_params](pos_t const& pos, double const wavelength) -> double
+    {
+        get_origin(rx).pos = pos;
+        return calc_power_gain(tx, rx, num_params);
     },
     [&rx] { get_origin(rx).reset(); }, num_params};
 }

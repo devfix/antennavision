@@ -14,9 +14,11 @@ namespace math
 {
     struct NumParams
     {
+        double wavelength = 0.1;
         std::size_t n_polar = 101;
         std::size_t n_azimuth = 201;
-        std::size_t n_linear = 101;
+        std::size_t n_linear1 = 101;
+        std::size_t n_linear2 = 101;
         double xtol_rel = 1e-8;
         double ftol_rel = 1e-8;
     };

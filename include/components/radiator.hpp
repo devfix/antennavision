@@ -73,12 +73,12 @@ struct Radiator : Component
     ms_elv_t const mean_squared_elv; /// callback for mean-squared effective length. Optional, can be nullptr
 
     [[nodiscard]] static vec_t get_elv_spherical_standing_wave(double dipole_length, double wavelength, double polar);
-    [[nodiscard]] static double calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, double wavelength, math::NumParams const& num_params);
+    [[nodiscard]] static double calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, math::NumParams const& num_params);
 
     [[nodiscard]] vec_t get_elv_spherical_from_cartesian(pos_t const& pos_local, double wavelength) const;
 
-    [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, double wavelength, math::NumParams const& num_params) const;
-    [[nodiscard]] double calc_directivity_from_cartesian(pos_t const& pos_local, double wavelength, math::NumParams const& num_params) const;
+    [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, math::NumParams const& num_params) const;
+    [[nodiscard]] double calc_directivity_from_cartesian(pos_t const& pos_local, math::NumParams const& num_params) const;
 
     complex_t calc_path(std::size_t idx_input, std::size_t idx_output) override;
 

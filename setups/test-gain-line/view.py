@@ -5,7 +5,7 @@ import json
 
 
 def main():
-    with open('plot_gain_over_straight.transmitter.receiver_z.z.result.json') as fp:
+    with open('plot_gain_over_line.voltage-field.transmitter.receiver_z.result.json') as fp:
         js = json.load(fp)
     name = js['name']
     distances = np.asarray(js['distances'])

@@ -81,9 +81,7 @@
       "ref_axis2_max": "ref_axis2_max",
       "wavelength": "wavelength",
       "n_points_axis1": 201,
-      "n_points_axis2": 201,
-      "label_axis1": "x",
-      "label_axis2": "y"
+      "n_points_axis2": 201
     }
   ]
 }

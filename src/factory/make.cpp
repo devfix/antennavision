@@ -38,9 +38,9 @@ namespace factory
         auto const origin_id = get_string(reference_desc, "origin");
         auto const pos = get_pos(reference_desc, "pos", variables, true, true);
         auto const rotation = get_quaternion(reference_desc, "rot", variables, true, true);
-        std::println(
-            "{}Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]{}",
-            fg4::bright_black, id, origin_id, pos.x, pos.y, pos.z, rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi, reset);
+        // std::println(
+        //     "{}Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]{}",
+        //     fg4::bright_black, id, origin_id, pos.x, pos.y, pos.z, rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi, reset);
         Reference& origin = find_reference_by_id(references, origin_id);
         assert_empty(reference_desc);
         return references.emplace_back(id, &origin, pos, rotation);
@@ -53,7 +53,7 @@ namespace factory
             auto const id = get_string(desc, "id");
             auto const origin_id = get_string(desc, "ref", true, true);
             auto const type = get_string(desc, "type");
-            std::println("{}Creating radiator [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
+            //std::println("{}Creating radiator [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
             Reference& origin = find_reference_by_id(context.references, origin_id);
             if (type == "HertzianDipole") { return Radiator::HertzianDipole::create(id, origin); }
             if (type == "StandingWaveDipole")

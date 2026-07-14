@@ -112,7 +112,7 @@ namespace math
 
     std::pair<double, double> f_min(OptParams const& optimization_params)
     {
-        auto const& n_samples = optimization_params.num_params.n_linear;
+        auto const& n_samples = optimization_params.num_params.n_linear1;
         std::vector<double> abs_values(n_samples, 0.0);
         double const delta = optimization_params.x_b - optimization_params.x_a;
         for (std::size_t k = 0; k < n_samples; k++)
