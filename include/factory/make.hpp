@@ -14,12 +14,15 @@ namespace factory
     struct Context
     {
         ojson &desc;
+        math::NumParams num_params;
         std::map<std::string, double> variables;
         std::list<Reference> references;
         std::map<std::string, Antenna> antennas;
+        std::map<std::string, Geometry> geometries;
         std::list<std::pair<std::string, task_t>> tasks;
     };
 
     Reference& make_reference(ojson& reference_desc, std::list<Reference>& references, std::map<std::string, double> const& variables);
     [[nodiscard]] Antenna make_antenna(ojson& desc, Context& context);
+    [[nodiscard]] Geometry make_geometry(ojson& desc, Context& context);
 } // namespace factory

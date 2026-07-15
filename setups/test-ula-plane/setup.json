@@ -56,13 +56,13 @@
       "type": "ULA",
       "id": "ula1",
       "ref": "origin",
-      "codebook": "../codebooks/ula16-1.json",
       "spacing": "wavelength * 0.5",
       "size": 16,
       "radiator": {
         "type": "StandingWaveDipole",
         "dipole_length": "dipole_length"
-      }
+      },
+      "codebook": {}
     },
     {
       "id": "receiver",

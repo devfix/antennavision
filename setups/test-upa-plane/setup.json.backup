@@ -13,13 +13,13 @@
       "id": "ref_tx",
       "origin": "",
       "pos": {"x": 0, "y": 0, "z": 0},
-      "rot": {"yaw": 0, "pitch": 0, "roll": 0}
+      "rot": {"yaw": 0, "pitch": 0, "roll": 0.25}
     },
     {
       "id": "ref_rx",
       "origin": "",
       "pos": {"x": 0, "y": 0, "z": "distance"},
-      "rot": {"yaw": 0.5, "pitch": 0.5, "roll": 0}
+      "rot": {"yaw": 0, "pitch": 0.5, "roll": 0}
     },
     {
       "id": "ref_rect",
@@ -58,7 +58,7 @@
   ],
   "tasks": [
     {
-      "type": "plot_gain_over_sphere",
+      "type": "plot_gain_over_geo_sphere",
       "tx": "tx",
       "rx": "rx",
       "ref_center": "",
@@ -69,8 +69,20 @@
       "n_points_polar": 101,
       "n_points_azimuth": 101,
       "dir_north": {
-        "x": 0, "y": 1, "z": 0
+        "x": 0, "y": 0, "z": 1
       }
+    },
+    {
+      "type": "plot_gain_over_local_sphere",
+      "tx": "tx",
+      "rx": "rx",
+      "wavelength": "wavelength",
+      "ref": "",
+      "radius": "distance",
+      "polar_min": 0,
+      "polar_max": 0.5,
+      "azimuth_min": 1.9,
+      "azimuth_max": 0.1,
     }
   ]
 }

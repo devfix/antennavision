@@ -45,7 +45,10 @@ complex_t antenna::calc_voltage_gain(Antenna const& tx, Antenna const& rx, math:
             else if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
             {
                 complex_t gain = 0;
-                for (auto const& element : ant_tx.elements) { gain += calc_voltage_gain_direct(element, radiator_rx, num_params); }
+                for (std::size_t k = 0; k < ant_tx.element_lookup.size(); k++)
+                {
+                    gain += ant_tx.coeffs[k] * calc_voltage_gain_direct(*ant_tx.element_lookup[k], radiator_rx, num_params);
+                }
                 return gain;
             }
             else

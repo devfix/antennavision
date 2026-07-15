@@ -31,7 +31,7 @@ namespace
     void extract_variables(factory::Context& context)
     {
         if (!context.desc.contains("variables")) { return; }
-        for (auto& variables = context.desc["variables"]; const auto& [key, val] : variables.items())
+        for (auto& variables = context.desc.at("variables"); const auto& [key, val] : variables.items())
         {
             if (val.is_string()) { context.variables[key] = factory::parse_double(val.get<std::string>(), context.variables); }
             else if (val.is_number()) { context.variables[key] = val.get<double>(); }
@@ -48,10 +48,10 @@ namespace
     {
         context.references.emplace_back("", nullptr, pos_t(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
         if (!context.desc.contains("references")) { return; }
-        for (auto& references = json_get(context.desc, "references"); auto& reference_desc : references)
+        for (auto& references = context.desc.at("references"); auto& desc : references)
         {
-            factory::make_reference(reference_desc, context.references, context.variables);
-            factory::assert_empty(reference_desc);
+            factory::make_reference(desc, context.references, context.variables);
+            factory::assert_empty(desc);
         }
         context.desc.erase("references");
     }
@@ -59,7 +59,7 @@ namespace
     void extract_antennas(factory::Context& context)
     {
         if (!context.desc.contains("antennas")) { return; }
-        for (auto& antennas = json_get(context.desc, "antennas"); auto& desc : antennas)
+        for (auto& antennas = context.desc.at("antennas"); auto& desc : antennas)
         {
             Antenna ant = factory::make_antenna(desc, context);
             context.antennas.emplace(antenna::get_id(ant), std::move(ant));
@@ -68,10 +68,23 @@ namespace
         context.desc.erase("antennas");
     }
 
+    void extract_geometries(factory::Context& context)
+    {
+        if (!context.desc.contains("geometries")) { return; }
+        for (auto& geometries = context.desc.at("geometries"); auto& desc : geometries)
+        {
+            auto id = factory::get_string(desc, "id", false, false);
+            Geometry geo = factory::make_geometry(desc, context);
+            context.geometries.emplace(id, std::move(geo));
+            factory::assert_empty(desc);
+        }
+        context.desc.erase("geometries");
+    }
+
     void extract_tasks(factory::Context& context)
     {
         if (!context.desc.contains("tasks")) { return; }
-        for (auto& tasks = json_get(context.desc, "tasks"); auto& task_desc : tasks)
+        for (auto& tasks = context.desc.at("tasks"); auto& task_desc : tasks)
         {
             auto const type = factory::get_string(task_desc, "type");
             std::println("Found task of type '{}'", type);
@@ -87,7 +100,7 @@ namespace
                 auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
                 Antenna const& ant = context.antennas.at(factory::get_string(task_desc, "antenna"));
                 task_name = std::format("{}.{}", type, antenna::get_id(ant));
-                context.tasks.emplace_back(task_name, [&ant, azimuth_angles]{ plot::plot_directivity_over_polar(ant, azimuth_angles, {}); });
+                context.tasks.emplace_back(task_name, [&ant, azimuth_angles] { plot::plot_directivity_over_polar(ant, azimuth_angles, {}); });
             }
             else if (type == "plot_gain_over_straight")
             {
@@ -101,49 +114,39 @@ namespace
                 pos_t const pos_end = ref_stop.global_pos();
                 auto power_field = antenna::get_voltage_field(tx, rx, num_params);
                 task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
-                context.tasks.emplace_back(task_name,[power_field, pos_start, pos_end] { plot::plot_gain_over_line(power_field, pos_start, pos_end); });
+                context.tasks.emplace_back(task_name, [power_field, pos_start, pos_end] { plot::plot_gain_over_line(power_field, pos_start, pos_end); });
             }
-            else if (type == "plot_gain_over_plane")
+            else if (type == "plot_voltage_field")
             {
                 auto const tx_id = factory::get_string(task_desc, "tx");
                 Antenna const& tx = context.antennas.at(tx_id);
                 Antenna& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
-                Reference& ref_zero = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_zero"));
-                Reference const& ref_axis1_max = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_axis1_max"));
-                Reference const& ref_axis2_max = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_axis2_max"));
-                double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
-                std::uint32_t n_points_axis1 = factory::get_uint(task_desc, "n_points_axis1", context.variables);
-                std::uint32_t n_points_axis2 = factory::get_uint(task_desc, "n_points_axis2", context.variables);
-                pos_t const pos_zero = ref_zero.global_pos();
-                pos_t const pos_axis1_max = ref_axis1_max.global_pos();
-                pos_t const pos_axis2_max = ref_axis2_max.global_pos();
-                auto rectangle = geometry::Rectangle::make(pos_zero, pos_axis1_max, pos_axis2_max);
-                math::NumParams num_params{.wavelength = wavelength, .n_linear1 = n_points_axis1, .n_linear2 = n_points_axis2};
-                auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
+                auto geo = context.geometries.at(factory::get_string(task_desc, "geometry"));
+                auto voltage_field = antenna::get_voltage_field(tx, rx, context.num_params);
                 task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
-                context.tasks.emplace_back(task_name, [voltage_field, rectangle] { plot::plot_gain_over_plane(voltage_field, rectangle); });
+                context.tasks.emplace_back(task_name, [voltage_field, geo] { plot::plot_field_over_geometry(voltage_field, geo); });
             }
-            else if (type == "plot_gain_over_sphere")
-            {
-                auto const tx_id = factory::get_string(task_desc, "tx");
-                Antenna const& tx = context.antennas.at(tx_id);
-                Antenna& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
-                Reference& ref_center = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_center"));
-                Reference& ref_rect = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_rect"));
-                double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
-                double const polar = factory::get_double(task_desc, "polar", context.variables);
-                double const azimuth = factory::get_double(task_desc, "azimuth", context.variables);
-                std::uint32_t const n_points_polar = factory::get_uint(task_desc, "n_points_polar", context.variables);
-                std::uint32_t const n_points_azimuth = factory::get_uint(task_desc, "n_points_azimuth", context.variables);
-                auto const dir_north = factory::get_pos(task_desc, "dir_north", context.variables);
-                pos_t const center = ref_center.global_pos();
-                pos_t const pos_rect = ref_rect.global_pos();
-                auto sr = geometry::SphericalRectangle::make(center, pos_rect, polar * pi, azimuth * pi, dir_north);
-                math::NumParams num_params{.wavelength = wavelength, .n_polar = n_points_polar, .n_azimuth = n_points_azimuth};
-                auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
-                task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
-                context.tasks.emplace_back(task_name, [voltage_field, sr] { plot::plot_gain_over_sphere(voltage_field, sr); });
-            }
+            // else if (type == "plot_gain_over_sphere")
+            // {
+            //     auto const tx_id = factory::get_string(task_desc, "tx");
+            //     Antenna const& tx = context.antennas.at(tx_id);
+            //     Antenna& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
+            //     Reference& ref_center = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_center"));
+            //     Reference& ref_rect = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_rect"));
+            //     double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
+            //     double const polar = factory::get_double(task_desc, "polar", context.variables);
+            //     double const azimuth = factory::get_double(task_desc, "azimuth", context.variables);
+            //     std::uint32_t const n_points_polar = factory::get_uint(task_desc, "n_points_polar", context.variables);
+            //     std::uint32_t const n_points_azimuth = factory::get_uint(task_desc, "n_points_azimuth", context.variables);
+            //     auto const dir_north = factory::get_pos(task_desc, "dir_north", context.variables);
+            //     pos_t const center = ref_center.global_pos();
+            //     pos_t const pos_rect = ref_rect.global_pos();
+            //     auto sr = geometry::SphericalRectangle::make(center, pos_rect, polar * pi, azimuth * pi, dir_north);
+            //     math::NumParams num_params{.wavelength = wavelength, .n_polar = n_points_polar, .n_azimuth = n_points_azimuth};
+            //     auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
+            //     task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
+            //     context.tasks.emplace_back(task_name, [voltage_field, sr] { plot::plot_gain_over_spherical_rectangle(voltage_field, sr); });
+            // }
             else
             {
                 throw SimulationError("Unknown task type \"{}\"", type);
@@ -165,9 +168,16 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
     setup_desc.erase("metadata");
 
     factory::Context context{.desc = setup_desc};
+    if (setup_desc.contains("num_params")) { setup_desc.at("num_params").get_to(context.num_params); }
+    else
+    {
+        std::println("{}No numerical parameters specified, using default configuration{}", ansi_color::fg4::bright_yellow, ansi_color::reset);
+    }
+
     extract_variables(context);
     extract_references(context);
     extract_antennas(context);
+    extract_geometries(context);
     extract_tasks(context);
     factory::assert_empty(context.desc);
 

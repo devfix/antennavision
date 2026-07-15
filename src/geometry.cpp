@@ -6,130 +6,128 @@
 #include <nlohmann/json.hpp>
 #include "simulationerror.hpp"
 
-
 namespace geometry
 {
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, Circle const& sr) {
-        j = nlohmann::json{
-                {"center",  sr.center},
-                {"normal",  sr.normal},
-                {"radius",  sr.radius},
-                {"e1",      sr.e1},
-                {"e2",      sr.e2}
-        };
-    }
-
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, Circle& sr) {
-        j.at("center").get_to(sr.center);
-        j.at("normal").get_to(sr.normal);
-        j.at("radius").get_to(sr.radius);
-        j.at("e1").get_to(sr.e1);
-        j.at("e2").get_to(sr.e2);
-    }
-
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, Rectangle const& sr) {
-        j = nlohmann::json{
-                {"center",  sr.center},
-                {"normal",  sr.normal},
-                {"width",  sr.width},
-                {"height",  sr.height},
-                {"e1",      sr.e1},
-                {"e2",      sr.e2}
-        };
-    }
-
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, Rectangle& sr) {
-        j.at("center").get_to(sr.center);
-        j.at("normal").get_to(sr.normal);
-        j.at("width").get_to(sr.width);
-        j.at("height").get_to(sr.height);
-        j.at("e1").get_to(sr.e1);
-        j.at("e2").get_to(sr.e2);
-    }
-
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, SphericalRectangle const& sr) {
-        j = nlohmann::json{
-            {"center",  sr.center},
-            {"normal",  sr.normal},
-            {"radius",  sr.radius},
-            {"polar",   sr.polar},
-            {"azimuth", sr.azimuth},
-            {"e1",      sr.e1},
-            {"e2",      sr.e2}
-        };
-    }
-
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, SphericalRectangle& sr) {
-        j.at("center").get_to(sr.center);
-        j.at("normal").get_to(sr.normal);
-        j.at("radius").get_to(sr.radius);
-        j.at("polar").get_to(sr.polar);
-        j.at("azimuth").get_to(sr.azimuth);
-        j.at("e1").get_to(sr.e1);
-        j.at("e2").get_to(sr.e2);
-    }
-
-    Circle Circle::make(pos_t const& center, pos_t const& normal, double radius, pos_t const& dir_start)
+    namespace
     {
-        pos_t const safe_normal = normal.normalize();
-        // Project start_direction onto the plane to ensure it's perfectly perpendicular to the normal Vector projection: e1 = v - (v . n) * n
-        pos_t const e1 = dir_start - dir_start.dot(safe_normal) * safe_normal;
-        if (e1.norm() <= NUMERICAL_MARGIN) {throw SimulationError("Invalid circle start direction");}
-        Circle circle{.center = center, .normal = safe_normal, .radius = radius, .e1 = e1.normalize()};
-        circle.e2 = safe_normal.cross(circle.e1);
-        return circle;
+        void assert_orthogonality(pos_t const& normal, pos_t const& e1, pos_t const& e2, std::string_view object)
+        {
+            if (std::abs(normal.dot(e1)) > NUMERICAL_MARGIN) { throw SimulationError("Invalid {} definition: normal and e1 must be orthogonal", object); }
+            if (std::abs(normal.dot(e2)) > NUMERICAL_MARGIN) { throw SimulationError("Invalid {} definition: normal and e2 must be orthogonal", object); }
+            if (std::abs(e1.dot(e2)) > NUMERICAL_MARGIN) { throw SimulationError("Invalid {} definition: e1 and e2 must be orthogonal", object); }
+        }
+    } // namespace
+
+    CircleArc::CircleArc(pos_t const& center, pos_t const& normal, pos_t const& e1, double radius, double angle_span) :
+        center_(center), normal_(normal.normalize()), e1_(e1.normalize()), e2_(normal_.cross(e1_)), radius_(radius), angle_span_(angle_span)
+    { assert_orthogonality(normal_, e1_, e2_, "circle"); }
+
+    CircleArc CircleArc::rotate(double angle) const { return {center_, normal_, std::cos(angle) * e1_ + std::sin(angle) * e2_, radius_, angle_span_}; }
+
+    template <typename BasicJsonType>
+    void to_json(BasicJsonType& j, CircleArc const& c)
+    {
+        j = BasicJsonType{{"center", c.center()}, {"normal", c.normal()}, {"e1", c.e1()},
+                          {"e2", c.e2()},         {"radius", c.radius()}, {"angle_span", c.angle_span()}};
     }
 
-    Circle Circle::rotate_base(double angle) const
+    template <typename BasicJsonType>
+    void from_json(BasicJsonType const& j, CircleArc& c)
     {
-        pos_t const e1_new = std::cos(angle) * e1 + std::sin(angle) * e2;
-        pos_t const e2_new = -std::sin(angle) * e1 + std::cos(angle) * e2;
-        return {.center = center, .normal = normal, .radius = radius, .e1 = e1_new, .e2 = e2_new};
+        if (!j.contains("center")) { throw SimulationError("Invalid circle definition: missing center"); }
+        if (!j.contains("normal")) { throw SimulationError("Invalid circle definition: missing normal"); }
+        if (!j.contains("e1")) { throw SimulationError("Invalid circle definition: missing e1"); }
+        if (!j.contains("radius")) { throw SimulationError("Invalid circle definition: missing radius"); }
+        if (!j.contains("angle_span")) { throw SimulationError("Invalid circle definition: missing angle_span"); }
+        pos_t center;
+        pos_t normal;
+        pos_t e1;
+        double radius;
+        double angle_span;
+        j.at("center").get_to(center);
+        j.at("normal").get_to(normal);
+        j.at("e1").get_to(e1);
+        j.at("radius").get_to(radius);
+        j.at("angle_span").get_to(angle_span);
+        c = CircleArc(center, normal, e1, radius, angle_span);
     }
 
-    Rectangle Rectangle::make(pos_t const& pos_zero, pos_t const& pos_width_max, pos_t const& pos_height_max)
+    Rectangle::Rectangle(pos_t const& center, pos_t const& normal, pos_t const& e1, double width, double height) :
+        center_(center), normal_(normal.normalize()), e1_(e1.normalize()), e2_(normal_.cross(e1_)), width_(width), height_(height)
+    { assert_orthogonality(normal_, e1_, e2_, "rectangle"); }
+
+    template <typename BasicJsonType>
+    void to_json(BasicJsonType& j, Rectangle const& r)
+    { j = BasicJsonType{{"center", r.center()}, {"normal", r.normal()}, {"e1", r.e1()}, {"e2", r.e2()}, {"width", r.width()}, {"height", r.height()}}; }
+
+    template <typename BasicJsonType>
+    void from_json(BasicJsonType const& j, Rectangle& r)
     {
-        pos_t const dir_width = pos_width_max - pos_zero;
-        pos_t const dir_height = pos_height_max - pos_zero;
-        pos_t const normal = dir_width.cross(dir_height).normalize();
-        pos_t const v1 = dir_width.normalize();
-        return {.center = pos_zero + 0.5 * dir_width + 0.5 * dir_height,
-                .normal = normal,
-                .width = dir_width.norm(),
-                .height = dir_height.norm(),
-                .e1 = v1,
-                .e2 = normal.cross(v1)};
+        if (!j.contains("center")) { throw SimulationError("Invalid rectangle definition: missing center"); }
+        if (!j.contains("normal")) { throw SimulationError("Invalid rectangle definition: missing normal"); }
+        if (!j.contains("e1")) { throw SimulationError("Invalid rectangle definition: missing e1"); }
+        if (!j.contains("width")) { throw SimulationError("Invalid rectangle definition: missing width"); }
+        if (!j.contains("height")) { throw SimulationError("Invalid rectangle definition: missing height"); }
+        pos_t center;
+        pos_t normal;
+        pos_t e1;
+        double width;
+        double height;
+        j.at("center").get_to(center);
+        j.at("normal").get_to(normal);
+        j.at("e1").get_to(e1);
+        j.at("width").get_to(width);
+        j.at("height").get_to(height);
+        r = Rectangle(center, normal, e1, width, height);
     }
 
-    SphericalRectangle SphericalRectangle::make(pos_t const& center, pos_t const& pos_rect, double polar, double azimuth, pos_t const& dir_north)
+    SphericalRectangle::SphericalRectangle(pos_t const& center, pos_t const& normal, pos_t const& e1, double radius, double polar_span, double azimuth_span) :
+        center_(center), normal_(normal.normalize()), e1_(e1.normalize()), e2_(normal_.cross(e1_)), radius_(radius), polar_span_(polar_span),
+        azimuth_span_(azimuth_span)
+    { assert_orthogonality(normal_, e1_, e2_, "spherical rectangle"); }
+
+    template <typename BasicJsonType>
+    void to_json(BasicJsonType& j, SphericalRectangle const& sr)
     {
-        SphericalRectangle sr{
-            .center = center,
-            .normal = pos_rect.normalize(),
-            .radius = pos_rect.norm(),
-            .polar = polar,
-            .azimuth = azimuth,
-        };
-        // Project dir_up onto the plane defined by normal to ensure it's perfectly perpendicular
-        pos_t const e2 = (dir_north - dir_north.dot(sr.normal) * sr.normal);
-        if (e2.norm() <= NUMERICAL_MARGIN) {throw SimulationError("Invalid spherical rectangle north direction");}
-        sr.e2 = e2.normalize();
-        sr.e1 = sr.e2.cross(sr.normal);
-        return sr;
+        j = BasicJsonType{{"center", sr.center()},
+                          {"normal", sr.normal()},
+                          {"e1", sr.e1()},
+                          {"e2", sr.e2()},
+                          {"radius", sr.radius()},
+                          {"polar_span", sr.polar_span()},
+                          {"azimuth_span", sr.azimuth_span()}};
+    }
+
+    template <typename BasicJsonType>
+    void from_json(BasicJsonType const& j, SphericalRectangle& sr)
+    {
+        if (!j.contains("center")) { throw SimulationError("Invalid spherical rectangle definition: missing center"); }
+        if (!j.contains("normal")) { throw SimulationError("Invalid spherical rectangle definition: missing normal"); }
+        if (!j.contains("e1")) { throw SimulationError("Invalid spherical rectangle definition: missing e1"); }
+        if (!j.contains("radius")) { throw SimulationError("Invalid spherical rectangle definition: missing radius"); }
+        if (!j.contains("polar_span")) { throw SimulationError("Invalid spherical rectangle definition: missing polar_span"); }
+        if (!j.contains("azimuth_span")) { throw SimulationError("Invalid spherical rectangle definition: missing azimuth_span"); }
+        pos_t center;
+        pos_t normal;
+        pos_t e1;
+        double radius;
+        double polar_span;
+        double azimuth_span;
+        j.at("center").get_to(center);
+        j.at("normal").get_to(normal);
+        j.at("e1").get_to(e1);
+        j.at("radius").get_to(radius);
+        j.at("polar_span").get_to(polar_span);
+        j.at("azimuth_span").get_to(azimuth_span);
+        sr = SphericalRectangle(center, normal, e1, radius, polar_span, azimuth_span);
     }
 } // namespace geometry
 
 // Circle Instantiations
-template void geometry::to_json(nlohmann::json&, geometry::Circle const&);
-template void geometry::to_json(nlohmann::ordered_json&, geometry::Circle const&);
-template void geometry::from_json(nlohmann::json const&, geometry::Circle&);
-template void geometry::from_json(nlohmann::ordered_json const&, geometry::Circle&);
+template void geometry::to_json(nlohmann::json&, geometry::CircleArc const&);
+template void geometry::to_json(nlohmann::ordered_json&, geometry::CircleArc const&);
+template void geometry::from_json(nlohmann::json const&, geometry::CircleArc&);
+template void geometry::from_json(nlohmann::ordered_json const&, geometry::CircleArc&);
 
 // Rectangle Instantiations
 template void geometry::to_json(nlohmann::json&, geometry::Rectangle const&);

@@ -36,6 +36,9 @@ polar_mesh = np.degrees(positions[..., 1])
 # 3. Vectorized Loading of Complex Numbers (Gain Data)
 raw_floats = np.array(data["gains"], dtype=np.float64)
 complex_gains = raw_floats.view(dtype=np.complex128).squeeze(-1)
+gain_abs_max = np.max(np.abs(complex_gains))
+#complex_gains /= gain_abs_max
+complex_gains *= 4*np.pi*radius
 gain_magnitudes = 20 * np.log10(np.abs(complex_gains))
 
 # Reshape gain values to match the coordinate mesh grid layout
@@ -44,16 +47,16 @@ gain_magnitudes = gain_magnitudes.reshape(n_points_azimuth, n_points_2)
 
 
 # 4. Set Physical & Visual Scaling Limits
-#min_gain = -120  # Clamping threshold for lower noise floor
-#max_gain = -20   # Maximum target visibility ceiling
-#gain_magnitudes = np.clip(gain_magnitudes, min_gain, max_gain)
+min_gain = -20  # Clamping threshold for lower noise floor
+max_gain = 20   # Maximum target visibility ceiling
+gain_magnitudes = np.clip(gain_magnitudes, min_gain, max_gain)
 
 # 5. Plotting the Spherical Heatmap
 plt.figure(figsize=(9, 7))
 
 # Mapping Azimuth to Horizontal axis (Axis 1) and Polar to Vertical axis (Axis 2)
 heatmap = plt.pcolormesh(
-    azimuth_mesh, polar_mesh, gain_magnitudes, shading="auto", cmap="viridis"#, vmin=min_gain, vmax=max_gain
+    azimuth_mesh, polar_mesh, gain_magnitudes, shading="auto", cmap="viridis", vmin=min_gain, vmax=max_gain
 )
 
 # Customize Layout & Labels with accurate angle names

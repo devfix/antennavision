@@ -24,6 +24,12 @@ namespace math
         double ftol_rel = 1e-8;
     };
 
+    template <typename BasicJsonType>
+    void to_json(BasicJsonType& j, NumParams const& num_params);
+
+    template <typename BasicJsonType>
+    void from_json(BasicJsonType const& j, NumParams& num_params);
+
     struct OptParams
     {
         std::function<double(double x)> fn; // objective function that gets minimized
@@ -31,12 +37,6 @@ namespace math
         double x_b;
         NumParams const& num_params;
     };
-
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, NumParams const& num_params);
-
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, NumParams& num_params);
 
     template <typename R, typename T1, typename T2, typename T3>
     nc::NdArray<R> constexpr vec(T1 a, T2 b, T3 c)

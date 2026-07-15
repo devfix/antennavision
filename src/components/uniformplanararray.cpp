@@ -6,8 +6,8 @@
 
 #include "simulationerror.hpp"
 
-UniformPlanarArray::UniformPlanarArray(std::string_view const id, Reference& origin, std::list<Radiator>&& elements, std::size_t size_x,
-                                       std::size_t size_y) : RadiatorArray(id, origin, std::move(elements)), size_x(size_x), size_y(size_y)
+UniformPlanarArray::UniformPlanarArray(std::string_view const id, Reference& origin, std::list<Radiator>&& elements, std::vector<complex_t>&& coeffs, std::size_t size_x,
+                                       std::size_t size_y) : RadiatorArray(id, origin, std::move(elements), std::move(coeffs)), size_x(size_x), size_y(size_y)
 {
     if (size != size_x * size_y)
     {

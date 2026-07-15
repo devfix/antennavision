@@ -8,7 +8,7 @@
 
 struct UniformPlanarArray : RadiatorArray<UniformPlanarArray>
 {
-    UniformPlanarArray(std::string_view id, Reference& origin, std::list<Radiator>&& elements, std::size_t size_x, std::size_t size_y);
+    UniformPlanarArray(std::string_view id, Reference& origin, std::list<Radiator>&& elements, std::vector<complex_t>&& coeffs, std::size_t size_x, std::size_t size_y);
 
     constexpr Radiator& operator()(std::size_t const x, std::size_t const y) const { return *element_lookup[y * size_x + x]; }
 

@@ -20,6 +20,7 @@ using Quaternion = nc::rotations::Quaternion;
 using RealArray = nc::NdArray<double>;
 using ComplexArray = nc::NdArray<complex_t>;
 using PositionArray = nc::NdArray<pos_t>;
+using SurfacePositionArray = nc::NdArray<nc::Vec2>;
 using VectorArray = nc::NdArray<vec_t>;
 using QuaternionArray = nc::NdArray<Quaternion>; // probably never used but we already define it here
 

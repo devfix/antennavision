@@ -8,6 +8,6 @@
 
 struct UniformLinearArray : RadiatorArray<UniformLinearArray>
 {
-    UniformLinearArray(std::string_view id, Reference& origin, std::list<Radiator>&& elements);
+    UniformLinearArray(std::string_view id, Reference& origin, std::list<Radiator>&& elements, std::vector<complex_t>&& coeffs);
     constexpr Reference& get_reference(std::size_t const idx) const { return (*this)(idx).origin; }
 };

@@ -11,8 +11,8 @@
 template <typename Derived>
 struct RadiatorArray
 {
-    RadiatorArray(std::string_view const id, Reference& origin, std::list<Radiator>&& elements) :
-        id(id), origin(origin), size(elements.size()), elements(std::move(elements)), element_lookup(size, nullptr)
+    RadiatorArray(std::string_view const id, Reference& origin, std::list<Radiator>&& elements, std::vector<complex_t>&& coeffs) :
+        id(id), origin(origin), size(elements.size()), elements(std::move(elements)), element_lookup(size, nullptr), coeffs(std::move(coeffs))
     {
         // important: use this->elements since elements is already moved and its size zero
         for (std::size_t idx = 0; auto& element : this->elements) { element_lookup[idx++] = &element; }
@@ -26,4 +26,5 @@ struct RadiatorArray
     std::size_t const size;
     std::list<Radiator> elements;
     std::vector<Radiator*> element_lookup;
+    std::vector<complex_t> coeffs;
 };

@@ -31,37 +31,31 @@ std::pair<pos_t, double> ScalarField<ScalarType>::argmax_line_abs(pos_t const& p
 }
 
 template <typename ScalarType>
-std::pair<pos_t, double> ScalarField<ScalarType>::argmax_circle_abs(geometry::Circle const& circle, double const angle) const
+std::pair<pos_t, double> ScalarField<ScalarType>::argmax_arc_abs(geometry::CircleArc const& arc) const
 {
-    math::OptParams const params{[&](double const x) -> double
-                                 {
-                                     pos_t const pos = circle.center + circle.radius * (std::cos(x) * circle.e1 + std::sin(x) * circle.e2);
-                                     return -std::abs(field(pos, num_params.wavelength));
-                                 },
-                                 0.0, angle, num_params};
-    auto [angle_min, f_min] = math::f_min(params);
-    pos_t pos_max = circle.center + circle.radius * (std::cos(angle_min) * circle.e1 + std::sin(angle_min) * circle.e2);
+    math::OptParams const params{[&](double angle) -> double { return -std::abs(field(arc.get_pos(angle), num_params.wavelength)); },
+                                 -0.5 * arc.angle_span(), 0.5 * arc.angle_span(), num_params};
+    auto [angle_max, f_min] = math::f_min(params);
+    pos_t pos_max = arc.get_pos(angle_max);
     return {pos_max, std::abs(field(pos_max, num_params.wavelength))};
 }
 
 template <typename ScalarType>
-std::pair<pos_t, double> ScalarField<ScalarType>::calc_beamwidth(geometry::Circle const& circle, double const ratio) const
+std::pair<pos_t, double> ScalarField<ScalarType>::calc_beamwidth(geometry::CircleArc const& arc, double const ratio) const
 {
-    geometry::Circle circle_rot = circle.rotate_base(-pi / 4.0);
-    auto [pos_beam, intensity] = argmax_circle_abs(circle_rot, pi / 2.0);
-
-    auto circle_hpbw = geometry::Circle::make(circle.center, circle.normal, circle.radius, pos_beam - circle.center);
-    math::OptParams const params{[&](double const x) -> double
+    auto const [pos_beam, intensity] = argmax_arc_abs(arc);
+    auto circle_hpbw = geometry::CircleArc(arc.center(), arc.normal(), pos_beam - arc.center(), arc.radius(), arc.angle_span());
+    math::OptParams const params{[&](double const angle) -> double
                                  {
-                                     pos_t const pos = circle_hpbw.center + circle_hpbw.radius * (std::cos(x) * circle_hpbw.e1 + std::sin(x) * circle_hpbw.e2);
+                                     pos_t const pos = circle_hpbw.get_pos(angle);
                                      return math::square(std::abs(field(pos, num_params.wavelength)) - ratio * intensity);
                                  },
-                                 0.0, pi / 4.0, num_params};
+                                 0.0, 0.5 * arc.angle_span(), num_params};
     auto [angle1, eps1] = math::f_min(params);
 
-    circle_hpbw = circle_hpbw.rotate_base(-pi / 4.0);
+    circle_hpbw = circle_hpbw.rotate(-0.5 * arc.angle_span());
     auto [angle2_inv, eps2] = math::f_min(params);
-    double angle2 = pi / 4.0 - angle2_inv;
+    double angle2 = 0.5 * arc.angle_span() - angle2_inv;
 
     return {pos_beam, angle1 + angle2};
 }
@@ -82,29 +76,34 @@ std::pair<PositionArray, std::variant<RealArray, ComplexArray>> ScalarField<Scal
 }
 
 template <typename ScalarType>
-std::pair<PositionArray, std::variant<RealArray, ComplexArray>> ScalarField<ScalarType>::eval_plane(geometry::Rectangle const& rectangle) const
+std::tuple<PositionArray, SurfacePositionArray, std::variant<RealArray, ComplexArray>> ScalarField<ScalarType>::eval_plane(geometry::Rectangle const& rectangle) const
 {
     PositionArray positions(num_params.n_linear2, num_params.n_linear1);
+    SurfacePositionArray surface_positions(num_params.n_linear2, num_params.n_linear1);
     nc::NdArray<ScalarType> values(num_params.n_linear2, num_params.n_linear1);
     for (ComplexArray::index_type k_ax2 = 0; k_ax2 < num_params.n_linear2; k_ax2++)
     {
         std::print("k_ax2 = {:04d} / {:04d}\n", k_ax2, num_params.n_linear2);
         double const f_ax2 = static_cast<double>(k_ax2) / static_cast<double>(num_params.n_linear2 - 1);
+        double const y = (f_ax2 - 0.5) * rectangle.height();
         for (RealArray::index_type k_ax1 = 0; k_ax1 < num_params.n_linear1; k_ax1++)
         {
             double const f_ax1 = static_cast<double>(k_ax1) / static_cast<double>(num_params.n_linear1 - 1);
-            auto const pos = rectangle.center + (f_ax1 - 0.5) * rectangle.width * rectangle.e1 + (f_ax2 - 0.5) * rectangle.height * rectangle.e2;
+            double const x = (f_ax1 - 0.5) * rectangle.width();
+            auto const pos = rectangle.center() + x * rectangle.e1() + y * rectangle.e2();
             positions(k_ax2, k_ax1) = pos;
+            surface_positions(k_ax2, k_ax1) = {x, y};
             values(k_ax2, k_ax1) = field(pos, num_params.wavelength);
         }
     }
-    return {positions, values};
+    return {positions, surface_positions, values};
 }
 
 template <typename ScalarType>
-std::pair<nc::NdArray<nc::Vec2>, std::variant<RealArray, ComplexArray>> ScalarField<ScalarType>::eval_sphere(geometry::SphericalRectangle const& sr) const
+std::tuple<PositionArray, SurfacePositionArray, std::variant<RealArray, ComplexArray>> ScalarField<ScalarType>::eval_sphere(geometry::SphericalRectangle const& sr) const
 {
-    nc::NdArray<nc::Vec2> positions(num_params.n_polar, num_params.n_azimuth);
+    nc::NdArray<pos_t> positions(num_params.n_polar, num_params.n_azimuth);
+    SurfacePositionArray surface_positions(num_params.n_polar, num_params.n_azimuth);
     nc::NdArray<ScalarType> values(num_params.n_polar, num_params.n_azimuth);
     for (ComplexArray::index_type k_polar = 0; k_polar < num_params.n_polar; k_polar++)
     {
@@ -114,7 +113,7 @@ std::pair<nc::NdArray<nc::Vec2>, std::variant<RealArray, ComplexArray>> ScalarFi
         double const f_polar = static_cast<double>(k_polar) / static_cast<double>(num_params.n_polar - 1);
 
         // Map to polar angle offset: theta in [-polar/2, polar/2]
-        double const polar = (f_polar - 0.5) * sr.polar;
+        double const polar = (f_polar - 0.5) * sr.polar_span();
         double const sin_polar = std::sin(polar);
         double const cos_polar = std::cos(polar);
 
@@ -124,21 +123,25 @@ std::pair<nc::NdArray<nc::Vec2>, std::variant<RealArray, ComplexArray>> ScalarFi
             double const f_azimuth = static_cast<double>(k_azimuth) / static_cast<double>(num_params.n_azimuth - 1);
 
             // Map to azimuthal angle offset: phi in [-azimuth/2, azimuth/2]
-            double const azimuth = (f_azimuth - 0.5) * sr.azimuth;
+            double const azimuth = (f_azimuth - 0.5) * sr.azimuth_span();
             double const sin_azimuth = std::sin(azimuth);
             double const cos_azimuth = std::cos(azimuth);
 
             // Compute local unit vector on the sphere's surface relative to the sphere center
-            auto const local_normal = cos_polar * cos_azimuth * sr.normal + cos_polar * sin_azimuth * sr.e1 + sin_polar * sr.e2;
+            auto const local_normal = cos_polar * cos_azimuth * sr.normal() + cos_polar * sin_azimuth * sr.e1() + sin_polar * sr.e2();
 
             // Project outward to the sphere's surface
-            auto const pos = sr.center + sr.radius * local_normal;
+            auto const pos = sr.center() + sr.radius() * local_normal;
 
-            positions(k_polar, k_azimuth) = {azimuth, polar};
+            positions(k_polar, k_azimuth) = pos;
+            surface_positions(k_polar, k_azimuth) = {azimuth, polar};
             values(k_polar, k_azimuth) = field(pos, num_params.wavelength);
         }
     }
-    return {positions, values};
+
+    // std::ranges::transform(positions, values.begin(), [&](pos_t const& pos) { return field(pos, num_params.wavelength);});
+
+    return {positions, surface_positions, values};
 }
 
 // =========================================================================

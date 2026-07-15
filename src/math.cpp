@@ -28,7 +28,7 @@ namespace math
     template <typename BasicJsonType>
     void to_json(BasicJsonType& j, NumParams const& num_params)
     {
-        j = nlohmann::json{{"wavelength", num_params.wavelength}, {"n_polar", num_params.n_polar},     {"n_azimuth", num_params.n_azimuth},
+        j = BasicJsonType{{"wavelength", num_params.wavelength}, {"n_polar", num_params.n_polar},     {"n_azimuth", num_params.n_azimuth},
                            {"n_linear1", num_params.n_linear1},   {"n_linear2", num_params.n_linear2}, {"xtol_rel", num_params.xtol_rel},
                            {"ftol_rel", num_params.ftol_rel}};
     }

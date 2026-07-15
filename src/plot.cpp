@@ -46,6 +46,21 @@ void plot::plot_directivity_over_polar(Antenna const& antenna, RealArray const& 
     ofs << js.dump(2) << '\n';
 }
 
+void plot::plot_field_over_geometry(GenericScalarField const& scalar_field, Geometry const& geometry)
+{
+    if (auto r = std::get_if<geometry::Rectangle>(&geometry); r)
+    {
+        plot_gain_over_rectangle(scalar_field, *r);
+        return;
+    }
+    if (auto sr = std::get_if<geometry::SphericalRectangle>(&geometry); sr)
+    {
+        plot_gain_over_spherical_rectangle(scalar_field, *sr);
+        return;
+    }
+    throw SimulationError("Not implemented");
+}
+
 void plot::plot_gain_over_line(GenericScalarField const& scalar_field, pos_t const& pos_start, pos_t const& pos_end)
 {
     std::string name = std::format("{}.{}", __func__, scalarfield::get_id(scalar_field));
@@ -67,21 +82,17 @@ void plot::plot_gain_over_line(GenericScalarField const& scalar_field, pos_t con
     ofs << js.dump(2) << '\n';
 }
 
-void plot::plot_gain_over_plane(GenericScalarField const& scalar_field, geometry::Rectangle const& rectangle)
+void plot::plot_gain_over_rectangle(GenericScalarField const& scalar_field, geometry::Rectangle const& rectangle)
 {
     std::string name = std::format("{}.{}", __func__, scalarfield::get_id(scalar_field));
     std::println("Creating plot: {}", name);
 
     ojson js;
     js["name"] = name;
-    auto const [positions, gains] = std::visit([&](auto const& field) { return field.eval_plane(rectangle); }, scalar_field);
-    if (auto ra = std::get_if<RealArray>(&gains); ra) { js["gains"] = ra->toStlVector(); }
-    else if (auto ca = std::get_if<ComplexArray>(&gains); ca) { js["gains"] = ca->toStlVector(); }
-    else
-    {
-        throw SimulationError("Invalid type of scalar field");
-    }
+    auto const [positions, surface_positions, values] = std::visit([&](auto const& field) { return field.eval_plane(rectangle); }, scalar_field);
     js["positions"] = positions.toStlVector();
+    js["surface_positions"] = surface_positions.toStlVector();
+    std::visit([&js](auto const& v) { js["values"] = v.toStlVector(); }, values);
     js["num_params"] = scalarfield::get_num_params(scalar_field);
     js["rectangle"] = rectangle;
 
@@ -89,22 +100,17 @@ void plot::plot_gain_over_plane(GenericScalarField const& scalar_field, geometry
     ofs << js.dump(2) << '\n';
 }
 
-void plot::plot_gain_over_sphere(GenericScalarField const& scalar_field, geometry::SphericalRectangle const& sr)
+void plot::plot_gain_over_spherical_rectangle(GenericScalarField const& scalar_field, geometry::SphericalRectangle const& sr)
 {
     std::string name = std::format("{}.{}", __func__, scalarfield::get_id(scalar_field));
     std::println("Creating plot: {}", name);
 
     ojson js;
     js["name"] = name;
-    auto const [positions, gains] = std::visit([&](auto const& field) { return field.eval_sphere(sr); }, scalar_field);
-    if (auto ra = std::get_if<RealArray>(&gains); ra) { js["gains"] = ra->toStlVector(); }
-    else if (auto ca = std::get_if<ComplexArray>(&gains); ca) { js["gains"] = ca->toStlVector(); }
-    else
-    {
-        throw SimulationError("Invalid type of scalar field");
-    }
-    auto v = positions.toStlVector();
+    auto const [positions, surface_positions, values] = std::visit([&](auto const& field) { return field.eval_sphere(sr); }, scalar_field);
     js["positions"] = positions.toStlVector();
+    js["surface_positions"] = surface_positions.toStlVector();
+    std::visit([&js](auto const& v) { js["values"] = v.toStlVector(); }, values);
     js["num_params"] = scalarfield::get_num_params(scalar_field);
     js["spherical_rectangle"] = sr;
 
