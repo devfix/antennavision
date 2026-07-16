@@ -39,8 +39,10 @@ constexpr auto POS_ZERO = pos_t(0, 0, 0);
 constexpr double SPEED_OF_LIGHT = 299'792'458;
 constexpr double NUMERICAL_MARGIN = 1e-9;
 
-// json serialization
 
+// ====================================================================================
+// JSON Serializer for non-standard types
+// ====================================================================================
 namespace nlohmann {
     // --- std::complex Serializer ---
     template <typename T>
@@ -77,12 +79,13 @@ namespace nlohmann {
         template<any_json_t JsonType>
         static void from_json(const JsonType& js, nc::rotations::Quaternion& value);
     };
+
+    // --- nc::NdArray Serializer ---
+    template <typename T>
+    struct adl_serializer<nc::NdArray<T>> {
+        template<any_json_t JsonType>
+        static void to_json(JsonType& js, const nc::NdArray<T>& value);
+        template<any_json_t JsonType>
+        static void from_json(const JsonType& j, nc::NdArray<T>& value);
+    };
 } // namespace nlohmann
-
-namespace nc {
-    template <any_json_t JsonType, typename T>
-    void to_json(JsonType& j, NdArray<T> const& array);
-
-    template <any_json_t JsonType, typename T>
-    void from_json(JsonType const& j, NdArray<T>& array);
-} // namespace nc

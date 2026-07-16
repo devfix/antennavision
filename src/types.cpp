@@ -3,12 +3,13 @@
 //
 
 #include "types.hpp"
+#include <cstdint>
 #include <nlohmann/json.hpp>
 
 namespace nlohmann {
-    // ==========================================
+    // ====================================================================================
     // std::complex Serializer
-    // ==========================================
+    // ====================================================================================
     template<typename T>
     template<any_json_t JsonType>
     void adl_serializer<std::complex<T>>::to_json(JsonType& js, const std::complex<T>& value) {
@@ -31,9 +32,9 @@ namespace nlohmann {
     template void adl_serializer<complex_t>::from_json(json const&, complex_t&);
     template void adl_serializer<complex_t>::from_json(ordered_json const&, complex_t&);
 
-    // ==========================================
+    // ====================================================================================
     // nc::Vec2 Serializer
-    // ==========================================
+    // ====================================================================================
     template<any_json_t JsonType>
     void adl_serializer<nc::Vec2>::to_json(JsonType& js, const nc::Vec2& value) {
         js = JsonType{ value.x, value.y };
@@ -54,9 +55,9 @@ namespace nlohmann {
     template void adl_serializer<nc::Vec2>::from_json(json const&, nc::Vec2&);
     template void adl_serializer<nc::Vec2>::from_json(ordered_json const&, nc::Vec2&);
 
-    // ==========================================
+    // ====================================================================================
     // nc::Vec3 Serializer
-    // ==========================================
+    // ====================================================================================
     template<any_json_t JsonType>
     void adl_serializer<nc::Vec3>::to_json(JsonType& js, const nc::Vec3& value) {
         js = JsonType{ value.x, value.y, value.z };
@@ -78,9 +79,9 @@ namespace nlohmann {
     template void adl_serializer<nc::Vec3>::from_json(json const&, nc::Vec3&);
     template void adl_serializer<nc::Vec3>::from_json(ordered_json const&, nc::Vec3&);
 
-    // ==========================================
+    // ====================================================================================
     // nc::rotations::Quaternion Serializer
-    // ==========================================
+    // ====================================================================================
     template<any_json_t JsonType>
     void adl_serializer<Quaternion>::to_json(JsonType& js, const Quaternion& value) {
         // Always serialize as a 4-element array [s, i, j, k]
@@ -119,47 +120,85 @@ namespace nlohmann {
     template void adl_serializer<Quaternion>::to_json(ordered_json&, Quaternion const&);
     template void adl_serializer<Quaternion>::from_json(json const&, Quaternion&);
     template void adl_serializer<Quaternion>::from_json(ordered_json const&, Quaternion&);
-} // namespace nlohmann
 
-namespace nc
-{
-    template <typename...>
-    inline constexpr bool always_false = false;
+    // ====================================================================================
+    // nc::NdArray<T> Serializer
+    // ====================================================================================
+    template<typename T>
+    template<any_json_t JsonType>
+    void adl_serializer<nc::NdArray<T>>::to_json(JsonType& js, const nc::NdArray<T>& value) {
+        auto shape = value.shape();
+        js = JsonType::array();
 
-    template <any_json_t JsonType, typename T>
-    void to_json(JsonType& j, NdArray<T> const& array)
-    {
-        auto shape = array.shape();
-        JsonType outer_array = JsonType::array();
-
-        // Loop through rows and columns to form a nested 2D JSON array
-        for (uint32 row = 0; row < shape.rows; ++row)
-        {
+        for (std::uint32_t row = 0; row < shape.rows; ++row) {
             JsonType inner_row = JsonType::array();
-            for (uint32 col = 0; col < shape.cols; ++col)
-            {
-                if constexpr (std::is_same_v<std::decay_t<T>, complex_t>)
-                {
-                    auto const& v = array(row, col);
-                    inner_row.push_back({std::abs(v), std::arg(v)});
-                }
-                else
-                {
-                    static_assert(always_false<T>, "Unsupported element type of nc::NdArray");
-                }
+            for (std::uint32_t col = 0; col < shape.cols; ++col) {
+                // This will automatically find the correct ADL serializer
+                // for the element type T (e.g., complex_t or double)
+                inner_row.push_back(value(row, col));
             }
-            outer_array.push_back(inner_row);
+            js.push_back(inner_row);
         }
-        j = outer_array;
     }
 
-    template <any_json_t JsonType, typename T>
-    void from_json(JsonType const& j, NdArray<T>& array)
-    {}
-} // namespace nc
+    template<typename T>
+    template<any_json_t JsonType>
+    void adl_serializer<nc::NdArray<T>>::from_json(const JsonType& j, nc::NdArray<T>& value) {
+        if (!j.is_array()) {
+            throw JsonType::type_error::create(302, "Expected a 2D JSON array for nc::NdArray", &j);
+        }
 
-// nc::NdArray<complex_t>
-template void nc::to_json(nlohmann::json&, nc::NdArray<complex_t> const&);
-template void nc::to_json(nlohmann::ordered_json&, nc::NdArray<complex_t> const&);
-template void nc::from_json(nlohmann::json const&, nc::NdArray<complex_t>&);
-template void nc::from_json(nlohmann::ordered_json const&, nc::NdArray<complex_t>&);
+        std::uint32_t num_rows = static_cast<std::uint32_t>(j.size());
+        if (num_rows == 0) {
+            value = nc::NdArray<T>();
+            return;
+        }
+
+        // Determine column count from the first row
+        if (!j.at(0).is_array()) {
+            throw JsonType::type_error::create(302, "Expected a nested array structure for nc::NdArray", &j);
+        }
+        std::uint32_t num_cols = static_cast<std::uint32_t>(j.at(0).size());
+
+        // Create an NdArray of correct shape
+        value = nc::NdArray<T>(num_rows, num_cols);
+
+        for (std::uint32_t r = 0; r < num_rows; ++r) {
+            const auto& row_js = j.at(r);
+            if (!row_js.is_array() || row_js.size() != num_cols) {
+                throw JsonType::type_error::create(302, "Inconsistent column dimensions in nc::NdArray JSON", &j);
+            }
+            for (std::uint32_t c = 0; c < num_cols; ++c) {
+                value(r, c) = row_js.at(c).template get<T>(); // Recursively gets element T
+            }
+        }
+    }
+
+    // Explicit Instantiations for nc::NdArray<double>
+    template struct adl_serializer<nc::NdArray<double>>;
+    template void adl_serializer<nc::NdArray<double>>::to_json(json&, const nc::NdArray<double>&);
+    template void adl_serializer<nc::NdArray<double>>::to_json(ordered_json&, const nc::NdArray<double>&);
+    template void adl_serializer<nc::NdArray<double>>::from_json(const json&, nc::NdArray<double>&);
+    template void adl_serializer<nc::NdArray<double>>::from_json(const ordered_json&, nc::NdArray<double>&);
+
+    // Explicit Instantiations for nc::NdArray<complex_t>
+    template struct adl_serializer<nc::NdArray<complex_t>>;
+    template void adl_serializer<nc::NdArray<complex_t>>::to_json(json&, const nc::NdArray<complex_t>&);
+    template void adl_serializer<nc::NdArray<complex_t>>::to_json(ordered_json&, const nc::NdArray<complex_t>&);
+    template void adl_serializer<nc::NdArray<complex_t>>::from_json(const json&, nc::NdArray<complex_t>&);
+    template void adl_serializer<nc::NdArray<complex_t>>::from_json(const ordered_json&, nc::NdArray<complex_t>&);
+
+    // Explicit Instantiations for nc::NdArray<nc::Vec2>
+    template struct adl_serializer<nc::NdArray<nc::Vec2>>;
+    template void adl_serializer<nc::NdArray<nc::Vec2>>::to_json(json&, const nc::NdArray<nc::Vec2>&);
+    template void adl_serializer<nc::NdArray<nc::Vec2>>::to_json(ordered_json&, const nc::NdArray<nc::Vec2>&);
+    template void adl_serializer<nc::NdArray<nc::Vec2>>::from_json(const json&, nc::NdArray<nc::Vec2>&);
+    template void adl_serializer<nc::NdArray<nc::Vec2>>::from_json(const ordered_json&, nc::NdArray<nc::Vec2>&);
+
+    // Explicit Instantiations for nc::NdArray<nc::Vec3>
+    template struct adl_serializer<nc::NdArray<nc::Vec3>>;
+    template void adl_serializer<nc::NdArray<nc::Vec3>>::to_json(json&, const nc::NdArray<nc::Vec3>&);
+    template void adl_serializer<nc::NdArray<nc::Vec3>>::to_json(ordered_json&, const nc::NdArray<nc::Vec3>&);
+    template void adl_serializer<nc::NdArray<nc::Vec3>>::from_json(const json&, nc::NdArray<nc::Vec3>&);
+    template void adl_serializer<nc::NdArray<nc::Vec3>>::from_json(const ordered_json&, nc::NdArray<nc::Vec3>&);
+} // namespace nlohmann

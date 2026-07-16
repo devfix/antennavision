@@ -11,7 +11,7 @@
 inline void REQUIRE_ROTATIONS_EQUAL(const Quaternion& q1, const Quaternion& q2) {
     double const dot = q1.s() * q2.s() + q1.i() * q2.i() + q1.j() * q2.j() + q1.k() * q2.k();
     // For unit quaternions, absolute dot product of 1.0 means identical orientations
-    REQUIRE(std::abs(dot) == Catch::Approx(1.0).margin(1e-6));
+    REQUIRE(std::abs(dot) == Catch::Approx(1.0));
 }
 
 
@@ -364,5 +364,107 @@ TEST_CASE("nc::rotations::Quaternion Deserialization", "[types][quaternion]") {
         bad_object_types["pitch"] = pitch;
         bad_object_types["roll"] = roll;
         REQUIRE_THROWS(bad_object_types.get<Quaternion>());
+    }
+}
+
+TEST_CASE("nc::NdArray<complex_t> Serialization", "[types][ndarray][serialize]") {
+    // Create a 2x3 NdArray of complex numbers
+    nc::NdArray<complex_t> arr(2, 3);
+    arr(0, 0) = complex_t{1.0, 2.0};
+    arr(0, 1) = complex_t{3.0, 4.0};
+    arr(0, 2) = complex_t{5.0, 6.0};
+    arr(1, 0) = complex_t{7.0, 8.0};
+    arr(1, 1) = complex_t{9.0, 10.0};
+    arr(1, 2) = complex_t{11.0, 12.0};
+
+    SECTION("Serializing to standard nlohmann::json") {
+        json js = arr;
+
+        REQUIRE(js.is_array());
+        REQUIRE(js.size() == 2);             // 2 rows
+        REQUIRE(js[0].size() == 3);          // 3 columns
+
+        // Check a couple of serialized complex elements
+        REQUIRE(js[0][0][0].get<double>() == 1.0); // Real part of arr(0,0)
+        REQUIRE(js[0][0][1].get<double>() == 2.0); // Imag part of arr(0,0)
+        REQUIRE(js[1][2][0].get<double>() == 11.0); // Real part of arr(1,2)
+        REQUIRE(js[1][2][1].get<double>() == 12.0); // Imag part of arr(1,2)
+    }
+
+    SECTION("Serializing to nlohmann::ordered_json") {
+        ojson oj = arr;
+
+        REQUIRE(oj.is_array());
+        REQUIRE(oj.size() == 2);
+        REQUIRE(oj[1].size() == 3);
+        REQUIRE(oj[1][1][0].get<double>() == 9.0);
+        REQUIRE(oj[1][1][1].get<double>() == 10.0);
+    }
+
+    SECTION("Serializing an empty NdArray") {
+        nc::NdArray<complex_t> empty_arr;
+        json js = empty_arr;
+
+        REQUIRE(js.is_array());
+        REQUIRE(js.empty());
+    }
+}
+
+TEST_CASE("nc::NdArray<complex_t> Deserialization", "[types][ndarray][deserialize]") {
+    SECTION("Deserializing a valid 2D array of complex numbers") {
+        json js = json::parse(R"(
+            [
+                [[1.5, 2.5], [3.5, 4.5]],
+                [[5.5, 6.5], [7.5, 8.5]]
+            ]
+        )");
+
+        auto arr = js.get<nc::NdArray<complex_t>>();
+        auto shape = arr.shape();
+
+        REQUIRE(shape.rows == 2);
+        REQUIRE(shape.cols == 2);
+
+        REQUIRE(arr(0, 0).real() == Catch::Approx(1.5));
+        REQUIRE(arr(0, 0).imag() == Catch::Approx(2.5));
+        REQUIRE(arr(1, 1).real() == Catch::Approx(7.5));
+        REQUIRE(arr(1, 1).imag() == Catch::Approx(8.5));
+    }
+
+    SECTION("Deserializing an empty 2D JSON array") {
+        json js = json::array();
+        auto arr = js.get<nc::NdArray<complex_t>>();
+
+        REQUIRE(arr.isempty());
+        REQUIRE(arr.shape().rows == 0);
+        REQUIRE(arr.shape().cols == 0);
+    }
+
+    SECTION("Deserializing invalid JSON structures triggers errors") {
+        // Test 1: Flat array instead of a 2D grid structure
+        json flat_array = json::array({1.0, 2.0, 3.0});
+        REQUIRE_THROWS_AS(flat_array.get<nc::NdArray<complex_t>>(), json::type_error);
+
+        // Test 2: Inconsistent row columns (Row 1 has 2 elements, Row 2 has 3 elements)
+        json ragged_array = json::parse(R"(
+            [
+                [[1.0, 2.0], [3.0, 4.0]],
+                [[5.0, 6.0], [7.0, 8.0], [9.0, 10.0]]
+            ]
+        )");
+        REQUIRE_THROWS_AS(ragged_array.get<nc::NdArray<complex_t>>(), json::type_error);
+
+        // Test 3: Totally wrong type (JSON object instead of array)
+        json object_format = json::object({{"data", {1.0, 2.0}}});
+        REQUIRE_THROWS_AS(object_format.get<nc::NdArray<complex_t>>(), json::type_error);
+
+        // Test 4: Nested elements are not valid complex number arrays
+        json bad_elements = json::parse(R"(
+            [
+                [[1.0, 2.0, 3.0], [4.0, 5.0]]
+            ]
+        )");
+        // Since [1.0, 2.0, 3.0] fails std::complex's 2-element array rule, it should throw
+        REQUIRE_THROWS_AS(bad_elements.get<nc::NdArray<complex_t>>(), json::type_error);
     }
 }
