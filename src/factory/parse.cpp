@@ -4,13 +4,32 @@
 
 #include "factory/parse.hpp"
 #include <complex>
-#include <exprtk.hpp>
 #include <memory>
-
+#include <exprtk.hpp>
 #include "simulationerror.hpp"
 
 namespace factory
 {
+    namespace
+    {
+        long double parse_long_double(std::string const& expr, std::map<std::string, var_t> const& variables)
+        {
+            exprtk::symbol_table<long double> symbol_table;
+            exprtk::expression<long double> expression;
+            for (const auto& [key, val] : variables)
+            {
+                symbol_table.add_constant(key, std::visit([](auto& v) { return static_cast<long double>(v); }, val));
+            }
+            symbol_table.add_constants();
+            expression.register_symbol_table(symbol_table);
+            if (exprtk::parser<long double> parser; !parser.compile(expr, expression))
+            {
+                throw SimulationError("ExprTk compilation failed: {}", parser.error());
+            }
+            return expression.value();
+        }
+    } // namespace
+
     std::function<complex_t(double polar, double azimuth, double wavelength)> parse_polar_azimuth_function(std::string const& expr)
     {
         // Struct to hold all ExprTk internal state variables safely on the heap
@@ -48,14 +67,14 @@ namespace factory
         };
     }
 
-    double parse_double(std::string const& expr, std::map<std::string, double> const& variables)
+    double parse_double(std::string const& expr, std::map<std::string, var_t> const& variables)
     {
-        exprtk::symbol_table<double> symbol_table;
-        exprtk::expression<double> expression;
-        for (const auto& [key, val] : variables) { symbol_table.add_constant(key, val); }
-        symbol_table.add_constants();
-        expression.register_symbol_table(symbol_table);
-        if (exprtk::parser<double> parser; !parser.compile(expr, expression)) { throw SimulationError("ExprTk compilation failed: {}", parser.error()); }
-        return expression.value();
+        return static_cast<double>(parse_long_double(expr, variables));
     }
+
+    std::int64_t parse_int(std::string const& expr, std::map<std::string, var_t> const& variables)
+    {
+        return static_cast<std::int64_t>(std::roundl(parse_long_double(expr, variables)));
+    }
+
 } // namespace factory

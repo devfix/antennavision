@@ -139,7 +139,7 @@ TEST_CASE("ULA gain", "[TestULA]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.wavelength = setup->variables.at("wavelength")};
+    math::NumParams num_params{.system_wavelength = setup->variables.at("wavelength")};
     auto const& tx = setup->get_antenna("ula1");
     auto const& rx = setup->get_antenna("receiver");
     Reference& ref_start = setup->get_reference("ref_rx_start");
@@ -247,7 +247,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.wavelength = setup->variables.at("wavelength"), .n_linear1 = 11};
+    math::NumParams num_params{.system_wavelength = setup->variables.at("wavelength"), .n_linear1 = 11};
     auto const& tx = setup->get_antenna("ula1");
     auto& rx = setup->get_antenna("receiver");
     Reference const& ref_stop = setup->get_reference("ref_rx_stop");

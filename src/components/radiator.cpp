@@ -68,7 +68,7 @@ double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_s
 
     RealArray squared_norms(polar_grid.shape());
     std::ranges::transform(polar_grid, azimuth_grid, squared_norms.begin(),
-                           [&elv_spherical, num_params](double const polar, double const azimuth) -> double { return math::square(math::norm(elv_spherical(polar, azimuth, num_params.wavelength))); });
+                           [&elv_spherical, num_params](double const polar, double const azimuth) -> double { return math::square(math::norm(elv_spherical(polar, azimuth, num_params.system_wavelength))); });
 
     // Reshape squared_norms back to match the grid shape (num_azimuth x num_polar)
     squared_norms = squared_norms.reshape(polar_grid.shape());
@@ -87,7 +87,7 @@ vec_t Radiator::get_elv_spherical_from_cartesian(pos_t const& pos_local, double 
 }
 
 double Radiator::calc_directivity_from_spherical(double polar, double azimuth, math::NumParams const& num_params) const
-{ return math::square(math::norm(elv_spherical(polar, azimuth, num_params.wavelength))) / calc_mean_squared_effective_length(elv_spherical, num_params); }
+{ return math::square(math::norm(elv_spherical(polar, azimuth, num_params.system_wavelength))) / calc_mean_squared_effective_length(elv_spherical, num_params); }
 
 double Radiator::calc_directivity_from_cartesian(pos_t const& pos_local, math::NumParams const& num_params) const
 {

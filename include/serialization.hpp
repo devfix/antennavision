@@ -21,5 +21,5 @@ namespace serialization
     };
 
     template <any_json_t JsonType>
-    void assert_structure(JsonType const& j, std::string_view structure_name, std::vector<JsonField> const& mandatory, std::vector<JsonField> const& optional);
+    void assert_structure(JsonType const& js, std::string_view structure_name, std::vector<JsonField> const& mandatory, std::vector<JsonField> const& optional);
 } // namespace serialization

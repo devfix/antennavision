@@ -83,7 +83,7 @@ namespace builtin
                 json_rot["yaw"] = 0.0;
                 js_configured.at("antennas").at(0)["rot"] = json_rot;
                 auto const setup = Setup::from_json(js_configured);
-                num_params.wavelength = setup->variables.at("wavelength");
+                num_params.system_wavelength = setup->variables.at("wavelength");
                 auto const distance = setup->variables.at("distance");
                 auto& tx = setup->get_antenna("tx");
                 auto& rx = setup->get_antenna("rx");
@@ -101,7 +101,7 @@ namespace builtin
                 json_rot["yaw"] = 0.0;
                 js_configured.at("antennas").at(0)["rot"] = json_rot;
                 auto const setup = Setup::from_json(js_configured);
-                num_params.wavelength = setup->variables.at("wavelength");
+                num_params.system_wavelength = setup->variables.at("wavelength");
                 auto const distance = setup->variables.at("distance");
                 auto& tx = setup->get_antenna("tx");
                 auto& rx = setup->get_antenna("rx");

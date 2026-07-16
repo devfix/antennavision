@@ -58,7 +58,7 @@ namespace factory
         return c;
     }
 
-    double get_double(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
+    double get_double(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return 0.0; }
         assert_key(js, key);
@@ -77,7 +77,7 @@ namespace factory
         throw SimulationError("Invalid type '{}' of entry '{}'", js.at(key).type_name(), key);
     }
 
-    std::uint32_t get_uint(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
+    std::uint32_t get_uint(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return 0.0; }
         assert_key(js, key);
@@ -96,7 +96,7 @@ namespace factory
         throw SimulationError("Invalid type '{}' of entry '{}'", js.at(key).type_name(), key);
     }
 
-    pos_t get_pos(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
+    pos_t get_pos(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return {}; }
         assert_key(js, key);
@@ -106,7 +106,7 @@ namespace factory
         return val;
     }
 
-    nc::rotations::Quaternion get_quaternion(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, double> const& variables, bool remove, bool default_ok)
+    nc::rotations::Quaternion get_quaternion(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return {}; }
         assert_key(js, key);

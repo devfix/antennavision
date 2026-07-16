@@ -30,12 +30,12 @@ namespace serialization
     } // namespace
 
     template <any_json_t JsonType>
-    void assert_structure(JsonType const& j, std::string_view structure_name, std::vector<JsonField> const& mandatory, std::vector<JsonField> const& optional)
+    void assert_structure(JsonType const& js, std::string_view structure_name, std::vector<JsonField> const& mandatory, std::vector<JsonField> const& optional)
     {
-        if (!j.is_object()) { throw SimulationError("Failed to load {} from JSON, expected JSON object, got {}", structure_name, j.type_name()); }
-        for (auto const& field : mandatory) { assert_field(j, structure_name, field.name, field.type, true); }
-        for (auto const& field : optional) { assert_field(j, structure_name, field.name, field.type, false); }
-        for (auto const& [key, value] : j.items())
+        if (!js.is_object()) { throw SimulationError("Failed to load {} from JSON, expected JSON object, got {}", structure_name, js.type_name()); }
+        for (auto const& field : mandatory) { assert_field(js, structure_name, field.name, field.type, true); }
+        for (auto const& field : optional) { assert_field(js, structure_name, field.name, field.type, false); }
+        for (auto const& [key, value] : js.items())
         {
             if (!std::ranges::contains(mandatory, key, &JsonField::name) && !std::ranges::contains(optional, value, &JsonField::name))
             {

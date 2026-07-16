@@ -23,21 +23,21 @@ template <typename ScalarType>
 std::pair<pos_t, double> ScalarField<ScalarType>::argmax_line_abs(pos_t const& pos_a, pos_t const& pos_b) const
 {
     pos_t const delta = pos_b - pos_a;
-    math::OptParams const params{[this, &pos_a, &delta](double const x) -> double { return -std::abs(field(pos_a + x * delta, num_params.wavelength)); }, 0.0,
+    math::OptParams const params{[this, &pos_a, &delta](double const x) -> double { return -std::abs(field(pos_a + x * delta, num_params.system_wavelength)); }, 0.0,
                                  1.0, num_params};
     auto [x_min, f_min] = math::f_min(params);
     pos_t pos_max = pos_a + x_min * delta;
-    return {pos_max, std::abs(field(pos_max, num_params.wavelength))};
+    return {pos_max, std::abs(field(pos_max, num_params.system_wavelength))};
 }
 
 template <typename ScalarType>
 std::pair<pos_t, double> ScalarField<ScalarType>::argmax_arc_abs(geometry::CircleArc const& arc) const
 {
-    math::OptParams const params{[&](double angle) -> double { return -std::abs(field(arc.get_pos(angle), num_params.wavelength)); },
+    math::OptParams const params{[&](double angle) -> double { return -std::abs(field(arc.get_pos(angle), num_params.system_wavelength)); },
                                  -0.5 * arc.angle_span(), 0.5 * arc.angle_span(), num_params};
     auto [angle_max, f_min] = math::f_min(params);
     pos_t pos_max = arc.get_pos(angle_max);
-    return {pos_max, std::abs(field(pos_max, num_params.wavelength))};
+    return {pos_max, std::abs(field(pos_max, num_params.system_wavelength))};
 }
 
 template <typename ScalarType>
@@ -48,7 +48,7 @@ std::pair<pos_t, double> ScalarField<ScalarType>::calc_beamwidth(geometry::Circl
     math::OptParams const params{[&](double const angle) -> double
                                  {
                                      pos_t const pos = circle_hpbw.get_pos(angle);
-                                     return math::square(std::abs(field(pos, num_params.wavelength)) - ratio * intensity);
+                                     return math::square(std::abs(field(pos, num_params.system_wavelength)) - ratio * intensity);
                                  },
                                  0.0, 0.5 * arc.angle_span(), num_params};
     auto [angle1, eps1] = math::f_min(params);
@@ -70,7 +70,7 @@ std::pair<PositionArray, std::variant<RealArray, ComplexArray>> ScalarField<Scal
         double const f = static_cast<double>(k) / static_cast<double>(num_params.n_linear1 - 1);
         pos_t const pos = pos_start + f * (pos_end - pos_start);
         positions(k, 0) = pos;
-        values(k, 0) = field(pos, num_params.wavelength);
+        values(k, 0) = field(pos, num_params.system_wavelength);
     }
     return {positions, values};
 }
@@ -93,7 +93,7 @@ std::tuple<PositionArray, SurfacePositionArray, std::variant<RealArray, ComplexA
             auto const pos = rectangle.center() + x * rectangle.e1() + y * rectangle.e2();
             positions(k_ax2, k_ax1) = pos;
             surface_positions(k_ax2, k_ax1) = {x, y};
-            values(k_ax2, k_ax1) = field(pos, num_params.wavelength);
+            values(k_ax2, k_ax1) = field(pos, num_params.system_wavelength);
         }
     }
     return {positions, surface_positions, values};
@@ -135,7 +135,7 @@ std::tuple<PositionArray, SurfacePositionArray, std::variant<RealArray, ComplexA
 
             positions(k_polar, k_azimuth) = pos;
             surface_positions(k_polar, k_azimuth) = {azimuth, polar};
-            values(k_polar, k_azimuth) = field(pos, num_params.wavelength);
+            values(k_polar, k_azimuth) = field(pos, num_params.system_wavelength);
         }
     }
 

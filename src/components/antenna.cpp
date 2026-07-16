@@ -10,7 +10,7 @@ namespace
 {
     complex_t calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, math::NumParams const& num_params)
     {
-        auto const& wavelength = num_params.wavelength;
+        auto const& wavelength = num_params.system_wavelength;
         double const r = (tx.origin.global_from_local_pos(POS_ZERO) - rx.origin.global_from_local_pos(POS_ZERO)).norm();
         if (r < wavelength / 10) { std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength); }
 

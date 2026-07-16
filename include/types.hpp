@@ -4,17 +4,21 @@
 
 #pragma once
 
+#include <stdfloat>
+#include <cstdint>
 #include <complex>
+#include <variant>
 #include <nlohmann/json_fwd.hpp> // Lightweight forward-declarations for nlohmann::json
-#include <NumCpp/Vector/Vec3.hpp>
 #include <NumCpp/NdArray/NdArrayCore.hpp>
 #include <NumCpp/Rotations/Quaternion.hpp>
+#include <NumCpp/Vector/Vec3.hpp>
 
 // single-element types
 using complex_t = std::complex<double>;
 using pos_t = nc::Vec3;
 using vec_t = nc::NdArray<complex_t>; /// should be of shape 3x1
 using Quaternion = nc::rotations::Quaternion;
+using var_t = std::variant<double, std::int64_t>;
 
 // array types
 using RealArray = nc::NdArray<double>;

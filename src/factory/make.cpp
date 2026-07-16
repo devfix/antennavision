@@ -30,8 +30,8 @@ namespace factory
             return true;
         }
 
-        std::vector<std::complex<double>> load_upa_codebook(const std::filesystem::path& filepath, const std::string& ratio_key, const std::string& row,
-                                                            const std::string& col)
+        std::vector<std::complex<double>> load_upa_codebook(
+            const std::filesystem::path& filepath, const std::string& ratio_key, const std::string& row, const std::string& col)
         {
             // 1. Open and parse the JSON file
             std::ifstream file(filepath);
@@ -91,19 +91,30 @@ namespace factory
         }
     } // namespace
 
-    Reference& make_reference(ojson& reference_desc, std::list<Reference>& references, std::map<std::string, double> const& variables)
+    Reference& make_reference(ojson& reference_desc, std::list<Reference>& references, std::map<std::string, var_t> const& variables)
     {
-        auto const id = get_string(reference_desc, "id");
-        assert_valid_id(id);
-        auto const origin_id = get_string(reference_desc, "origin");
-        auto const pos = get_pos(reference_desc, "pos", variables, true, true);
-        auto const rotation = get_quaternion(reference_desc, "rot", variables, true, true);
-        // std::println(
-        //     "{}Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]{}",
-        //     fg4::bright_black, id, origin_id, pos.x, pos.y, pos.z, rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi, reset);
-        Reference& origin = find_reference_by_id(references, origin_id);
-        assert_empty(reference_desc);
-        return references.emplace_back(id, &origin, pos, rotation);
+        try
+        {
+            auto const id = get_string(reference_desc, "id");
+            assert_valid_id(id);
+            auto const origin_id = get_string(reference_desc, "origin");
+
+            try_resolve_expressions<double>(reference_desc, variables, "pos");
+            try_resolve_expressions<double>(reference_desc, variables, "rot");
+
+            auto const pos = get_pos(reference_desc, "pos", variables, true, true);
+            auto const rotation = get_quaternion(reference_desc, "rot", variables, true, true);
+            // std::println(
+            //     "{}Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]{}",
+            //     fg4::bright_black, id, origin_id, pos.x, pos.y, pos.z, rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi, reset);
+            Reference& origin = find_reference_by_id(references, origin_id);
+            assert_empty(reference_desc);
+            return references.emplace_back(id, &origin, pos, rotation);
+        }
+        catch (...)
+        {
+            std::throw_with_nested(SimulationError("Failed to parse reference:\n{}", reference_desc.dump(2)));
+        }
     }
 
     namespace
@@ -129,7 +140,7 @@ namespace factory
                 auto effective_length = [effective_length_parts](double const polar, double const azimuth, double const wavelength) -> ComplexArray
                 {
                     return {effective_length_parts[0](polar, azimuth, wavelength), effective_length_parts[1](polar, azimuth, wavelength),
-                            effective_length_parts[2](polar, azimuth, wavelength)};
+                        effective_length_parts[2](polar, azimuth, wavelength)};
                 };
                 return {id, origin, std::move(effective_length)};
             }

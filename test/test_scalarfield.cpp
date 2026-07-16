@@ -82,7 +82,7 @@ TEST_CASE("ScalarField", "[ScalarField]")
     auto const distance = setup->variables.at("distance");
     auto const& tx = setup->get_antenna("ula1");
     auto & rx = setup->get_antenna("receiver");
-    math::NumParams num_params{.wavelength = setup->variables.at("wavelength")};
+    math::NumParams num_params{.system_wavelength = setup->variables.at("wavelength")};
     auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
     {
         auto [pos_abs_max, _] = voltage_field.argmax_line_abs(pos_t(0, distance, -0.5*distance), pos_t(0, distance, 0.5*distance));

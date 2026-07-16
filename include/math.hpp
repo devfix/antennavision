@@ -15,7 +15,7 @@ namespace math
 {
     struct NumParams
     {
-        double wavelength = 0.1;
+        double system_wavelength = 0.1;
         std::size_t n_polar = 101;
         std::size_t n_azimuth = 201;
         std::size_t n_linear1 = 101;
@@ -48,7 +48,7 @@ namespace math
         return vec;
     }
 
-    vec_t constexpr rotate(vec_t const& vec, nc::rotations::Quaternion const& quaternion) { return nc::dot(quaternion.toDCM(), vec); }
+    vec_t constexpr rotate(vec_t const& vec, Quaternion const& quaternion) { return nc::dot(quaternion.toDCM(), vec); }
 
     double angle_between_vectors(pos_t vec1, pos_t vec2);
     Quaternion quaternion_from_directions(pos_t dir_initial, pos_t dir_target);

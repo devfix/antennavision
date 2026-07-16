@@ -1,13 +1,11 @@
 #include <NumCpp.hpp>
 #include <ansi_color.hpp>
-#include <execution>
-#include <ranges>
 #include <print>
+#include <ranges>
 #include "bitmap.hpp"
 #include "builtin.hpp"
 #include "include/setup.hpp"
 #include "manifest.hpp"
-#include "types.hpp"
 
 namespace
 {
@@ -18,7 +16,23 @@ namespace
 #endif
 } // namespace
 
-int main(int argc, char* argv[])
+void print_exception_chain(const std::exception& e, int level = 0)
+{
+    std::println("{}- {}", std::string(level * 2, ' '), e.what());
+
+    try
+    {
+        std::rethrow_if_nested(e);
+    }
+    catch (const std::exception& nested)
+    {
+        print_exception_chain(nested, level + 1); // Recurse into the inner exception
+    }
+    catch (...)
+    {}
+}
+
+int run(int argc, char* argv[])
 {
     ansi_color::enable_windows_ansi();
 
@@ -26,8 +40,8 @@ int main(int argc, char* argv[])
 
     if (DEBUG_MODE)
     {
-        std::println("{}Warning: Compiled in debug mode. This will severely increase the computation time!{}\n", ansi_color::fg4::bright_yellow,
-                     ansi_color::reset);
+        std::println(
+            "{}Warning: Compiled in debug mode. This will severely increase the computation time!{}\n", ansi_color::fg4::bright_yellow, ansi_color::reset);
     }
 
     if (argc == 1)
@@ -58,7 +72,11 @@ int main(int argc, char* argv[])
         std::filesystem::current_path(path.parent_path());
 
         std::filesystem::path const path_timestamp = "timestamp";
-        if (setup->isUpToDate(path_timestamp)) { std::println("{}Setup '{}' is unchanged since {}, skipping{}", ansi_color::fg4::cyan, setup->name, timeutil::format(setup->timestamp), ansi_color::reset); }
+        if (setup->isUpToDate(path_timestamp))
+        {
+            std::println(
+                "{}Setup '{}' is unchanged since {}, skipping{}", ansi_color::fg4::cyan, setup->name, timeutil::format(setup->timestamp), ansi_color::reset);
+        }
         else
         {
             std::println("{}Setup '{}' is new or updated, running{}", ansi_color::fg4::cyan, setup->name, ansi_color::reset);
@@ -69,30 +87,25 @@ int main(int argc, char* argv[])
         }
     }
 
-    return 0;
+    return EXIT_SUCCESS;
+}
 
-    std::size_t n = std::stoi(argv[1]);
-    std::print("using {} values per dimension\n", n);
-
-    double freq = 1e9;
-    double lambda = SPEED_OF_LIGHT / freq;
-    std::print("lambda: {:.02f} m\n", lambda);
-
-    /*
-
-    // auto r1 = IsotropicRadiator(complex_t{0, 0}, 0, freq);
-    // auto r2 = TestRadiator(complex_t{0, 1}, std::numbers::pi/4);
-    auto r3 = ULA<IsotropicRadiator>{complex_t{0, 0}, 0*std::numbers::pi/4, 8, lambda/2};
-    std::vector<IRadiator*> const radiators = {&r3};
-
-    double s = 100;
-
-    compute_rect(
-        nc::linspace(-s, s, n),
-        nc::linspace(-s, s, n),
-        radiators,
-        freq);
-    */
-
-    return 0;
+int main(int argc, char* argv[])
+{
+    try
+    {
+        return run(argc, argv);
+    }
+    catch (const std::exception& e)
+    {
+        // Route to stderr using stderr as the first argument
+        std::println(stderr, "Error Stack Trace:");
+        print_exception_chain(e);
+    }
+    catch (...)
+    {
+        // Catch-all non-standard or third-party strange exceptions
+        std::println(stderr, "Error Stack Trace:\n- [Unknown Critical Exception Caught]");
+    }
+    return EXIT_FAILURE;
 }

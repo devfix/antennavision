@@ -30,7 +30,7 @@ namespace math
     template <any_json_t JsonType>
     void to_json(JsonType& j, NumParams const& num_params)
     {
-        j = JsonType{{"wavelength", num_params.wavelength}, {"n_polar", num_params.n_polar}, {"n_azimuth", num_params.n_azimuth},
+        j = JsonType{{"wavelength", num_params.system_wavelength}, {"n_polar", num_params.n_polar}, {"n_azimuth", num_params.n_azimuth},
             {"n_linear1", num_params.n_linear1}, {"n_linear2", num_params.n_linear2}, {"xtol_rel", num_params.xtol_rel}, {"ftol_rel", num_params.ftol_rel}};
     }
 
@@ -49,7 +49,7 @@ namespace math
                 {"xtol_rel", json::value_t::number_float},
                 {"ftol_rel", json::value_t::number_float},
             });
-        j.at("wavelength").get_to(num_params.wavelength);
+        j.at("wavelength").get_to(num_params.system_wavelength);
         if (j.contains("n_polar")) { j.at("n_polar").get_to(num_params.n_polar); }
         if (j.contains("n_azimuth")) { j.at("n_azimuth").get_to(num_params.n_azimuth); }
         if (j.contains("n_linear1")) { j.at("n_linear1").get_to(num_params.n_linear1); }

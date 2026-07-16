@@ -19,8 +19,8 @@ struct Setup
 {
     using task_t = factory::task_t;
 
-    static std::unique_ptr<Setup> from_json(ojson const& js, timeutil::timestamp_t timestamp = 0);
-    static std::unique_ptr<Setup> from_file(std::filesystem::path const& p);
+    [[nodiscard]] static std::unique_ptr<Setup> from_json(ojson const& js, timeutil::timestamp_t timestamp = 0);
+    [[nodiscard]] static std::unique_ptr<Setup> from_file(std::filesystem::path const& p);
     void export_to_three(std::filesystem::path const& directory, std::string_view objects_name = "setup") const;
     void run_tasks(const std::function<void(std::string_view)>& builtin_handler);
 
@@ -31,7 +31,8 @@ struct Setup
 
     std::string const name;
     timeutil::timestamp_t const timestamp;
-    std::map<std::string, double> const variables;
+    std::map<std::string, var_t> const variables;
+    math::NumParams const num_params;
     std::list<Reference> references;
     std::map<std::string, Antenna> antennas;
     std::list<std::pair<std::string, task_t>> const tasks;

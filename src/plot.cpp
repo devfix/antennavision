@@ -76,7 +76,7 @@ void plot::plot_gain_over_line(GenericScalarField const& scalar_field, pos_t con
         throw SimulationError("Invalid type of scalar field");
     }
     js["positions"] = positions.toStlVector();
-    js["wavelength"] = scalarfield::get_num_params(scalar_field).wavelength;
+    js["wavelength"] = scalarfield::get_num_params(scalar_field).system_wavelength;
 
     std::ofstream ofs(std::format("{}.result.json", name));
     ofs << js.dump(2) << '\n';

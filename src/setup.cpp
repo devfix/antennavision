@@ -31,15 +31,37 @@ namespace
     void extract_variables(factory::Context& context)
     {
         if (!context.desc.contains("variables")) { return; }
-        for (auto& variables = context.desc.at("variables"); const auto& [key, val] : variables.items())
+        for (auto& variables = context.desc.at("variables"); const auto& [raw_key, val] : variables.items())
         {
-            if (val.is_string()) { context.variables[key] = factory::parse_double(val.get<std::string>(), context.variables); }
-            else if (val.is_number()) { context.variables[key] = val.get<double>(); }
+            auto const colon_pos = raw_key.find(':');
+            auto const stripped_key = std::string_view(raw_key).substr(0, colon_pos);
+            auto const type = colon_pos == std::string_view::npos ? std::string_view() : stripped_key.substr(colon_pos + 1);
+            if (!type.empty() and type != "int") { throw SimulationError("Variable '{}' has invalid type specifier '{}'", stripped_key, type); }
+            std::string key(stripped_key);
+            if (val.is_string())
+            {
+                if (type == "int") { context.variables[key] = factory::parse_int(val.get<std::string>(), context.variables); }
+                else
+                {
+                    context.variables[key] = factory::parse_double(val.get<std::string>(), context.variables);
+                }
+            }
+            else if (val.is_number_integer()) { context.variables[key] = val.get<std::int64_t>(); }
+            else if (val.is_number_float()) { context.variables[key] = val.get<double>(); }
             else
             {
-                throw SimulationError("Invalid type '{}' of variable '{}'", val.type_name(), key);
+                throw SimulationError("Invalid type '{}' of variable '{}'", val.type_name(), stripped_key);
             }
-            std::println("Define variable {}={:.15g}", key, context.variables[key]);
+            std::visit(
+                [&key](const auto& var)
+                {
+                    if constexpr (std::is_same_v<std::decay_t<decltype(var)>, std::int64_t>) { std::println("Define integer variable {}={}", key, var); }
+                    else
+                    {
+                        std::println("Define floating-point variable {}={:.15g}", key, var);
+                    }
+                },
+                context.variables[key]);
         }
         context.desc.erase("variables");
     }
@@ -97,7 +119,9 @@ namespace
             }
             else if (type == "plot_directivity_over_polar")
             {
-                auto const azimuth_angles = factory::get_ndarray(task_desc, "azimuth_angles") * nc::constants::pi;
+                auto azimuth_angles_vec = task_desc.at("azimuth_angles").get<std::vector<double>>();
+                auto azimuth_angles = RealArray(azimuth_angles_vec.size(), 1);
+                std::ranges::transform(azimuth_angles_vec, azimuth_angles.begin(), [](auto const v){return v* nc::constants::pi;});
                 Antenna const& ant = context.antennas.at(factory::get_string(task_desc, "antenna"));
                 task_name = std::format("{}.{}", type, antenna::get_id(ant));
                 context.tasks.emplace_back(task_name, [&ant, azimuth_angles] { plot::plot_directivity_over_polar(ant, azimuth_angles, {}); });
@@ -109,7 +133,7 @@ namespace
                 Reference& ref_start = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_start"));
                 Reference const& ref_stop = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_stop"));
                 double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
-                math::NumParams num_params{.wavelength = wavelength};
+                math::NumParams num_params{.system_wavelength = wavelength};
                 pos_t const pos_start = ref_start.global_pos();
                 pos_t const pos_end = ref_stop.global_pos();
                 auto power_field = antenna::get_voltage_field(tx, rx, num_params);
@@ -168,7 +192,11 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
     setup_desc.erase("metadata");
 
     factory::Context context{.desc = setup_desc};
-    if (setup_desc.contains("num_params")) { setup_desc.at("num_params").get_to(context.num_params); setup_desc.erase("num_params");}
+    if (setup_desc.contains("num_params"))
+    {
+        setup_desc.at("num_params").get_to(context.num_params);
+        setup_desc.erase("num_params");
+    }
     else
     {
         std::println("{}No numerical parameters specified, using default configuration{}", ansi_color::fg4::bright_yellow, ansi_color::reset);
@@ -199,8 +227,7 @@ void Setup::export_to_three(std::filesystem::path const& directory, std::string_
 {
     std::filesystem::path const p = directory / std::format("{}.objects.js", objects_name);
 
-    if (!variables.contains("system_wavelength")) { throw SimulationError("Missing mandatory variable 'system_wavelength' for three export"); }
-    double const system_wavelength = variables.at("system_wavelength");
+    double const system_wavelength = num_params.system_wavelength;
 
     three::Container container;
     for (auto const& reference : references)
@@ -211,8 +238,7 @@ void Setup::export_to_three(std::filesystem::path const& directory, std::string_
         // auto const distance = (pos_center - pos_origin).norm();
         container.add(three::make_line(pos_origin, pos_center, 1.0, Color::white));
         container.add(three::create_coordinate_arrows(pos_center, reference.global_from_local_pos({1, 0, 0}) - pos_center,
-                                                      reference.global_from_local_pos({0, 1, 0}) - pos_center,
-                                                      reference.global_from_local_pos({0, 0, 1}) - pos_center, 0.25 * system_wavelength));
+            reference.global_from_local_pos({0, 1, 0}) - pos_center, reference.global_from_local_pos({0, 0, 1}) - pos_center, 0.25 * system_wavelength));
     }
 
     auto add_radiator = [&container, &system_wavelength](Radiator const& radiator)
@@ -276,6 +302,6 @@ bool Setup::isUpToDate(std::filesystem::path const& path_timestamp) const
 }
 
 Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, factory::Context&& context) :
-    name(name), timestamp(timestamp), variables(std::move(context.variables)), references(std::move(context.references)), antennas(std::move(context.antennas)),
+    name(name), timestamp(timestamp), variables(std::move(context.variables)), num_params(context.num_params), references(std::move(context.references)), antennas(std::move(context.antennas)),
     tasks(std::move(context.tasks))
 {}
