@@ -27,6 +27,8 @@ using QuaternionArray = nc::NdArray<Quaternion>; // probably never used but we a
 // other types
 using ojson = nlohmann::ordered_json;
 using json = nlohmann::json;
+template <typename T>
+concept any_json_t = std::same_as<std::decay_t<T>, json> || std::same_as<std::decay_t<T>, ojson>;
 
 // mathematical and physical constants
 constexpr double pi = std::numbers::pi;
@@ -37,16 +39,41 @@ constexpr auto POS_ZERO = pos_t(0, 0, 0);
 constexpr double SPEED_OF_LIGHT = 299'792'458;
 constexpr double NUMERICAL_MARGIN = 1e-9;
 
+// json serialization
+
+namespace nlohmann {
+    // --- std::complex Serializer ---
+    template <typename T>
+    struct adl_serializer<std::complex<T>> {
+        template<any_json_t JsonType>
+        static void to_json(JsonType& j, const std::complex<T>& value);
+        template<any_json_t JsonType>
+        static void from_json(const JsonType& j, std::complex<T>& value);
+    };
+
+    // --- nc::Vec2 Serializer ---
+    template <>
+    struct adl_serializer<nc::Vec2> {
+        template<any_json_t JsonType>
+        static void to_json(JsonType& j, const nc::Vec2& value);
+        template<any_json_t JsonType>
+        static void from_json(const JsonType& j, nc::Vec2& value);
+    };
+
+    // --- nc::Vec3 Serializer ---
+    template <>
+    struct adl_serializer<nc::Vec3> {
+        template<any_json_t JsonType>
+        static void to_json(JsonType& j, const nc::Vec3& value);
+        template<any_json_t JsonType>
+        static void from_json(const JsonType& j, nc::Vec3& value);
+    };
+} // namespace nlohmann
+
 namespace nc {
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, Vec3 const& v);
+    template <any_json_t JsonType, typename T>
+    void to_json(JsonType& j, NdArray<T> const& array);
 
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, Vec3& v);
-
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, Vec2 const& v);
-
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, Vec2& v);
-}
+    template <any_json_t JsonType, typename T>
+    void from_json(JsonType const& j, NdArray<T>& array);
+} // namespace nc

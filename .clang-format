@@ -63,5 +63,6 @@ AllowShortLoopsOnASingleLine: true
 AllowShortLambdasOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: true
 PointerAlignment: Left
+AlignAfterOpenBracket: DontAlign
 
 ...

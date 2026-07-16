@@ -24,11 +24,11 @@ namespace math
         double ftol_rel = 1e-8;
     };
 
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, NumParams const& num_params);
+    template <any_json_t JsonType>
+    void to_json(JsonType& j, NumParams const& num_params);
 
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, NumParams& num_params);
+    template <any_json_t JsonType>
+    void from_json(JsonType const& j, NumParams& num_params);
 
     struct OptParams
     {

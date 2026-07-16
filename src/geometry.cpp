@@ -4,6 +4,7 @@
 
 #include "geometry.hpp"
 #include <nlohmann/json.hpp>
+#include "serialization.hpp"
 #include "simulationerror.hpp"
 
 namespace geometry
@@ -24,21 +25,25 @@ namespace geometry
 
     CircleArc CircleArc::rotate(double angle) const { return {center_, normal_, std::cos(angle) * e1_ + std::sin(angle) * e2_, radius_, angle_span_}; }
 
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, CircleArc const& c)
+    template <any_json_t JsonType>
+    void to_json(JsonType& j, CircleArc const& c)
     {
-        j = BasicJsonType{{"center", c.center()}, {"normal", c.normal()}, {"e1", c.e1()},
-                          {"e2", c.e2()},         {"radius", c.radius()}, {"angle_span", c.angle_span()}};
+        j = JsonType{
+            {"center", c.center()}, {"normal", c.normal()}, {"e1", c.e1()}, {"e2", c.e2()}, {"radius", c.radius()}, {"angle_span", c.angle_span()}};
     }
 
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, CircleArc& c)
+    template <any_json_t JsonType>
+    void from_json(JsonType const& j, CircleArc& c)
     {
-        if (!j.contains("center")) { throw SimulationError("Invalid circle definition: missing center"); }
-        if (!j.contains("normal")) { throw SimulationError("Invalid circle definition: missing normal"); }
-        if (!j.contains("e1")) { throw SimulationError("Invalid circle definition: missing e1"); }
-        if (!j.contains("radius")) { throw SimulationError("Invalid circle definition: missing radius"); }
-        if (!j.contains("angle_span")) { throw SimulationError("Invalid circle definition: missing angle_span"); }
+        serialization::assert_structure(j, "geometry::CircleArc",
+            {
+                {"center", json::value_t::object},
+                {"normal", json::value_t::object},
+                {"e1", json::value_t::object},
+                {"radius", json::value_t::number_float},
+                {"angle_span", json::value_t::number_float},
+            },
+            {{"e2", json::value_t::object}});
         pos_t center;
         pos_t normal;
         pos_t e1;
@@ -56,18 +61,22 @@ namespace geometry
         center_(center), normal_(normal.normalize()), e1_(e1.normalize()), e2_(normal_.cross(e1_)), width_(width), height_(height)
     { assert_orthogonality(normal_, e1_, e2_, "rectangle"); }
 
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, Rectangle const& r)
-    { j = BasicJsonType{{"center", r.center()}, {"normal", r.normal()}, {"e1", r.e1()}, {"e2", r.e2()}, {"width", r.width()}, {"height", r.height()}}; }
+    template <any_json_t JsonType>
+    void to_json(JsonType& j, Rectangle const& r)
+    { j = JsonType{{"center", r.center()}, {"normal", r.normal()}, {"e1", r.e1()}, {"e2", r.e2()}, {"width", r.width()}, {"height", r.height()}}; }
 
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, Rectangle& r)
+    template <any_json_t JsonType>
+    void from_json(JsonType const& j, Rectangle& r)
     {
-        if (!j.contains("center")) { throw SimulationError("Invalid rectangle definition: missing center"); }
-        if (!j.contains("normal")) { throw SimulationError("Invalid rectangle definition: missing normal"); }
-        if (!j.contains("e1")) { throw SimulationError("Invalid rectangle definition: missing e1"); }
-        if (!j.contains("width")) { throw SimulationError("Invalid rectangle definition: missing width"); }
-        if (!j.contains("height")) { throw SimulationError("Invalid rectangle definition: missing height"); }
+        serialization::assert_structure(j, "geometry::Rectangle",
+            {
+                {"center", json::value_t::object},
+                {"normal", json::value_t::object},
+                {"e1", json::value_t::object},
+                {"width", json::value_t::number_float},
+                {"height", json::value_t::number_float},
+            },
+            {{"e2", json::value_t::object}});
         pos_t center;
         pos_t normal;
         pos_t e1;
@@ -86,27 +95,26 @@ namespace geometry
         azimuth_span_(azimuth_span)
     { assert_orthogonality(normal_, e1_, e2_, "spherical rectangle"); }
 
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, SphericalRectangle const& sr)
+    template <any_json_t JsonType>
+    void to_json(JsonType& j, SphericalRectangle const& sr)
     {
-        j = BasicJsonType{{"center", sr.center()},
-                          {"normal", sr.normal()},
-                          {"e1", sr.e1()},
-                          {"e2", sr.e2()},
-                          {"radius", sr.radius()},
-                          {"polar_span", sr.polar_span()},
-                          {"azimuth_span", sr.azimuth_span()}};
+        j = JsonType{{"center", sr.center()}, {"normal", sr.normal()}, {"e1", sr.e1()}, {"e2", sr.e2()}, {"radius", sr.radius()},
+            {"polar_span", sr.polar_span()}, {"azimuth_span", sr.azimuth_span()}};
     }
 
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, SphericalRectangle& sr)
+    template <any_json_t JsonType>
+    void from_json(JsonType const& j, SphericalRectangle& sr)
     {
-        if (!j.contains("center")) { throw SimulationError("Invalid spherical rectangle definition: missing center"); }
-        if (!j.contains("normal")) { throw SimulationError("Invalid spherical rectangle definition: missing normal"); }
-        if (!j.contains("e1")) { throw SimulationError("Invalid spherical rectangle definition: missing e1"); }
-        if (!j.contains("radius")) { throw SimulationError("Invalid spherical rectangle definition: missing radius"); }
-        if (!j.contains("polar_span")) { throw SimulationError("Invalid spherical rectangle definition: missing polar_span"); }
-        if (!j.contains("azimuth_span")) { throw SimulationError("Invalid spherical rectangle definition: missing azimuth_span"); }
+        serialization::assert_structure(j, "geometry::SphericalRectangle",
+            {
+                {"center", json::value_t::object},
+                {"normal", json::value_t::object},
+                {"e1", json::value_t::object},
+                {"radius", json::value_t::number_float},
+                {"polar_span", json::value_t::number_float},
+                {"azimuth_span", json::value_t::number_float},
+            },
+            {{"e2", json::value_t::object}});
         pos_t center;
         pos_t normal;
         pos_t e1;

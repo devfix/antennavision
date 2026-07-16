@@ -7,6 +7,8 @@
 #include <magic_enum/magic_enum.hpp>
 #include <nlohmann/json.hpp>
 #include <nlopt.h>
+
+#include "serialization.hpp"
 #include "simulationerror.hpp"
 
 extern "C" {
@@ -25,24 +27,35 @@ namespace math
         }
     } // namespace
 
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, NumParams const& num_params)
+    template <any_json_t JsonType>
+    void to_json(JsonType& j, NumParams const& num_params)
     {
-        j = BasicJsonType{{"wavelength", num_params.wavelength}, {"n_polar", num_params.n_polar},     {"n_azimuth", num_params.n_azimuth},
-                           {"n_linear1", num_params.n_linear1},   {"n_linear2", num_params.n_linear2}, {"xtol_rel", num_params.xtol_rel},
-                           {"ftol_rel", num_params.ftol_rel}};
+        j = JsonType{{"wavelength", num_params.wavelength}, {"n_polar", num_params.n_polar}, {"n_azimuth", num_params.n_azimuth},
+            {"n_linear1", num_params.n_linear1}, {"n_linear2", num_params.n_linear2}, {"xtol_rel", num_params.xtol_rel}, {"ftol_rel", num_params.ftol_rel}};
     }
 
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, NumParams& num_params)
+    template <any_json_t JsonType>
+    void from_json(JsonType const& j, NumParams& num_params)
     {
+        serialization::assert_structure(j, "math::NumParams",
+            {
+                {"wavelength", json::value_t::number_float},
+            },
+            {
+                {"n_polar", json::value_t::number_unsigned},
+                {"n_azimuth", json::value_t::number_unsigned},
+                {"n_linear1", json::value_t::number_unsigned},
+                {"n_linear2", json::value_t::number_unsigned},
+                {"xtol_rel", json::value_t::number_float},
+                {"ftol_rel", json::value_t::number_float},
+            });
         j.at("wavelength").get_to(num_params.wavelength);
-        j.at("n_polar").get_to(num_params.n_polar);
-        j.at("n_azimuth").get_to(num_params.n_azimuth);
-        j.at("n_linear1").get_to(num_params.n_linear1);
-        j.at("n_linear2").get_to(num_params.n_linear2);
-        j.at("xtol_rel").get_to(num_params.xtol_rel);
-        j.at("ftol_rel").get_to(num_params.ftol_rel);
+        if (j.contains("n_polar")) { j.at("n_polar").get_to(num_params.n_polar); }
+        if (j.contains("n_azimuth")) { j.at("n_azimuth").get_to(num_params.n_azimuth); }
+        if (j.contains("n_linear1")) { j.at("n_linear1").get_to(num_params.n_linear1); }
+        if (j.contains("n_linear2")) { j.at("n_linear2").get_to(num_params.n_linear2); }
+        if (j.contains("xtol_rel")) { j.at("xtol_rel").get_to(num_params.xtol_rel); }
+        if (j.contains("ftol_rel")) { j.at("ftol_rel").get_to(num_params.ftol_rel); }
     }
 
     double angle_between_vectors(pos_t vec1, pos_t vec2)
@@ -69,9 +82,8 @@ namespace math
             std::array<std::tuple<pos_t, double>, 3> dir_orts{
                 {{dir_initial.cross(pos_t(1, 0, 0)), 0}, {dir_initial.cross(pos_t(0, 1, 0)), 0}, {dir_initial.cross(pos_t(0, 0, 1)), 0}}};
             for (auto& [dir, len] : dir_orts) { len = dir.norm(); }
-            auto const dir_ort_best =
-                std::get<0>(*std::max_element(dir_orts.begin(), dir_orts.end(), [](std::tuple<pos_t, double> const& a, std::tuple<pos_t, double> const& b)
-                                              { return std::get<1>(a) < std::get<1>(b); }));
+            auto const dir_ort_best = std::get<0>(*std::max_element(dir_orts.begin(), dir_orts.end(),
+                [](std::tuple<pos_t, double> const& a, std::tuple<pos_t, double> const& b) { return std::get<1>(a) < std::get<1>(b); }));
             return {dir_ort_best.normalize(), nc::constants::pi};
         }
         else

@@ -55,11 +55,11 @@ namespace geometry
         [[nodiscard]] constexpr pos_t get_pos(double angle) const noexcept { return center_ + radius_ * (std::cos(angle) * e1_ + std::sin(angle) * e2_); }
     };
 
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, CircleArc const& c);
+    template <any_json_t JsonType>
+    void to_json(JsonType& j, CircleArc const& c);
 
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, CircleArc& c);
+    template <any_json_t JsonType>
+    void from_json(JsonType const& j, CircleArc& c);
 
     //         <---- width ---->
     //         +---------------+   ^
@@ -99,11 +99,11 @@ namespace geometry
         [[nodiscard]] constexpr double height() const noexcept { return height_; }
     };
 
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, Rectangle const& r);
+    template <any_json_t JsonType>
+    void to_json(JsonType& j, Rectangle const& r);
 
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, Rectangle& r);
+    template <any_json_t JsonType>
+    void from_json(JsonType const& j, Rectangle& r);
 
     struct SphericalRectangle
     {
@@ -138,11 +138,11 @@ namespace geometry
         [[nodiscard]] constexpr double azimuth_span() const noexcept { return azimuth_span_; }
     };
 
-    template <typename BasicJsonType>
-    void to_json(BasicJsonType& j, SphericalRectangle const& sr);
+    template <any_json_t JsonType>
+    void to_json(JsonType& j, SphericalRectangle const& sr);
 
-    template <typename BasicJsonType>
-    void from_json(BasicJsonType const& j, SphericalRectangle& sr);
+    template <any_json_t JsonType>
+    void from_json(JsonType const& j, SphericalRectangle& sr);
 } // namespace geometry
 
 using Geometry = std::variant<geometry::CircleArc, geometry::Rectangle, geometry::SphericalRectangle>;

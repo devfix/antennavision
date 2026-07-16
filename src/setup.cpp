@@ -168,7 +168,7 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
     setup_desc.erase("metadata");
 
     factory::Context context{.desc = setup_desc};
-    if (setup_desc.contains("num_params")) { setup_desc.at("num_params").get_to(context.num_params); }
+    if (setup_desc.contains("num_params")) { setup_desc.at("num_params").get_to(context.num_params); setup_desc.erase("num_params");}
     else
     {
         std::println("{}No numerical parameters specified, using default configuration{}", ansi_color::fg4::bright_yellow, ansi_color::reset);

@@ -20,6 +20,9 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
   "metadata": {
     "setup_name": "test-ula"
   },
+  "num_params": {
+    "wavelength": 0.1
+  },
   "variables": {
     "wavelength": 0.1
   },
@@ -132,12 +135,6 @@ TEST_CASE("ULA gain", "[TestULA]")
       "ref": "ref_rx_start",
       "type": "HertzianDipole"
     }
-  ],
-  "tasks": [
-    {
-      "type": "builtin",
-      "key": "t00_compare_beamwidth"
-    }
   ]
 }
 )JSON");
@@ -245,12 +242,6 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
       "id": "receiver",
       "ref": "ref_rx_start",
       "type": "HertzianDipole"
-    }
-  ],
-  "tasks": [
-    {
-      "type": "builtin",
-      "key": "t00_compare_beamwidth"
     }
   ]
 }
