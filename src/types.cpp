@@ -11,8 +11,8 @@ namespace nlohmann {
     // ==========================================
     template<typename T>
     template<any_json_t JsonType>
-    void adl_serializer<std::complex<T>>::to_json(JsonType& j, const std::complex<T>& value) {
-        j = JsonType{ value.real(), value.imag() };
+    void adl_serializer<std::complex<T>>::to_json(JsonType& js, const std::complex<T>& value) {
+        js = JsonType{ value.real(), value.imag() };
     }
     template<typename T>
     template<any_json_t JsonType>
@@ -35,16 +35,16 @@ namespace nlohmann {
     // nc::Vec2 Serializer
     // ==========================================
     template<any_json_t JsonType>
-    void adl_serializer<nc::Vec2>::to_json(JsonType& j, const nc::Vec2& value) {
-        j = JsonType{ value.x, value.y };
+    void adl_serializer<nc::Vec2>::to_json(JsonType& js, const nc::Vec2& value) {
+        js = JsonType{ value.x, value.y };
     }
     template<any_json_t JsonType>
-    void adl_serializer<nc::Vec2>::from_json(const JsonType& j, nc::Vec2& value) {
-        if (j.is_array() && j.size() == 2) {
-            j[0].get_to(value.x);
-            j[1].get_to(value.y);
+    void adl_serializer<nc::Vec2>::from_json(const JsonType& s, nc::Vec2& value) {
+        if (s.is_array() && s.size() == 2) {
+            s[0].get_to(value.x);
+            s[1].get_to(value.y);
         } else {
-            throw JsonType::type_error::create(302, "Expected a 2-element array for nc::Vec2", &j);
+            throw JsonType::type_error::create(302, "Expected a 2-element array for nc::Vec2", &s);
         }
     }
 
@@ -58,17 +58,17 @@ namespace nlohmann {
     // nc::Vec3 Serializer
     // ==========================================
     template<any_json_t JsonType>
-    void adl_serializer<nc::Vec3>::to_json(JsonType& j, const nc::Vec3& value) {
-        j = JsonType{ value.x, value.y, value.z };
+    void adl_serializer<nc::Vec3>::to_json(JsonType& js, const nc::Vec3& value) {
+        js = JsonType{ value.x, value.y, value.z };
     }
     template<any_json_t JsonType>
-    void adl_serializer<nc::Vec3>::from_json(const JsonType& j, nc::Vec3& value) {
-        if (j.is_array() && j.size() == 3) {
-            j[0].get_to(value.x);
-            j[1].get_to(value.y);
-            j[2].get_to(value.z);
+    void adl_serializer<nc::Vec3>::from_json(const JsonType& js, nc::Vec3& value) {
+        if (js.is_array() && js.size() == 3) {
+            js[0].get_to(value.x);
+            js[1].get_to(value.y);
+            js[2].get_to(value.z);
         } else {
-            throw JsonType::type_error::create(302, "Expected a 3-element array for nc::Vec3", &j);
+            throw JsonType::type_error::create(302, "Expected a 3-element array for nc::Vec3", &js);
         }
     }
 
@@ -77,6 +77,48 @@ namespace nlohmann {
     template void adl_serializer<nc::Vec3>::to_json(ordered_json&, nc::Vec3 const&);
     template void adl_serializer<nc::Vec3>::from_json(json const&, nc::Vec3&);
     template void adl_serializer<nc::Vec3>::from_json(ordered_json const&, nc::Vec3&);
+
+    // ==========================================
+    // nc::rotations::Quaternion Serializer
+    // ==========================================
+    template<any_json_t JsonType>
+    void adl_serializer<Quaternion>::to_json(JsonType& js, const Quaternion& value) {
+        // Always serialize as a 4-element array [s, i, j, k]
+        js = JsonType{ value.s(), value.i(), value.j(), value.k() };
+    }
+
+    template<any_json_t JsonType>
+    void adl_serializer<Quaternion>::from_json(const JsonType& js, Quaternion& value)
+    {
+        if (js.is_array() && js.size() == 4) {
+            // Case 1: Read raw 4-element quaternion representation
+            double cs = js.at(0).template get<double>();
+            double ci = js.at(1).template get<double>();
+            double cj = js.at(2).template get<double>();
+            double ck = js.at(3).template get<double>();
+            value = Quaternion(ci, cj, ck, cs);
+        }
+        else if (js.is_object() && js.contains("roll") && js.contains("pitch") && js.contains("yaw")) {
+            // Case 2: Read fallback Roll-Pitch-Yaw object representation
+            double roll = js.at("roll").template get<double>();
+            double pitch = js.at("pitch").template get<double>();
+            double yaw = js.at("yaw").template get<double>();
+            value = Quaternion(roll, pitch, yaw);
+        }
+        else {
+            throw JsonType::type_error::create(
+                302,
+                "Expected a 4-element array [s, x, y, z] or a roll-pitch-yaw object for Quaternion",
+                &js
+            );
+        }
+    }
+
+    // Instantiations for Quaternion
+    template void adl_serializer<Quaternion>::to_json(json&, Quaternion const&);
+    template void adl_serializer<Quaternion>::to_json(ordered_json&, Quaternion const&);
+    template void adl_serializer<Quaternion>::from_json(json const&, Quaternion&);
+    template void adl_serializer<Quaternion>::from_json(ordered_json const&, Quaternion&);
 } // namespace nlohmann
 
 namespace nc

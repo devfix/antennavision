@@ -7,6 +7,13 @@
 #include <nlohmann/json.hpp>
 #include "types.hpp"
 
+// Helper to check if two quaternions represent the same physical 3D rotation
+inline void REQUIRE_ROTATIONS_EQUAL(const Quaternion& q1, const Quaternion& q2) {
+    double const dot = q1.s() * q2.s() + q1.i() * q2.i() + q1.j() * q2.j() + q1.k() * q2.k();
+    // For unit quaternions, absolute dot product of 1.0 means identical orientations
+    REQUIRE(std::abs(dot) == Catch::Approx(1.0).margin(1e-6));
+}
+
 
 TEST_CASE("serialize to JSON", "[types][complex_t]")
 {
@@ -269,5 +276,93 @@ TEST_CASE("nc::Vec3 Deserialization", "[types][vec3]") {
         // Test 4: Object format instead of Array
         json bad_format = json::object({{"x", 1.0}, {"y", -2.5}, {"z", 3.75}});
         REQUIRE_THROWS_AS(bad_format.get<nc::Vec3>(), json::type_error);
+    }
+}
+
+TEST_CASE("nc::rotations::Quaternion Serialization", "[types][quaternion]") {
+    double constexpr yaw = 1.0;
+    double constexpr pitch = 0.5; // Avoid singularities (pitch=2.0 is > pi/2)
+    double constexpr roll = 0.8;
+
+    Quaternion const q_expected(roll, pitch, yaw);
+
+    SECTION("Serializing to standard nlohmann::json (always outputs 4-element array)") {
+        json js = q_expected;
+
+        REQUIRE(js.is_array());
+        REQUIRE(js.size() == 4);
+        REQUIRE(js[0].get<double>() == Catch::Approx(q_expected.s()));
+        REQUIRE(js[1].get<double>() == Catch::Approx(q_expected.i()));
+        REQUIRE(js[2].get<double>() == Catch::Approx(q_expected.j()));
+        REQUIRE(js[3].get<double>() == Catch::Approx(q_expected.k()));
+    }
+
+    SECTION("Serializing to nlohmann::ordered_json (always outputs 4-element array)") {
+        ojson oj = q_expected;
+
+        REQUIRE(oj.is_array());
+        REQUIRE(oj.size() == 4);
+        REQUIRE(oj[0].get<double>() == Catch::Approx(q_expected.s()));
+        REQUIRE(oj[1].get<double>() == Catch::Approx(q_expected.i()));
+        REQUIRE(oj[2].get<double>() == Catch::Approx(q_expected.j()));
+        REQUIRE(oj[3].get<double>() == Catch::Approx(q_expected.k()));
+    }
+}
+
+TEST_CASE("nc::rotations::Quaternion Deserialization", "[types][quaternion]") {
+    double constexpr yaw = 1.0;
+    double constexpr pitch = 0.5; // Keep away from gimbal lock/singularities
+    double constexpr roll = 0.8;
+
+    Quaternion const q_expected(roll, pitch, yaw);
+
+    SECTION("Deserializing from 4-element JSON array representation") {
+        json js = json::array({ q_expected.s(), q_expected.i(), q_expected.j(), q_expected.k() });
+        auto const q = js.get<Quaternion>();
+
+        REQUIRE_ROTATIONS_EQUAL(q, q_expected);
+    }
+
+    SECTION("Deserializing from valid legacy Roll-Pitch-Yaw JSON object") {
+        json js = json::object();
+        js["yaw"] = yaw;
+        js["pitch"] = pitch;
+        js["roll"] = roll;
+        auto const q = js.get<Quaternion>();
+
+        REQUIRE_ROTATIONS_EQUAL(q, q_expected);
+    }
+
+    SECTION("Deserializing from valid legacy Roll-Pitch-Yaw ordered JSON object") {
+        ojson oj = ojson::object();
+        oj["yaw"] = yaw;
+        oj["pitch"] = pitch;
+        oj["roll"] = roll;
+        auto const q = oj.get<Quaternion>();
+
+        REQUIRE_ROTATIONS_EQUAL(q, q_expected);
+    }
+
+    SECTION("Deserializing invalid JSON structures triggers errors") {
+        // Test 1: Wrong number of elements in array (expected 4, got 3)
+        json bad_array_size = json::array({1.0, 0.0, 0.0});
+        REQUIRE_THROWS_AS(bad_array_size.get<Quaternion>(), json::type_error);
+
+        // Test 2: Missing keys in Roll-Pitch-Yaw object representation (missing "roll")
+        json bad_object_keys = json::object();
+        bad_object_keys["yaw"] = yaw;
+        bad_object_keys["pitch"] = pitch;
+        REQUIRE_THROWS_AS(bad_object_keys.get<Quaternion>(), json::type_error);
+
+        // Test 3: Wrong value types in array (contains string)
+        json bad_array_types = json::array({1.0, 0.0, "not-a-double", 0.0});
+        REQUIRE_THROWS(bad_array_types.get<Quaternion>());
+
+        // Test 4: Wrong value types in object
+        json bad_object_types = json::object();
+        bad_object_types["yaw"] = "string";
+        bad_object_types["pitch"] = pitch;
+        bad_object_types["roll"] = roll;
+        REQUIRE_THROWS(bad_object_types.get<Quaternion>());
     }
 }

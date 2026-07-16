@@ -46,7 +46,7 @@ namespace nlohmann {
     template <typename T>
     struct adl_serializer<std::complex<T>> {
         template<any_json_t JsonType>
-        static void to_json(JsonType& j, const std::complex<T>& value);
+        static void to_json(JsonType& js, const std::complex<T>& value);
         template<any_json_t JsonType>
         static void from_json(const JsonType& j, std::complex<T>& value);
     };
@@ -55,18 +55,27 @@ namespace nlohmann {
     template <>
     struct adl_serializer<nc::Vec2> {
         template<any_json_t JsonType>
-        static void to_json(JsonType& j, const nc::Vec2& value);
+        static void to_json(JsonType& js, const nc::Vec2& value);
         template<any_json_t JsonType>
-        static void from_json(const JsonType& j, nc::Vec2& value);
+        static void from_json(const JsonType& s, nc::Vec2& value);
     };
 
     // --- nc::Vec3 Serializer ---
     template <>
     struct adl_serializer<nc::Vec3> {
         template<any_json_t JsonType>
-        static void to_json(JsonType& j, const nc::Vec3& value);
+        static void to_json(JsonType& js, const nc::Vec3& value);
         template<any_json_t JsonType>
-        static void from_json(const JsonType& j, nc::Vec3& value);
+        static void from_json(const JsonType& js, nc::Vec3& value);
+    };
+
+    // --- nc::rotations::Quaternion Serializer ---
+    template <>
+    struct adl_serializer<nc::rotations::Quaternion> {
+        template<any_json_t JsonType>
+        static void to_json(JsonType& js, const nc::rotations::Quaternion& value);
+        template<any_json_t JsonType>
+        static void from_json(const JsonType& js, nc::rotations::Quaternion& value);
     };
 } // namespace nlohmann
 
