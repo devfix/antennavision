@@ -25,7 +25,7 @@ namespace nlohmann {
         }
     }
 
-    // Instantiations for std::complex<std::float64_t>
+    // Instantiations for std::complex<double>
     template void adl_serializer<complex_t>::to_json(json&, complex_t const&);
     template void adl_serializer<complex_t>::to_json(ordered_json&, complex_t const&);
     template void adl_serializer<complex_t>::from_json(json const&, complex_t&);
@@ -92,18 +92,18 @@ namespace nlohmann {
     {
         if (js.is_array() && js.size() == 4) {
             // Case 1: Read raw 4-element quaternion representation
-            std::float64_t const cs = js.at(0).template get<std::float64_t>();
-            std::float64_t const ci = js.at(1).template get<std::float64_t>();
-            std::float64_t const cj = js.at(2).template get<std::float64_t>();
-            std::float64_t const ck = js.at(3).template get<std::float64_t>();
+            double const cs = js.at(0).template get<double>();
+            double const ci = js.at(1).template get<double>();
+            double const cj = js.at(2).template get<double>();
+            double const ck = js.at(3).template get<double>();
             value = Quaternion(ci, cj, ck, cs);
         }
         else if (js.is_object() && js.contains("roll") && js.contains("pitch") && js.contains("yaw")) {
             // Case 2: Read fallback Roll-Pitch-Yaw object representation
-            std::float64_t const roll = js.at("roll").template get<std::float64_t>();
-            std::float64_t const pitch = js.at("pitch").template get<std::float64_t>();
-            std::float64_t const yaw = js.at("yaw").template get<std::float64_t>();
-            value = Quaternion(roll, pitch, yaw);
+            double const roll = js.at("roll").template get<double>();
+            double const pitch = js.at("pitch").template get<double>();
+            double const yaw = js.at("yaw").template get<double>();
+            value = Quaternion(roll * pi, pitch * pi, yaw * pi);
         }
         else {
             throw JsonType::type_error::create(
@@ -133,7 +133,7 @@ namespace nlohmann {
             JsonType inner_row = JsonType::array();
             for (std::uint32_t col = 0; col < shape.cols; ++col) {
                 // This will automatically find the correct ADL serializer
-                // for the element type T (e.g., complex_t or std::float64_t)
+                // for the element type T (e.g., complex_t or double)
                 inner_row.push_back(value(row, col));
             }
             js.push_back(inner_row);
@@ -173,12 +173,12 @@ namespace nlohmann {
         }
     }
 
-    // Explicit Instantiations for nc::NdArray<std::float64_t>
-    template struct adl_serializer<nc::NdArray<std::float64_t>>;
-    template void adl_serializer<nc::NdArray<std::float64_t>>::to_json(json&, const nc::NdArray<std::float64_t>&);
-    template void adl_serializer<nc::NdArray<std::float64_t>>::to_json(ordered_json&, const nc::NdArray<std::float64_t>&);
-    template void adl_serializer<nc::NdArray<std::float64_t>>::from_json(const json&, nc::NdArray<std::float64_t>&);
-    template void adl_serializer<nc::NdArray<std::float64_t>>::from_json(const ordered_json&, nc::NdArray<std::float64_t>&);
+    // Explicit Instantiations for nc::NdArray<double>
+    template struct adl_serializer<nc::NdArray<double>>;
+    template void adl_serializer<nc::NdArray<double>>::to_json(json&, const nc::NdArray<double>&);
+    template void adl_serializer<nc::NdArray<double>>::to_json(ordered_json&, const nc::NdArray<double>&);
+    template void adl_serializer<nc::NdArray<double>>::from_json(const json&, nc::NdArray<double>&);
+    template void adl_serializer<nc::NdArray<double>>::from_json(const ordered_json&, nc::NdArray<double>&);
 
     // Explicit Instantiations for nc::NdArray<complex_t>
     template struct adl_serializer<nc::NdArray<complex_t>>;

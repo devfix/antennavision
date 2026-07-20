@@ -21,13 +21,10 @@ namespace factory
     std::string get_string(nlohmann::ordered_json& js, std::string_view key, bool remove = true, bool default_ok = false);
     RealArray get_ndarray(nlohmann::ordered_json& js, std::string_view key, bool remove = true);
     char get_char(nlohmann::ordered_json& js, std::string_view key, bool remove = true);
-    double get_double(
-        nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove = true, bool default_ok = false);
-    std::uint32_t get_uint(
-        nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove = true, bool default_ok = false);
+    double get_double(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove = true, bool default_ok = false);
+    std::uint32_t get_uint(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove = true, bool default_ok = false);
     pos_t get_pos(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove = true, bool default_ok = false);
-    nc::rotations::Quaternion get_quaternion(
-        nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove = true, bool default_ok = false);
+    nc::rotations::Quaternion get_quaternion(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove = true, bool default_ok = false);
     std::array<std::string, 3> get_string_vec3(nlohmann::ordered_json& js, std::string_view key, bool remove = true);
 
 } // namespace factory

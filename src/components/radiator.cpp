@@ -7,27 +7,33 @@
 #include <NumCpp/Functions/meshgrid.hpp>
 #include <NumCpp/Functions/sin.hpp>
 #include <NumCpp/Functions/sum.hpp>
+#include <print>
 #include <string>
 #include <utility>
-#include <print>
 #include "factory/get.hpp"
 #include "factory/make.hpp"
 #include "math.hpp"
-#include "simulationerror.hpp"
 
-Radiator Radiator::HertzianDipole::create(std::string_view id, Reference& origin) { return {id, origin, elv_spherical, ms_elv}; }
 
-Radiator::elv_spherical_t::result_type Radiator::HertzianDipole::elv_spherical(double const polar, double, double) { return math::vec<complex_t>(0, -HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0); }
+Radiator Radiator::HertzianDipole::create(std::string const& id, std::string const& origin_id)
+{ return {.id = id, .origin_id = origin_id, .elv_spherical = elv_spherical, .mean_squared_elv = ms_elv}; }
+
+Radiator::elv_spherical_t::result_type Radiator::HertzianDipole::elv_spherical(double const polar, double, double)
+{ return math::vec<complex_t>(0, -HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0); }
 
 Radiator::ms_elv_t::result_type Radiator::HertzianDipole::ms_elv(double) { return 2.0 / 3.0 * math::square(HERTZIAN_DIPOLE_LENGTH); }
 
-Radiator Radiator::StandingWaveDipole::create(std::string_view id, Reference & origin, double const dipole_length)
+Radiator Radiator::StandingWaveDipole::create(std::string const& id, std::string const& origin_id, double const dipole_length)
 {
-    return {id, origin, [dipole_length](double const polar, double const azimuth, double const wavelength) -> elv_spherical_t::result_type
-            { return elv_spherical(polar, azimuth, wavelength, dipole_length); }, [dipole_length](double wavelength) -> ms_elv_t::result_type { return ms_elv(wavelength, dipole_length); }};
+    return {.id = id,
+        .origin_id = origin_id,
+        .elv_spherical = [dipole_length](double const polar, double const azimuth, double const wavelength) -> elv_spherical_t::result_type
+        { return elv_spherical(polar, azimuth, wavelength, dipole_length); },
+        .mean_squared_elv = [dipole_length](double wavelength) -> ms_elv_t::result_type { return ms_elv(wavelength, dipole_length); }};
 }
 
-Radiator::elv_spherical_t::result_type Radiator::StandingWaveDipole::elv_spherical(double const polar, double const azimuth, double const wavelength, double const dipole_length)
+Radiator::elv_spherical_t::result_type Radiator::StandingWaveDipole::elv_spherical(
+    double const polar, double const azimuth, double const wavelength, double const dipole_length)
 {
     double const x = pi * dipole_length / wavelength;
     complex_t const polar_comp = -wavelength / (pi * std::sin(polar)) * (std::cos(x * std::cos(polar)) - cos(x));
@@ -39,10 +45,6 @@ Radiator::ms_elv_t::result_type Radiator::StandingWaveDipole::ms_elv(double cons
     double const x = pi * dipole_length / wavelength;
     return 0.5 * math::square(wavelength / pi) * math::q_function(x);
 }
-
-Radiator::Radiator(std::string_view const id, Reference & origin, elv_spherical_t elv_spherical, ms_elv_t ms_elv) :
-    Component(id, 1, 0), origin(origin), elv_spherical(std::move(elv_spherical)), mean_squared_elv(std::move(ms_elv))
-{}
 
 vec_t Radiator::get_elv_spherical_standing_wave(double const dipole_length, double const wavelength, double const polar)
 {
@@ -59,16 +61,16 @@ double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_s
     auto const d_azimuth = 2.0 * pi / static_cast<double>(num_params.n_azimuth);
 
     auto const polar_mids = (polar_edges(polar_edges.rSlice(), nc::Slice(0, static_cast<std::int32_t>(num_params.n_polar))) +
-                             polar_edges(polar_edges.rSlice(), nc::Slice(1, static_cast<std::int32_t>(num_params.n_polar) + 1))) /
+                                polar_edges(polar_edges.rSlice(), nc::Slice(1, static_cast<std::int32_t>(num_params.n_polar) + 1))) /
         2.0;
     auto const azimuth_mids = (azimuth_edges(azimuth_edges.rSlice(), nc::Slice(0, static_cast<std::int32_t>(num_params.n_azimuth))) +
-                               azimuth_edges(azimuth_edges.rSlice(), nc::Slice(1, static_cast<std::int32_t>(num_params.n_azimuth) + 1))) /
+                                  azimuth_edges(azimuth_edges.rSlice(), nc::Slice(1, static_cast<std::int32_t>(num_params.n_azimuth) + 1))) /
         2.0;
     auto const [polar_grid, azimuth_grid] = nc::meshgrid(polar_mids, azimuth_mids);
 
     RealArray squared_norms(polar_grid.shape());
-    std::ranges::transform(polar_grid, azimuth_grid, squared_norms.begin(),
-                           [&elv_spherical, num_params](double const polar, double const azimuth) -> double { return math::square(math::norm(elv_spherical(polar, azimuth, num_params.system_wavelength))); });
+    std::ranges::transform(polar_grid, azimuth_grid, squared_norms.begin(), [&elv_spherical, num_params](double const polar, double const azimuth) -> double
+        { return math::square(math::norm(elv_spherical(polar, azimuth, num_params.system_wavelength))); });
 
     // Reshape squared_norms back to match the grid shape (num_azimuth x num_polar)
     squared_norms = squared_norms.reshape(polar_grid.shape());
@@ -87,12 +89,13 @@ vec_t Radiator::get_elv_spherical_from_cartesian(pos_t const& pos_local, double 
 }
 
 double Radiator::calc_directivity_from_spherical(double polar, double azimuth, math::NumParams const& num_params) const
-{ return math::square(math::norm(elv_spherical(polar, azimuth, num_params.system_wavelength))) / calc_mean_squared_effective_length(elv_spherical, num_params); }
+{
+    return math::square(math::norm(elv_spherical(polar, azimuth, num_params.system_wavelength))) /
+        calc_mean_squared_effective_length(elv_spherical, num_params);
+}
 
 double Radiator::calc_directivity_from_cartesian(pos_t const& pos_local, math::NumParams const& num_params) const
 {
     auto const [r, polar, azimuth] = math::spherical_from_cartesian(pos_local);
     return calc_directivity_from_spherical(polar, azimuth, num_params);
 }
-
-complex_t Radiator::calc_path(std::size_t idx_input, std::size_t idx_output) { throw SimulationError("{} should not be called on a radiator", __func__); }

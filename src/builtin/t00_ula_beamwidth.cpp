@@ -54,7 +54,7 @@ namespace builtin
 
     BUILTIN_FUNCTION(t00_ula_beamwidth, Setup& setup_task)
     {
-        std::filesystem::path const dir_plot = std::filesystem::path(setup_task.name);
+        std::filesystem::path const dir_plot = std::filesystem::path(setup_task.name());
 
         std::string name = std::format("builtin.{}", __func__);
         std::println("Creating plot: {}", name);
@@ -65,8 +65,8 @@ namespace builtin
         std::vector<std::uint32_t> ns_elements;
         std::vector<double> beamwidths_axial;
         std::vector<double> beamwidths_lateral;
-        std::uint32_t n_elements_min = static_cast<std::uint32_t>(std::round(setup_task.variables.at("n_elements_min")));
-        std::uint32_t n_elements_max = static_cast<std::uint32_t>(std::round(setup_task.variables.at("n_elements_max")));
+        std::uint32_t n_elements_min = setup_task.get_int("n_elements_min");
+        std::uint32_t n_elements_max = setup_task.get_int("n_elements_max");
         for (std::uint32_t n_elements = n_elements_min; n_elements <= n_elements_max; n_elements++)
         {
             std::println("Calculating beamwidth for n={}", n_elements);
@@ -83,8 +83,8 @@ namespace builtin
                 json_rot["yaw"] = 0.0;
                 js_configured.at("antennas").at(0)["rot"] = json_rot;
                 auto const setup = Setup::from_json(js_configured);
-                num_params.system_wavelength = setup->variables.at("wavelength");
-                auto const distance = setup->variables.at("distance");
+                num_params.system_wavelength = setup->get_double("wavelength");
+                auto const distance = setup->get_double("distance");
                 auto& tx = setup->get_antenna("tx");
                 auto& rx = setup->get_antenna("rx");
                 auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
@@ -101,8 +101,8 @@ namespace builtin
                 json_rot["yaw"] = 0.0;
                 js_configured.at("antennas").at(0)["rot"] = json_rot;
                 auto const setup = Setup::from_json(js_configured);
-                num_params.system_wavelength = setup->variables.at("wavelength");
-                auto const distance = setup->variables.at("distance");
+                num_params.system_wavelength = setup->get_double("wavelength");
+                auto const distance = setup->get_double("distance");
                 auto& tx = setup->get_antenna("tx");
                 auto& rx = setup->get_antenna("rx");
                 auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);

@@ -4,9 +4,8 @@
 
 #pragma once
 
-#include <variant>
 #include <magic_enum/magic_enum.hpp>
-
+#include <variant>
 #include "components/uniformlineararray.hpp"
 #include "components/uniformplanararray.hpp"
 #include "scalarfield.hpp"
@@ -39,8 +38,20 @@ constexpr std::size_t get_variant_index()
 
 namespace antenna
 {
+    template <typename R>
+    concept AntennaContainer = std::ranges::range<R> && std::same_as<std::ranges::range_value_t<R>, Antenna>;
+
+    template <typename R>
+    concept RadiatorContainer = std::ranges::range<R> && std::same_as<std::ranges::range_value_t<R>, Radiator>;
+
     template <typename T>
     concept IsAntenna = std::same_as<std::decay_t<T>, Antenna>;
+
+    template <typename T>
+    constexpr bool is_array = std::disjunction_v<
+        std::is_same<std::decay_t<T>, UniformLinearArray>,
+        std::is_same<std::decay_t<T>, UniformPlanarArray>
+    >;
 
     constexpr std::string_view get_type_name(const Antenna& ant)
     {
@@ -48,14 +59,14 @@ namespace antenna
         return magic_enum::enum_name(active_enum);
     }
 
-    constexpr std::string_view get_id(Antenna const& antenna)
+    constexpr std::string const& id(Antenna const& antenna)
     {
-        return std::visit([](auto const& ant) -> std::string_view { return ant.id; }, antenna);
+        return std::visit([](auto& ant) -> std::string const& { return ant.id; }, antenna);
     }
 
-    constexpr Reference& get_origin(Antenna& antenna)
+    constexpr Reference* origin(Antenna& antenna)
     {
-        return std::visit([](auto const& ant) -> Reference& { return ant.origin; }, antenna);
+        return std::visit([](auto& ant) -> Reference* { return ant.origin; }, antenna);
     }
 
     template <typename T, IsAntenna A>
@@ -63,7 +74,7 @@ namespace antenna
     {
         if (auto specified = std::get_if<T>(&antenna); specified) { return *specified; }
         throw SimulationError("Antenna cast failed: {} has type {}, but {} was requested", static_cast<const void*>(&antenna), get_type_name(antenna),
-                              magic_enum::enum_name(static_cast<AntennaType>(get_variant_index<T, Antenna>())));
+            magic_enum::enum_name(static_cast<AntennaType>(get_variant_index<T, Antenna>())));
     }
 
     [[nodiscard]] complex_t calc_voltage_gain(Antenna const& tx, Antenna const& rx, math::NumParams const& num_params);
@@ -87,4 +98,37 @@ namespace antenna
      */
     [[nodiscard]] ScalarField<double> get_power_field(Antenna const& tx, Antenna& rx, math::NumParams const& num_params);
 
+    void resolve_origins(AntennaContainer auto& antennas, ReferenceContainer auto& references);
+    void resolve_origins(RadiatorContainer auto& radiators, ReferenceContainer auto& references);
+    [[nodiscard]] Antenna& get(AntennaContainer auto& antennas, std::string const& id);
+
 } // namespace antenna
+
+void antenna::resolve_origins(AntennaContainer auto& antennas, ReferenceContainer auto& references)
+{
+    for (Antenna& ant : antennas)
+    {
+        std::string const& origin_id = std::visit([](auto& a) -> std::string const& { return a.origin_id; }, ant);
+        Reference** origin = std::visit([](auto& a) -> Reference** { return &a.origin; }, ant);
+        auto const it = std::ranges::find(references, origin_id, &Reference::id);
+        if (it == references.end()) { throw SimulationError("Antenna '{}' has non-existing origin '{}'", id(ant), origin_id); }
+        *origin = std::to_address(it);
+    }
+}
+
+void antenna::resolve_origins(RadiatorContainer auto& radiators, ReferenceContainer auto& references)
+{
+    for (Radiator& rad : radiators)
+    {
+        auto const it = std::ranges::find(references, rad.origin_id, &Reference::id);
+        if (it == references.end()) { throw SimulationError("Antenna '{}' has non-existing origin '{}'", id(rad), rad.origin_id); }
+        rad.origin = std::to_address(it);
+    }
+}
+
+Antenna& antenna::get(AntennaContainer auto& antennas, std::string const& id)
+{
+    auto const it = std::ranges::find(antennas, id, [](auto& ant) { return std::visit([](auto& a) { return a.id; }, ant); });
+    if (it == antennas.end()) { throw SimulationError("Could not find antenna with id '{}'", id); }
+    return *it;
+}

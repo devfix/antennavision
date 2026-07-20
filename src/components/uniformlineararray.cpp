@@ -3,8 +3,8 @@
 //
 
 #include "components/uniformlineararray.hpp"
-
-UniformLinearArray::UniformLinearArray(std::string_view const id, Reference& origin, std::list<Radiator>&& elements, std::vector<complex_t>&& coeffs) :
-    RadiatorArray(id, origin, std::move(elements), std::move(coeffs))
-{}
-
+//
+// UniformLinearArray::UniformLinearArray(std::string_view const id, std::string const& origin_id, std::vector<Radiator>&& elements, std::vector<complex_t>&& coefficients) :
+//     RadiatorArray(id, origin_id, std::move(elements), std::move(coefficients))
+// {}
+//

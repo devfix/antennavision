@@ -21,7 +21,7 @@ void plot::plot_directivity_over_polar(Antenna const& antenna, RealArray const& 
         azimuth_angles_stream << std::format("{:.2f}", azimuth_angles.at(k) / nc::constants::pi);
         if (k < azimuth_angles.size() - 1) { azimuth_angles_stream << '_'; }
     }
-    std::string name = std::format("{}.{}.{}", __func__, antenna::get_id(antenna), azimuth_angles_stream.str());
+    std::string name = std::format("{}.{}.{}", __func__, antenna::id(antenna), azimuth_angles_stream.str());
     std::println("Creating plot: {}", name);
 
     ojson js;

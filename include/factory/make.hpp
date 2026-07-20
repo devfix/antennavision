@@ -17,13 +17,13 @@ namespace factory
         ojson &desc;
         std::map<std::string, var_t> variables;
         math::NumParams num_params;
-        std::list<Reference> references;
-        std::map<std::string, Antenna> antennas;
+        std::vector<Reference> references;
+        std::vector<Antenna> antennas;
         std::map<std::string, Geometry> geometries;
         std::list<std::pair<std::string, task_t>> tasks;
     };
 
-    Reference& make_reference(ojson& reference_desc, std::list<Reference>& references, std::map<std::string, var_t> const& variables);
+    [[nodiscard]] Reference make_reference(ojson& desc, Context const& context);
     [[nodiscard]] Antenna make_antenna(ojson& desc, Context& context);
     [[nodiscard]] Geometry make_geometry(ojson& desc, Context& context);
 } // namespace factory

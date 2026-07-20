@@ -23,29 +23,17 @@ TEST_CASE("ScalarField", "[ScalarField]")
     {
       "id": "ref_ula",
       "origin": "",
-      "rot": {
-        "roll": 0.0,
-        "pitch": 0.5,
-        "yaw": 0.0
-      }
+      "rot": { "roll": 0.0, "pitch": 0.5, "yaw": 0.0 }
     },
     {
       "id": "ref_rx_start",
       "origin": "",
-      "pos": {
-        "x": 0,
-        "y": "distance",
-        "z": "-distance/2"
-      }
+      "pos": [0, "distance", "-distance/2"]
     },
     {
       "id": "ref_rx_stop",
       "origin": "",
-      "pos": {
-        "x": 0,
-        "y": "distance",
-        "z": "distance/2"
-      }
+      "pos": [0, "distance", "distance/2"]
     }
   ],
   "antennas": [
@@ -55,11 +43,7 @@ TEST_CASE("ScalarField", "[ScalarField]")
       "ref": "ref_ula",
       "spacing": "wavelength * 0.5",
       "size": 16,
-      "rot": {
-        "roll": 0.0,
-        "pitch": -0.5,
-        "yaw": 0.0
-      },
+      "rot": { "roll": 0.0, "pitch": -0.5, "yaw": 0.0 },
       "radiator": {
         "type": "HertzianDipole"
       }
@@ -79,10 +63,10 @@ TEST_CASE("ScalarField", "[ScalarField]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    auto const distance = setup->variables.at("distance");
+    auto const distance = setup->get_double("distance");
     auto const& tx = setup->get_antenna("ula1");
     auto & rx = setup->get_antenna("receiver");
-    math::NumParams num_params{.system_wavelength = setup->variables.at("wavelength")};
+    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength")};
     auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
     {
         auto [pos_abs_max, _] = voltage_field.argmax_line_abs(pos_t(0, distance, -0.5*distance), pos_t(0, distance, 0.5*distance));

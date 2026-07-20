@@ -53,4 +53,16 @@ namespace factory
             }
         }
     }
+
+    template <any_json_t AnyJson>
+    void try_resolve_double_expressions(AnyJson& js, std::map<std::string, var_t> const& variables, std::string_view key = "")
+    {
+        try_resolve_expressions<double>(js, variables, key);
+    }
+
+    template <any_json_t AnyJson>
+    void try_resolve_int_expressions(AnyJson& js, std::map<std::string, var_t> const& variables, std::string_view key = "")
+    {
+        try_resolve_expressions<std::int64_t>(js, variables, key);
+    }
 } // namespace factory

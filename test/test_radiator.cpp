@@ -56,9 +56,9 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
 TEST_CASE("HertzianDipole", "[Radiator]")
 {
     math::NumParams num_params{.system_wavelength = 0.1};
-    Reference reference("", nullptr);
-    auto radiator = Radiator::HertzianDipole::create("HertzianDipole", reference);
-    REQUIRE_THROWS(radiator.calc_path(0, 0));
+    Reference reference;
+    auto radiator = Radiator::HertzianDipole::create("HertzianDipole", "");
+    radiator.origin = &reference;
 
     auto const thetas = nc::linspace(0.0, pi, 21);
     RealArray directivities_actual_phi0(thetas.shape());
@@ -74,9 +74,10 @@ TEST_CASE("HertzianDipole", "[Radiator]")
 TEST_CASE("HalfWaveDipole direct", "[Radiator]")
 {
     math::NumParams num_params{.system_wavelength = 0.1};
-    Reference reference("", nullptr);
-    auto radiator = Radiator::StandingWaveDipole::create("HalfWaveDipole", reference, 0.5 * num_params.system_wavelength);
-    REQUIRE_THROWS(radiator.calc_path(0, 0));
+    Reference reference;
+    auto radiator = Radiator::StandingWaveDipole::create("HalfWaveDipole", "", 0.5 * num_params.system_wavelength);
+    radiator.origin = &reference;
+    
 
     auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, num_params);
     REQUIRE(actual == Catch::Approx(1.640922388).margin(1e-3));
@@ -109,7 +110,7 @@ TEST_CASE("HalfWaveDipole via setup", "[Radiator]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.system_wavelength = setup->variables.at("wavelength")};
+    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength")};
     auto & antenna = setup->get_antenna("DUT");
     auto* radiator = std::get_if<Radiator>(&antenna);
     assert(radiator);
@@ -120,9 +121,10 @@ TEST_CASE("HalfWaveDipole via setup", "[Radiator]")
 TEST_CASE("FullWaveDipole direct", "[Radiator]")
 {
     math::NumParams num_params{.system_wavelength = 0.1};
-    Reference reference("", nullptr);
-    auto radiator = Radiator::StandingWaveDipole::create("FullWaveDipole", reference, 1.0 * num_params.system_wavelength);
-    REQUIRE_THROWS(radiator.calc_path(0, 0));
+    Reference reference;
+    auto radiator = Radiator::StandingWaveDipole::create("FullWaveDipole", "", 1.0 * num_params.system_wavelength);
+    radiator.origin = &reference;
+    
 
     auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, num_params);
     REQUIRE(actual == Catch::Approx(2.4116035252).margin(1e-3));
@@ -149,7 +151,7 @@ TEST_CASE("FullWaveDipole via setup", "[Radiator]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.system_wavelength = setup->variables.at("wavelength")};
+    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength")};
     auto & antenna = setup->get_antenna("DUT");
     auto* radiator = std::get_if<Radiator>(&antenna);
     assert(radiator);
@@ -160,9 +162,10 @@ TEST_CASE("FullWaveDipole via setup", "[Radiator]")
 TEST_CASE("3/2-WaveDipole direct", "[Radiator]")
 {
     math::NumParams num_params{.system_wavelength = 0.1};
-    Reference reference("", nullptr);
-    auto radiator = Radiator::StandingWaveDipole::create("3/2-WaveDipole", reference, 1.5 * num_params.system_wavelength);
-    REQUIRE_THROWS(radiator.calc_path(0, 0));
+    Reference reference;
+    auto radiator = Radiator::StandingWaveDipole::create("3/2-WaveDipole", "", 1.5 * num_params.system_wavelength);
+    radiator.origin = &reference;
+    
 
     auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, num_params);
     REQUIRE(actual == Catch::Approx(1.13750300493283).margin(1e-3));
@@ -195,7 +198,7 @@ TEST_CASE("3/2-WaveDipole via setup", "[Radiator]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.system_wavelength = setup->variables.at("wavelength")};
+    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength")};
     auto & antenna = setup->get_antenna("DUT");
     auto* radiator = std::get_if<Radiator>(&antenna);
     assert(radiator);

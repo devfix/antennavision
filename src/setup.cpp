@@ -21,59 +21,66 @@ using namespace ansi_color;
 
 namespace
 {
-    template <typename ContainerType>
-    ContainerType& json_get(ContainerType& js, std::string_view key)
-    {
-        factory::assert_key(js, key);
-        return js[key];
-    }
-
     void extract_variables(factory::Context& context)
     {
         if (!context.desc.contains("variables")) { return; }
-        for (auto& variables = context.desc.at("variables"); const auto& [raw_key, val] : variables.items())
+ for (auto& variables = context.desc.at("variables"); const auto& [raw_key, val] : variables.items())
         {
-            auto const colon_pos = raw_key.find(':');
-            auto const stripped_key = std::string_view(raw_key).substr(0, colon_pos);
-            auto const type = colon_pos == std::string_view::npos ? std::string_view() : stripped_key.substr(colon_pos + 1);
-            if (!type.empty() and type != "int") { throw SimulationError("Variable '{}' has invalid type specifier '{}'", stripped_key, type); }
-            std::string key(stripped_key);
-            if (val.is_string())
+            try
             {
-                if (type == "int") { context.variables[key] = factory::parse_int(val.get<std::string>(), context.variables); }
-                else
+                auto const colon_pos = raw_key.find(':');
+                auto const stripped_key = std::string_view(raw_key).substr(0, colon_pos);
+                auto const type = colon_pos == std::string_view::npos ? std::string_view() : stripped_key.substr(colon_pos + 1);
+                bool is_double = type.empty() or type == "double";
+                if (!is_double and type != "int") { throw SimulationError("Variable '{}' has invalid type specifier '{}'", stripped_key, type); }
+                std::string key(stripped_key);
+                if (val.is_string())
                 {
-                    context.variables[key] = factory::parse_double(val.get<std::string>(), context.variables);
-                }
-            }
-            else if (val.is_number_integer()) { context.variables[key] = val.get<std::int64_t>(); }
-            else if (val.is_number_float()) { context.variables[key] = val.get<double>(); }
-            else
-            {
-                throw SimulationError("Invalid type '{}' of variable '{}'", val.type_name(), stripped_key);
-            }
-            std::visit(
-                [&key](const auto& var)
-                {
-                    if constexpr (std::is_same_v<std::decay_t<decltype(var)>, std::int64_t>) { std::println("Define integer variable {}={}", key, var); }
+                    if (is_double) { context.variables.at(key) = factory::parse_double(val.get<std::string>(), context.variables); }
                     else
                     {
-                        std::println("Define floating-point variable {}={:.15g}", key, var);
+                        context.variables.at(key) = factory::parse_int(val.get<std::string>(), context.variables);
                     }
-                },
-                context.variables[key]);
+                }
+                else if (val.is_number())
+                {
+                    if (is_double) { context.variables.at(key) = val.get<double>(); }
+                    else
+                    {
+                        context.variables.at(key) = val.get<std::int64_t>();
+                    }
+                }
+                else
+                {
+                    throw SimulationError("Invalid type '{}' of variable '{}'", val.type_name(), stripped_key);
+                }
+                std::visit(
+                    [&key](const auto& var)
+                    {
+                        if constexpr (std::is_same_v<std::decay_t<decltype(var)>, std::int64_t>) { std::println("Define integer variable {}={}", key, var); }
+                        else
+                        {
+                            std::println("Define floating-point variable {}={:.15g}", key, var);
+                        }
+                    },
+                    context.variables.at(key));
+            }
+            catch (...)
+            {
+                std::throw_with_nested(SimulationError("Failed to process variable '{}'", raw_key));
+            }
         }
         context.desc.erase("variables");
     }
 
     void extract_references(factory::Context& context)
     {
-        context.references.emplace_back("", nullptr, pos_t(0, 0, 0), Quaternion(0, 0, 0)); // dummy reference to global origin
+        context.references.emplace_back(); // dummy reference to global origin
         if (!context.desc.contains("references")) { return; }
+        context.references.reserve(1 + context.desc.at("references").size());
         for (auto& references = context.desc.at("references"); auto& desc : references)
         {
-            factory::make_reference(desc, context.references, context.variables);
-            factory::assert_empty(desc);
+            context.references.push_back(factory::make_reference(desc, context));
         }
         context.desc.erase("references");
     }
@@ -81,12 +88,7 @@ namespace
     void extract_antennas(factory::Context& context)
     {
         if (!context.desc.contains("antennas")) { return; }
-        for (auto& antennas = context.desc.at("antennas"); auto& desc : antennas)
-        {
-            Antenna ant = factory::make_antenna(desc, context);
-            context.antennas.emplace(antenna::get_id(ant), std::move(ant));
-            factory::assert_empty(desc);
-        }
+        for (auto& antennas = context.desc.at("antennas"); auto& desc : antennas) { context.antennas.push_back(factory::make_antenna(desc, context)); }
         context.desc.erase("antennas");
     }
 
@@ -121,15 +123,15 @@ namespace
             {
                 auto azimuth_angles_vec = task_desc.at("azimuth_angles").get<std::vector<double>>();
                 auto azimuth_angles = RealArray(azimuth_angles_vec.size(), 1);
-                std::ranges::transform(azimuth_angles_vec, azimuth_angles.begin(), [](auto const v){return v* nc::constants::pi;});
-                Antenna const& ant = context.antennas.at(factory::get_string(task_desc, "antenna"));
-                task_name = std::format("{}.{}", type, antenna::get_id(ant));
+                std::ranges::transform(azimuth_angles_vec, azimuth_angles.begin(), [](auto const v) { return v * nc::constants::pi; });
+                Antenna const& ant = antenna::get(context.antennas, factory::get_string(task_desc, "antenna"));
+                task_name = std::format("{}.{}", type, antenna::id(ant));
                 context.tasks.emplace_back(task_name, [&ant, azimuth_angles] { plot::plot_directivity_over_polar(ant, azimuth_angles, {}); });
             }
             else if (type == "plot_gain_over_straight")
             {
-                Antenna const& tx = context.antennas.at(factory::get_string(task_desc, "tx"));
-                Antenna& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
+                Antenna const& tx = antenna::get(context.antennas, factory::get_string(task_desc, "tx"));
+                Antenna& rx = antenna::get(context.antennas, factory::get_string(task_desc, "rx"));
                 Reference& ref_start = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_start"));
                 Reference const& ref_stop = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_stop"));
                 double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
@@ -137,17 +139,16 @@ namespace
                 pos_t const pos_start = ref_start.global_pos();
                 pos_t const pos_end = ref_stop.global_pos();
                 auto power_field = antenna::get_voltage_field(tx, rx, num_params);
-                task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
+                task_name = std::format("{}.{}.{}", type, antenna::id(tx), antenna::id(rx));
                 context.tasks.emplace_back(task_name, [power_field, pos_start, pos_end] { plot::plot_gain_over_line(power_field, pos_start, pos_end); });
             }
             else if (type == "plot_voltage_field")
             {
-                auto const tx_id = factory::get_string(task_desc, "tx");
-                Antenna const& tx = context.antennas.at(tx_id);
-                Antenna& rx = context.antennas.at(factory::get_string(task_desc, "rx"));
+                Antenna const& tx = antenna::get(context.antennas, factory::get_string(task_desc, "tx"));
+                Antenna& rx = antenna::get(context.antennas, factory::get_string(task_desc, "rx"));
                 auto geo = context.geometries.at(factory::get_string(task_desc, "geometry"));
                 auto voltage_field = antenna::get_voltage_field(tx, rx, context.num_params);
-                task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
+                task_name = std::format("{}.{}.{}", type, antenna::id(tx), antenna::id(rx));
                 context.tasks.emplace_back(task_name, [voltage_field, geo] { plot::plot_field_over_geometry(voltage_field, geo); });
             }
             // else if (type == "plot_gain_over_sphere")
@@ -185,7 +186,7 @@ namespace
 std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeutil::timestamp_t const timestamp)
 {
     ojson setup_desc = js; // create a copy of the json object in order to decompose it
-    auto& metadata = json_get(setup_desc, "metadata");
+    auto& metadata = setup_desc.at("metadata");
     auto const setup_name = factory::get_string(metadata, "setup_name");
     std::println("Setup name: {}", setup_name);
     factory::assert_empty(metadata);
@@ -205,6 +206,17 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
     extract_variables(context);
     extract_references(context);
     extract_antennas(context);
+    Reference::resolve_origins(context.references);
+    antenna::resolve_origins(context.antennas, context.references);
+    for (auto& ant : context.antennas)
+    {
+        std::visit(
+            [&context](auto& a)
+            {
+                if constexpr (antenna::is_array<decltype(a)>) { antenna::resolve_origins(a.elements, context.references); }
+            },
+            ant);
+    }
     extract_geometries(context);
     extract_tasks(context);
     factory::assert_empty(context.desc);
@@ -227,10 +239,10 @@ void Setup::export_to_three(std::filesystem::path const& directory, std::string_
 {
     std::filesystem::path const p = directory / std::format("{}.objects.js", objects_name);
 
-    double const system_wavelength = num_params.system_wavelength;
+    double const system_wavelength = num_params_.system_wavelength;
 
     three::Container container;
-    for (auto const& reference : references)
+    for (auto const& reference : references_)
     {
         if (!reference.origin) { continue; } // we skip the dummy reference
         auto const pos_center = reference.global_from_local_pos(POS_ZERO);
@@ -243,14 +255,14 @@ void Setup::export_to_three(std::filesystem::path const& directory, std::string_
 
     auto add_radiator = [&container, &system_wavelength](Radiator const& radiator)
     {
-        auto pos_center = radiator.origin.global_from_local_pos(POS_ZERO);
+        auto pos_center = radiator.origin->global_from_local_pos(POS_ZERO);
         double const radiator_length = 0.49 * system_wavelength;
-        auto pos_end = radiator.origin.global_from_local_pos({0.0, 0.0, 0.5 * radiator_length});
+        auto pos_end = radiator.origin->global_from_local_pos({0.0, 0.0, 0.5 * radiator_length});
         auto const pos_start = pos_center - (pos_end - pos_center);
         double const radius = 0.1 * radiator_length;
         container.add(three::make_cylinder(pos_start, pos_end, radius, radius));
     };
-    for (const auto& antenna : antennas | std::views::values)
+    for (const auto& antenna : antennas_)
     {
         std::visit(
             [&](auto const& ant)
@@ -273,7 +285,7 @@ void Setup::export_to_three(std::filesystem::path const& directory, std::string_
 
 void Setup::run_tasks(std::function<void(std::string_view)> const& builtin_handler)
 {
-    for (auto& [task_name, task] : tasks)
+    for (auto& [task_name, task] : tasks_)
     {
         if (task_name.starts_with("builtin."))
         {
@@ -288,9 +300,9 @@ void Setup::run_tasks(std::function<void(std::string_view)> const& builtin_handl
     }
 }
 
-Reference& Setup::get_reference(std::string_view const id) { return factory::find_reference_by_id(references, id); }
+Reference& Setup::get_reference(std::string_view const id) { return factory::find_reference_by_id(references_, id); }
 
-Antenna& Setup::get_antenna(std::string const& id) { return antennas.at(id); }
+Antenna& Setup::get_antenna(std::string const& id) { return antenna::get(antennas_, id); }
 
 bool Setup::isUpToDate(std::filesystem::path const& path_timestamp) const
 {
@@ -298,10 +310,26 @@ bool Setup::isUpToDate(std::filesystem::path const& path_timestamp) const
 
     // we skip if the timestamps match and are non-zero
     // zero timestamps are used by the testing framework to force setup's tasks execution
-    return saved_timestamp && saved_timestamp == timestamp;
+    return saved_timestamp && saved_timestamp == timestamp_;
+}
+
+double Setup::get_double(std::string const& variable_name) const
+{
+    auto const var = variables_.at(variable_name);
+    auto const ptr = std::get_if<double>(&var);
+    if (!ptr) { throw SimulationError("Variable '{}' is not a double", variable_name); }
+    return *ptr;
+}
+
+std::int64_t Setup::get_int(std::string const& variable_name) const
+{
+    auto const var = variables_.at(variable_name);
+    auto const ptr = std::get_if<std::int64_t>(&var);
+    if (!ptr) { throw SimulationError("Variable '{}' is not an int", variable_name); }
+    return *ptr;
 }
 
 Setup::Setup(std::string_view const name, timeutil::timestamp_t const timestamp, factory::Context&& context) :
-    name(name), timestamp(timestamp), variables(std::move(context.variables)), num_params(context.num_params), references(std::move(context.references)), antennas(std::move(context.antennas)),
-    tasks(std::move(context.tasks))
+    name_(name), timestamp_(timestamp), variables_(std::move(context.variables)), num_params_(context.num_params), references_(std::move(context.references)),
+    antennas_(std::move(context.antennas)), tasks_(std::move(context.tasks))
 {}

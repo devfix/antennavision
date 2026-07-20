@@ -7,8 +7,6 @@
 #include <filesystem>
 #include <functional>
 #include <list>
-
-#include "components/source.hpp"
 #include "factory/find.hpp"
 #include "factory/make.hpp"
 #include "scalarfield.hpp"
@@ -29,17 +27,24 @@ struct Setup
 
     [[nodiscard]] bool isUpToDate(std::filesystem::path const& path_timestamp) const;
 
-    std::string const name;
-    timeutil::timestamp_t const timestamp;
-    std::map<std::string, var_t> const variables;
-    math::NumParams const num_params;
-    std::list<Reference> references;
-    std::map<std::string, Antenna> antennas;
-    std::list<std::pair<std::string, task_t>> const tasks;
+    [[nodiscard]] decltype(auto) name() const {return name_;}
+    [[nodiscard]] decltype(auto) variables() const {return variables_;}
+    [[nodiscard]] decltype(auto) antennas() const {return antennas_;}
 
-    std::vector<Source> sources;
-    std::vector<Component> inter_components;
+    [[nodiscard]] double get_double(std::string const& variable_name) const;
+    [[nodiscard]] std::int64_t get_int(std::string const& variable_name) const;
 
 private:
     Setup(std::string_view name, timeutil::timestamp_t timestamp, factory::Context&& context);
+
+    std::string name_;
+    timeutil::timestamp_t timestamp_;
+    std::map<std::string, var_t> variables_;
+    math::NumParams num_params_;
+    std::vector<Reference> references_;
+    std::vector<Antenna> antennas_;
+    std::list<std::pair<std::string, task_t>> tasks_;
+
+    // std::vector<Source> sources;
+    // std::vector<Component> inter_components;
 };

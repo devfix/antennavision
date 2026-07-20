@@ -19,44 +19,17 @@ TEST_CASE("setup without rotation", "[Setup]")
     {
       "id": "ref1",
       "origin": "",
-      "pos": {
-        "x": 1,
-        "y": 0,
-        "z": 0
-      },
-      "rot": {
-        "yaw": 0.0,
-        "pitch": 0.0,
-        "roll": 0.0
-      }
+      "pos": [1, 0, 0]
     },
     {
       "id": "ref2",
       "origin": "ref1",
-      "pos": {
-        "x": 0,
-        "y": 1,
-        "z": 0
-      },
-      "rot": {
-        "yaw": 0.0,
-        "pitch": 0.0,
-        "roll": 0.0
-      }
+      "pos": [0, 1, 0]
     },
     {
       "id": "ref3",
       "origin": "ref2",
-      "pos": {
-        "x": 0,
-        "y": 0,
-        "z": 1
-      },
-      "rot": {
-        "yaw": 0.0,
-        "pitch": 0.0,
-        "roll": 0.0
-      }
+      "pos": [0, 0, 1]
     }
   ]
 }
@@ -83,44 +56,20 @@ TEST_CASE("setup with rotation", "[Setup]")
     {
       "id": "ref1",
       "origin": "",
-      "pos": {
-        "x": 1,
-        "y": 0,
-        "z": 0
-      },
-      "rot": {
-        "yaw": 0.5,
-        "pitch": 0.0,
-        "roll": 0.0
-      }
+      "pos": [1, 0, 0],
+      "rot": { "yaw": 0.5, "pitch": 0.0, "roll": 0.0 }
     },
     {
       "id": "ref2",
       "origin": "ref1",
-      "pos": {
-        "x": 1,
-        "y": 0,
-        "z": 0
-      },
-      "rot": {
-        "yaw": 0.0,
-        "pitch": -0.5,
-        "roll": 0.0
-      }
+      "pos": [1, 0, 0],
+      "rot": { "yaw": 0.0, "pitch": -0.5, "roll": 0.0 }
     },
     {
       "id": "ref3",
       "origin": "ref2",
-      "pos": {
-        "x": 1,
-        "y": 0,
-        "z": 0
-      },
-      "rot": {
-        "yaw": -0.5,
-        "pitch": 0.0,
-        "roll": -0.5
-      }
+      "pos": [1, 0, 0],
+      "rot": { "yaw": -0.5, "pitch": 0.0, "roll": -0.5 }
     }
   ]
 }
@@ -155,13 +104,13 @@ TEST_CASE("setup context only variables", "[Setup]")
 }
 )JSON");
     auto const su = Setup::from_json(js);
-    REQUIRE(su->variables.at("x") == Catch::Approx(2.0));
-    REQUIRE(su->variables.at("y") == Catch::Approx(6.0));
-    REQUIRE(su->variables.at("z") == Catch::Approx(8.0));
-    REQUIRE(su->variables.at("phi") == Catch::Approx(2 * pi));
-    REQUIRE(su->variables.at("a") == Catch::Approx(1.0));
-    REQUIRE(su->variables.at("b") == Catch::Approx(3.0));
-    REQUIRE(su->variables.at("c") == Catch::Approx(-1.0));
+    REQUIRE(su->get_double("x") == Catch::Approx(2.0));
+    REQUIRE(su->get_double("y") == Catch::Approx(6.0));
+    REQUIRE(su->get_double("z") == Catch::Approx(8.0));
+    REQUIRE(su->get_double("phi") == Catch::Approx(2 * pi));
+    REQUIRE(su->get_double("a") == Catch::Approx(1.0));
+    REQUIRE(su->get_double("b") == Catch::Approx(3.0));
+    REQUIRE(su->get_double("c") == Catch::Approx(-1.0));
 }
 
 TEST_CASE("setup context with references", "[Setup]")
@@ -183,16 +132,8 @@ TEST_CASE("setup context with references", "[Setup]")
     {
       "id": "ref1",
       "origin": "",
-      "pos": {
-        "x": "x",
-        "y": "y",
-        "z": "z"
-      },
-      "rot": {
-        "yaw": "yaw",
-        "pitch": "pitch",
-        "roll": "roll"
-      }
+      "pos": ["x", "y", "z"],
+      "rot": { "yaw": "yaw", "pitch": "pitch", "roll": "roll" }
     }
   ]
 }
@@ -201,7 +142,7 @@ TEST_CASE("setup context with references", "[Setup]")
     REQUIRE(su->get_reference("ref1").pos.x == Catch::Approx(1.0));
     REQUIRE(su->get_reference("ref1").pos.y == Catch::Approx(2.0));
     REQUIRE(su->get_reference("ref1").pos.z == Catch::Approx(3.0));
-    REQUIRE(su->get_reference("ref1").rotation.yaw() == Catch::Approx(0.1 * pi));
-    REQUIRE(su->get_reference("ref1").rotation.pitch() == Catch::Approx(0.2 * pi));
-    REQUIRE(su->get_reference("ref1").rotation.roll() == Catch::Approx(0.3 * pi));
+    REQUIRE(su->get_reference("ref1").rot.yaw() == Catch::Approx(0.1 * pi));
+    REQUIRE(su->get_reference("ref1").rot.pitch() == Catch::Approx(0.2 * pi));
+    REQUIRE(su->get_reference("ref1").rot.roll() == Catch::Approx(0.3 * pi));
 }

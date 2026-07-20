@@ -30,11 +30,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
     {
       "id": "ref_ula",
       "origin": "",
-      "pos": {
-        "x": 0,
-        "y": "wavelength * 2",
-        "z": "wavelength * 2"
-      }
+      "pos": [0, "wavelength * 2", "wavelength * 2"]
     }
   ],
   "antennas": [
@@ -42,11 +38,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
       "type": "ULA",
       "id": "ula1",
       "ref": "ref_ula",
-      "rot": {
-        "roll": 0.5,
-        "pitch": 0.0,
-        "yaw": 0.5
-      },
+      "rot": { "roll": 0.5, "pitch": 0.0, "yaw": 0.5 },
       "spacing": "wavelength * 0.5",
       "size": 8,
       "radiator": {
@@ -57,7 +49,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    auto const wavelength = setup->variables.at("wavelength");
+    auto const wavelength = setup->get_double("wavelength");
     auto& ula = antenna::cast<UniformLinearArray>(setup->get_antenna("ula1"));
 
     // check ULA element references
@@ -89,29 +81,17 @@ TEST_CASE("ULA gain", "[TestULA]")
     {
       "id": "ref_ula",
       "origin": "",
-      "rot": {
-        "yaw": 0.0,
-        "pitch": -0.5,
-        "roll": 0.0
-      }
+      "rot": { "yaw": 0.0, "pitch": -0.5, "roll": 0.0}
     },
     {
       "id": "ref_rx_start",
       "origin": "",
-      "pos": {
-        "x": 0,
-        "y": "distance",
-        "z": "-distance/2"
-      }
+      "pos": [0, "distance", "-distance/2"]
     },
     {
       "id": "ref_rx_stop",
       "origin": "",
-      "pos": {
-        "x": 0,
-        "y": "distance",
-        "z": "distance/2"
-      }
+      "pos": [0, "distance", "distance/2"]
     }
   ],
   "antennas": [
@@ -139,15 +119,15 @@ TEST_CASE("ULA gain", "[TestULA]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.system_wavelength = setup->variables.at("wavelength")};
+    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength")};
     auto const& tx = setup->get_antenna("ula1");
     auto const& rx = setup->get_antenna("receiver");
     Reference& ref_start = setup->get_reference("ref_rx_start");
+    Reference const ref_start_initial = ref_start; // we make a copy
     Reference const& ref_stop = setup->get_reference("ref_rx_stop");
 
     constexpr std::size_t n_points = 11;
-    pos_t const pos_delta = ref_stop.pos - ref_start.pos_initial;
-    RealArray const rotation_delta = ref_stop.rotation.toNdArray() - ref_start.rotation.toNdArray();
+    pos_t const pos_delta = ref_stop.pos - ref_start_initial.pos;
     double const length = pos_delta.norm();
 
     std::vector<complex_t> gains(n_points, 0.0);
@@ -157,12 +137,11 @@ TEST_CASE("ULA gain", "[TestULA]")
     for (RealArray::index_type k = 0; k < n_points; k++)
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
-        ref_start.pos = ref_start.pos_initial + pos_delta * f;
-        ref_start.rotation = ref_start.rotation_initial.toNdArray() + rotation_delta * f;
+        ref_start.pos = ref_start_initial.pos + pos_delta * f;
         gains.at(k) = antenna::calc_voltage_gain(tx, rx, num_params);
         distances.at(k) = *distance_ptr;
     }
-    ref_start.reset();
+    ref_start.pos = ref_start_initial.pos;
 
     complex_t const gain_votage_abs_max = std::ranges::max(gains, {}, [](complex_t const& gain) -> double { return std::abs(gain); });
     REQUIRE(std::abs(gain_votage_abs_max) == Catch::Approx(0.00035809851155573));
@@ -247,13 +226,13 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.system_wavelength = setup->variables.at("wavelength"), .n_linear1 = 11};
+    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength"), .n_linear1 = 11};
     auto const& tx = setup->get_antenna("ula1");
     auto& rx = setup->get_antenna("receiver");
     Reference const& ref_stop = setup->get_reference("ref_rx_stop");
     auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
 
-    pos_t const pos_start = antenna::get_origin(rx).global_pos();
+    pos_t const pos_start = antenna::origin(rx)->global_pos();
     pos_t const pos_end = ref_stop.global_pos();
 
     auto [distances, variant_gains] = voltage_field.eval_line(pos_start, pos_end);

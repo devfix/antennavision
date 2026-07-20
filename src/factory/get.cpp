@@ -83,9 +83,10 @@ namespace factory
         assert_key(js, key);
         if (js.at(key).is_string())
         {
-            auto const val = static_cast<std::uint32_t>(std::round(variables.at(js.at(key).get<std::string>())));
+            auto const val = std::get_if<std::int64_t>(&variables.at(js.at(key)));
+            assert(val);
             if (remove) { js.erase(key); }
-            return val;
+            return *val;
         }
         if (js.at(key).is_number_integer())
         {

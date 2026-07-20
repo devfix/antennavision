@@ -6,14 +6,19 @@
 
 #include "components/radiatorarray.hpp"
 
+/**
+ * Class "UniformPlanarArray" of Aggregate Type
+ * Also known as POD (Plain Old Data) / PDS (Passive Data Structure) / DTO (Data Transfer Object)
+ */
 struct UniformPlanarArray : RadiatorArray<UniformPlanarArray>
 {
-    UniformPlanarArray(std::string_view id, Reference& origin, std::list<Radiator>&& elements, std::vector<complex_t>&& coeffs, std::size_t size_x, std::size_t size_y);
+    constexpr Radiator& operator()(std::size_t x, std::size_t y) { return elements.at(y * size_x + x); }
 
-    constexpr Radiator& operator()(std::size_t const x, std::size_t const y) const { return *element_lookup[y * size_x + x]; }
+    Reference& get_reference(std::size_t x, std::size_t y) { auto const ptr = (*this)(x, y).origin;
+        if (!ptr) { throw SimulationError("Element {}:{} UniformPlanarArray '{}' has unconfigured origin", x, y, id); }
+        return *ptr;
+    }
 
-    constexpr Reference& get_reference(std::size_t const x, std::size_t const y) const { return (*this)(x, y).origin; }
-
-    std::size_t const size_x;
-    std::size_t const size_y;
+    std::size_t size_x{};
+    std::size_t size_y{};
 };

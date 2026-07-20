@@ -6,8 +6,18 @@
 
 #include "components/radiatorarray.hpp"
 
+/**
+ * Class "UniformLinearArray" of Aggregate Type
+ * Also known as POD (Plain Old Data) / PDS (Passive Data Structure) / DTO (Data Transfer Object)
+ */
 struct UniformLinearArray : RadiatorArray<UniformLinearArray>
 {
-    UniformLinearArray(std::string_view id, Reference& origin, std::list<Radiator>&& elements, std::vector<complex_t>&& coeffs);
-    constexpr Reference& get_reference(std::size_t const idx) const { return (*this)(idx).origin; }
+    constexpr Radiator& operator()(std::size_t idx) { return elements.at(idx); }
+
+    Reference& get_reference(std::size_t idx)
+    {
+        auto const ptr = elements.at(idx).origin;
+        if (!ptr) { throw SimulationError("Element {} UniformLinearArray '{}' has unconfigured origin", idx, id); }
+        return *ptr;
+    }
 };

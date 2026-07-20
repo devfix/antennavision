@@ -6,6 +6,7 @@
 
 #include "types.hpp"
 #include <string_view>
+#include "reference.hpp"
 #include "simulationerror.hpp"
 
 namespace serialization
@@ -23,3 +24,10 @@ namespace serialization
     template <any_json_t JsonType>
     void assert_structure(JsonType const& js, std::string_view structure_name, std::vector<JsonField> const& mandatory, std::vector<JsonField> const& optional);
 } // namespace serialization
+
+template <any_json_t JsonType>
+void to_json(JsonType& j, Reference const& ref);
+
+template <any_json_t JsonType>
+void from_json(JsonType const& j, Reference& ref);
+
