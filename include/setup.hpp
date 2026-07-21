@@ -27,9 +27,15 @@ struct Setup
 
     [[nodiscard]] bool isUpToDate(std::filesystem::path const& path_timestamp) const;
 
-    [[nodiscard]] decltype(auto) name() const {return name_;}
-    [[nodiscard]] decltype(auto) variables() const {return variables_;}
-    [[nodiscard]] decltype(auto) antennas() const {return antennas_;}
+    [[nodiscard]] std::string const& name() const { return name_; }
+
+    [[nodiscard]] std::map<std::string, var_t> const& variables() const { return variables_; }
+
+    [[nodiscard]] math::NumParams const& num_params() const { return num_params_; }
+
+    [[nodiscard]] std::span<const Reference> references() const { return references_; }
+
+    [[nodiscard]] std::span<const Antenna> antennas() const { return antennas_; }
 
     [[nodiscard]] double get_double(std::string const& variable_name) const;
     [[nodiscard]] std::int64_t get_int(std::string const& variable_name) const;
@@ -44,7 +50,4 @@ private:
     std::vector<Reference> references_;
     std::vector<Antenna> antennas_;
     std::list<std::pair<std::string, task_t>> tasks_;
-
-    // std::vector<Source> sources;
-    // std::vector<Component> inter_components;
 };

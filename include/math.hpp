@@ -7,28 +7,33 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
-#include <optional>
 #include <nlohmann/json_fwd.hpp>
+#include <optional>
 #include "types.hpp"
 
 namespace math
 {
     struct NumParams
     {
-        double system_wavelength = 0.1;
-        std::size_t n_polar = 101;
-        std::size_t n_azimuth = 201;
-        std::size_t n_linear1 = 101;
-        std::size_t n_linear2 = 101;
-        double xtol_rel = 1e-8;
-        double ftol_rel = 1e-8;
+        double system_wavelength{};
+        std::size_t n_polar{};
+        std::size_t n_azimuth{};
+        std::size_t n_linear1{};
+        std::size_t n_linear2{};
+        double xtol_rel{};
+        double ftol_rel{};
+
+        [[nodiscard]] static NumParams configure(NumParams const& num_params);
+        void check() const;
     };
 
-    template <any_json_t JsonType>
-    void to_json(JsonType& j, NumParams const& num_params);
+    NumParams constexpr DEFAULT_NUM_PARAMS = {.n_polar = 101, .n_azimuth = 201, .n_linear1 = 101, .n_linear2 = 101, .xtol_rel = 1e-8, .ftol_rel = 1e-8};
 
     template <any_json_t JsonType>
-    void from_json(JsonType const& j, NumParams& num_params);
+    void to_json(JsonType& js, NumParams const& num_params);
+
+    template <any_json_t JsonType>
+    void from_json(JsonType const& js, NumParams& num_params);
 
     struct OptParams
     {
@@ -134,7 +139,8 @@ namespace math
     std::optional<std::size_t> find_closest_index(const Container& container, T target)
     {
         if (container.empty()) { return std::nullopt; }
-        auto it = std::min_element(std::begin(container), std::end(container),[target](const T& a, const T& b) { return std::abs(a - target) < std::abs(b - target); });
+        auto it = std::min_element(
+            std::begin(container), std::end(container), [target](const T& a, const T& b) { return std::abs(a - target) < std::abs(b - target); });
         return std::distance(std::begin(container), it);
     }
 } // namespace math

@@ -4,14 +4,9 @@
 
 #pragma once
 
-#include <concepts>
 #include "simulationerror.hpp"
 #include "types.hpp"
 
-struct Reference; // forward declaration
-
-template <typename R>
-concept ReferenceContainer = container_t<R, Reference>;
 
 /**
  * Class "Reference" of Aggregate Type
@@ -34,7 +29,7 @@ struct Reference
      * @param target_id id of the target references that shall be returned
      * @return reference to matching reference
      */
-    [[nodiscard]] static Reference& get(ReferenceContainer auto& references, std::string const& target_id);
+    [[nodiscard]] static Reference& get(std::span<Reference> references, std::string const& target_id);
 
     /**
      * Interconnect all references, i.d., resolving non-empty origins ".origin_id" ids to their actual pointer ".origin".
@@ -62,10 +57,3 @@ struct Reference
     // last argument since optional for brace-initializer list
     Reference* origin{}; /// pointer to the origin
 };
-
-Reference& Reference::get(ReferenceContainer auto& references, std::string const& target_id)
-{
-    auto const it = std::ranges::find(references, target_id, &Reference::id);
-    if (it == references.end()) { throw SimulationError("Could not find reference with id '{}'", target_id); }
-    return *it;
-}

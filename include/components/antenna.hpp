@@ -40,11 +40,6 @@ constexpr std::size_t get_variant_index()
 
 namespace antenna
 {
-    template <typename R>
-    concept RadiatorContainer = container_t<R, Radiator>;
-    template <typename R>
-    concept AntennaContainer = container_t<R, Antenna>;
-
     template <typename T>
     concept IsAntenna = std::same_as<std::decay_t<T>, Antenna>;
 

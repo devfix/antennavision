@@ -15,8 +15,13 @@ TEST_CASE("ScalarField", "[ScalarField]")
   "metadata": {
     "setup_name": "test-ula"
   },
+  "num_params": {
+    "system_wavelength": 0.1,
+    "n_polar": 101,
+    "n_azimuth": 201,
+    "n_linear1": 101
+  },
   "variables": {
-    "wavelength": 0.1,
     "distance": 100
   },
   "references": [
@@ -41,7 +46,7 @@ TEST_CASE("ScalarField", "[ScalarField]")
       "type": "ULA",
       "id": "ula1",
       "ref": "ref_ula",
-      "spacing": "wavelength * 0.5",
+      "spacing": "system_wavelength * 0.5",
       "size": 16,
       "rot": { "roll": 0, "pitch": "-0.5*pi", "yaw": 0 },
       "radiator": {
@@ -66,8 +71,7 @@ TEST_CASE("ScalarField", "[ScalarField]")
     auto const distance = setup->get_double("distance");
     auto const& tx = setup->get_antenna("ula1");
     auto & rx = setup->get_antenna("receiver");
-    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength")};
-    auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
+    auto voltage_field = antenna::get_voltage_field(tx, rx, setup->num_params());
     {
         auto [pos_abs_max, _] = voltage_field.argmax_line_abs(pos_t(0, distance, -0.5*distance), pos_t(0, distance, 0.5*distance));
         REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));

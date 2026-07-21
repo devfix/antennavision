@@ -21,8 +21,24 @@ using namespace ansi_color;
 
 namespace
 {
+    void extract_num_params(factory::Context& context)
+    {
+        if (std::string_view constexpr key("num_params"); context.desc.contains(key))
+        {
+            context.desc.at(key).get_to(context.num_params);
+            context.desc.erase(key);
+        }
+        // else
+        // {
+        //     std::println("{}No numerical parameters specified, using default configuration{}", ansi_color::fg4::bright_yellow, ansi_color::reset);
+        // }
+    }
+
     void extract_variables(factory::Context& context)
     {
+        // we always provide the system wavelength as a variable for convenience
+        context.variables["system_wavelength"] = context.num_params.system_wavelength;
+
         if (!context.desc.contains("variables")) { return; }
         for (auto& variables = context.desc.at("variables"); const auto& [raw_key, val] : variables.items())
         {
@@ -194,24 +210,16 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
     setup_desc.erase("metadata");
 
     factory::Context context{.desc = setup_desc};
-    if (setup_desc.contains("num_params"))
-    {
-        setup_desc.at("num_params").get_to(context.num_params);
-        setup_desc.erase("num_params");
-    }
-    else
-    {
-        std::println("{}No numerical parameters specified, using default configuration{}", ansi_color::fg4::bright_yellow, ansi_color::reset);
-    }
-
+    extract_num_params(context);
     extract_variables(context);
     extract_references(context);
     extract_antennas(context);
-    Reference::resolve_origins(context.references);
-    antenna::resolve_origins(context.antennas, context.references);
     extract_geometries(context);
     extract_tasks(context);
     factory::assert_empty(context.desc);
+
+    Reference::resolve_origins(context.references);
+    antenna::resolve_origins(context.antennas, context.references);
 
     // ReSharper disable once CppDFAMemoryLeak
     return std::unique_ptr<Setup>(new Setup(setup_name, timestamp, std::move(context)));

@@ -21,16 +21,15 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
     "setup_name": "test-ula"
   },
   "num_params": {
-    "wavelength": 0.1
-  },
-  "variables": {
-    "wavelength": 0.1
+    "system_wavelength": 0.1,
+    "n_polar": 101,
+    "n_azimuth": 201
   },
   "references": [
     {
       "id": "ref_ula",
       "origin": "",
-      "pos": [0, "wavelength * 2", "wavelength * 2"]
+      "pos": [0, "system_wavelength * 2", "system_wavelength * 2"]
     }
   ],
   "antennas": [
@@ -39,7 +38,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
       "id": "ula1",
       "ref": "ref_ula",
       "rot": { "roll": "0.5*pi", "pitch": 0, "yaw": "0.5*pi" },
-      "spacing": "wavelength * 0.5",
+      "spacing": "system_wavelength * 0.5",
       "size": 8,
       "radiator": {
         "type": "HertzianDipole"
@@ -49,7 +48,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    auto const wavelength = setup->get_double("wavelength");
+    auto const& wavelength = setup->num_params().system_wavelength;
     auto& ula = antenna::cast<UniformLinearArray>(setup->get_antenna("ula1"));
 
     // check ULA element references
@@ -73,8 +72,12 @@ TEST_CASE("ULA gain", "[TestULA]")
   "metadata": {
     "setup_name": "test-ula"
   },
+  "num_params": {
+    "system_wavelength": 0.1,
+    "n_polar": 101,
+    "n_azimuth": 201
+  },
   "variables": {
-    "wavelength": 0.1,
     "distance": 100
   },
   "references": [
@@ -99,7 +102,7 @@ TEST_CASE("ULA gain", "[TestULA]")
       "type": "ULA",
       "id": "ula1",
       "ref": "ref_ula",
-      "spacing": "wavelength * 0.5",
+      "spacing": "system_wavelength * 0.5",
       "size": 3,
       "rot": { "yaw": 0, "pitch": "0.5*pi", "roll": 0 },
       "radiator": {
@@ -115,7 +118,6 @@ TEST_CASE("ULA gain", "[TestULA]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength")};
     auto const& tx = setup->get_antenna("ula1");
     auto const& rx = setup->get_antenna("receiver");
     Reference& ref_start = setup->get_reference("ref_rx_start");
@@ -134,7 +136,7 @@ TEST_CASE("ULA gain", "[TestULA]")
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         ref_start.pos = ref_start_initial.pos + pos_delta * f;
-        gains.at(k) = antenna::calc_voltage_gain(tx, rx, num_params);
+        gains.at(k) = antenna::calc_voltage_gain(tx, rx, setup->num_params());
         distances.at(k) = *distance_ptr;
     }
     ref_start.pos = ref_start_initial.pos;
@@ -164,8 +166,13 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
   "metadata": {
     "setup_name": "test-ula"
   },
+  "num_params": {
+    "system_wavelength": 0.1,
+    "n_polar": 101,
+    "n_azimuth": 201,
+    "n_linear1": 11
+  },
   "variables": {
-    "wavelength": 0.1,
     "distance": 100
   },
   "references": [
@@ -190,7 +197,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
       "type": "ULA",
       "id": "ula1",
       "ref": "ref_ula",
-      "spacing": "wavelength * 0.5",
+      "spacing": "system_wavelength * 0.5",
       "size": 3,
       "rot": { "yaw": 0, "pitch": "0.5*pi", "roll": 0 },
       "radiator": {
@@ -206,11 +213,10 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength"), .n_linear1 = 11};
     auto const& tx = setup->get_antenna("ula1");
     auto& rx = setup->get_antenna("receiver");
     Reference const& ref_stop = setup->get_reference("ref_rx_stop");
-    auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
+    auto voltage_field = antenna::get_voltage_field(tx, rx, setup->num_params());
 
     pos_t const pos_start = antenna::get_origin(rx)->global_pos();
     pos_t const pos_end = ref_stop.global_pos();

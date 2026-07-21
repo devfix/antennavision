@@ -3,13 +3,13 @@
 //
 
 #include "components/radiator.hpp"
+#include <print>
+#include <string>
+#include <utility>
 #include <NumCpp/Functions/linspace.hpp>
 #include <NumCpp/Functions/meshgrid.hpp>
 #include <NumCpp/Functions/sin.hpp>
 #include <NumCpp/Functions/sum.hpp>
-#include <print>
-#include <string>
-#include <utility>
 #include "factory/get.hpp"
 #include "factory/make.hpp"
 #include "math.hpp"
@@ -55,6 +55,7 @@ vec_t Radiator::get_elv_spherical_standing_wave(double const dipole_length, doub
 
 double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, math::NumParams const& num_params)
 {
+    num_params.check();
     auto const polar_edges = nc::linspace(0.0, pi, num_params.n_polar + 1);
     auto const azimuth_edges = nc::linspace(0.0, 2.0 * pi, num_params.n_azimuth + 1);
     auto const d_polar = pi / static_cast<double>(num_params.n_polar);

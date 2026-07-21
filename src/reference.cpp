@@ -64,6 +64,13 @@ pos_t Reference::localize(Reference const& reference) const { return local_from_
 
 pos_t Reference::global_pos() const { return global_from_local_pos(POS_ZERO); }
 
+Reference& Reference::get(std::span<Reference> references, std::string const& target_id)
+{
+    auto const it = std::ranges::find(references, target_id, &Reference::id);
+    if (it == references.end()) { throw SimulationError("Could not find reference with id '{}'", target_id); }
+    return *it;
+}
+
 void Reference::resolve_origins(std::span<Reference> refs)
 {
     std::vector<Reference*> ref_vec = refs | std::views::transform([](Reference& ref) { return std::addressof(ref); }) | std::ranges::to<std::vector>();

@@ -17,7 +17,7 @@ double constexpr DIPOLE_LENGTH = 1e-3;
 TEST_CASE("Mean squared effective length", "[Radiator]")
 {
     double constexpr wavelength = 0.1;
-    math::NumParams num_params{.system_wavelength = wavelength};
+    auto num_params = math::NumParams::configure({.system_wavelength = wavelength, .n_polar = 101, .n_azimuth = 201});
     // Hertzian Dipole
     {
         Radiator::elv_spherical_t elv_sherical = [](double const polar, double, double) -> nc::NdArray<complex_t> { return {0, -DIPOLE_LENGTH * std::sin(polar), 0}; };
@@ -55,7 +55,7 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
 
 TEST_CASE("HertzianDipole", "[Radiator]")
 {
-    math::NumParams num_params{.system_wavelength = 0.1};
+    auto num_params = math::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     Reference reference;
     auto radiator = Radiator::HertzianDipole::create("HertzianDipole", "");
     radiator.origin = &reference;
@@ -73,12 +73,11 @@ TEST_CASE("HertzianDipole", "[Radiator]")
 
 TEST_CASE("HalfWaveDipole direct", "[Radiator]")
 {
-    math::NumParams num_params{.system_wavelength = 0.1};
+    auto num_params = math::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     Reference reference;
     auto radiator = Radiator::StandingWaveDipole::create("HalfWaveDipole", "", 0.5 * num_params.system_wavelength);
     radiator.origin = &reference;
     
-
     auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, num_params);
     REQUIRE(actual == Catch::Approx(1.640922388).margin(1e-3));
 }
@@ -90,8 +89,10 @@ TEST_CASE("HalfWaveDipole via setup", "[Radiator]")
   "metadata": {
     "setup_name": "test-radiator"
   },
-  "variables": {
-    "wavelength": 0.1
+  "num_params": {
+    "system_wavelength": 0.1,
+    "n_polar": 101,
+    "n_azimuth": 201
   },
   "references": [
     {
@@ -104,23 +105,22 @@ TEST_CASE("HalfWaveDipole via setup", "[Radiator]")
       "type": "StandingWaveDipole",
       "id": "DUT",
       "ref": "",
-      "dipole_length": "0.5*wavelength"
+      "dipole_length": "0.5*system_wavelength"
     }
   ]
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength")};
     auto & antenna = setup->get_antenna("DUT");
     auto* radiator = std::get_if<Radiator>(&antenna);
     assert(radiator);
-    auto const actual = radiator->calc_directivity_from_spherical(0.5 * pi, 0, num_params);
+    auto const actual = radiator->calc_directivity_from_spherical(0.5 * pi, 0, setup->num_params());
     REQUIRE(actual == Catch::Approx(1.640922388).margin(1e-3));
 }
 
 TEST_CASE("FullWaveDipole direct", "[Radiator]")
 {
-    math::NumParams num_params{.system_wavelength = 0.1};
+    auto num_params = math::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     Reference reference;
     auto radiator = Radiator::StandingWaveDipole::create("FullWaveDipole", "", 1.0 * num_params.system_wavelength);
     radiator.origin = &reference;
@@ -137,36 +137,36 @@ TEST_CASE("FullWaveDipole via setup", "[Radiator]")
   "metadata": {
     "setup_name": "test-radiator"
   },
-  "variables": {
-    "wavelength": 0.1
+  "num_params": {
+    "system_wavelength": 0.1,
+    "n_polar": 101,
+    "n_azimuth": 201
   },
   "antennas": [
     {
       "type": "StandingWaveDipole",
       "id": "DUT",
       "ref": "",
-      "dipole_length": "1.0*wavelength"
+      "dipole_length": "1.0*system_wavelength"
     }
   ]
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength")};
     auto & antenna = setup->get_antenna("DUT");
     auto* radiator = std::get_if<Radiator>(&antenna);
     assert(radiator);
-    auto const actual = radiator->calc_directivity_from_spherical(0.5 * pi, 0, num_params);
+    auto const actual = radiator->calc_directivity_from_spherical(0.5 * pi, 0, setup->num_params());
     REQUIRE(actual == Catch::Approx(2.4116035252).margin(1e-3));
 }
 
 TEST_CASE("3/2-WaveDipole direct", "[Radiator]")
 {
-    math::NumParams num_params{.system_wavelength = 0.1};
+    auto num_params = math::NumParams::configure({.system_wavelength = 0.1,.n_polar = 101,.n_azimuth = 201});
     Reference reference;
     auto radiator = Radiator::StandingWaveDipole::create("3/2-WaveDipole", "", 1.5 * num_params.system_wavelength);
     radiator.origin = &reference;
     
-
     auto const actual = radiator.calc_directivity_from_spherical(0.5 * pi, 0, num_params);
     REQUIRE(actual == Catch::Approx(1.13750300493283).margin(1e-3));
 }
@@ -178,8 +178,10 @@ TEST_CASE("3/2-WaveDipole via setup", "[Radiator]")
   "metadata": {
     "setup_name": "test-radiator"
   },
-  "variables": {
-    "wavelength": 0.1
+  "num_params": {
+    "system_wavelength": 0.1,
+    "n_polar": 101,
+    "n_azimuth": 201
   },
   "references": [
     {
@@ -192,16 +194,15 @@ TEST_CASE("3/2-WaveDipole via setup", "[Radiator]")
       "type": "StandingWaveDipole",
       "id": "DUT",
       "ref": "",
-      "dipole_length": "1.5*wavelength"
+      "dipole_length": "1.5*system_wavelength"
     }
   ]
 }
 )JSON");
     auto const setup = Setup::from_json(js);
-    math::NumParams num_params{.system_wavelength = setup->get_double("wavelength")};
     auto & antenna = setup->get_antenna("DUT");
     auto* radiator = std::get_if<Radiator>(&antenna);
     assert(radiator);
-    auto const actual = radiator->calc_directivity_from_spherical(0.5 * pi, 0, num_params);
+    auto const actual = radiator->calc_directivity_from_spherical(0.5 * pi, 0, setup->num_params());
     REQUIRE(actual == Catch::Approx(1.13750300493283).margin(1e-3));
 }

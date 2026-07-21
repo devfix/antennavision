@@ -32,8 +32,6 @@ using ojson = nlohmann::ordered_json;
 using json = nlohmann::json;
 template <typename T>
 concept any_json_t = std::same_as<std::decay_t<T>, json> || std::same_as<std::decay_t<T>, ojson>;
-template <typename R, typename T>
-concept container_t = std::ranges::range<R> && std::convertible_to<std::ranges::range_reference_t<R>, const T&>;
 
 // mathematical and physical constants
 constexpr double pi = std::numbers::pi;
