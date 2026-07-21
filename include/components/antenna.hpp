@@ -5,6 +5,7 @@
 #pragma once
 
 #include <magic_enum/magic_enum.hpp>
+#include <span>
 #include <variant>
 #include "components/uniformlineararray.hpp"
 #include "components/uniformplanararray.hpp"
@@ -19,6 +20,7 @@ enum struct AntennaType // must be same order as in Antenna
     UniformLinearArray,
     UniformPlanarArray
 };
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename T, typename Variant>
@@ -39,38 +41,39 @@ constexpr std::size_t get_variant_index()
 namespace antenna
 {
     template <typename R>
-    concept AntennaContainer = std::ranges::range<R> && std::same_as<std::ranges::range_value_t<R>, Antenna>;
-
+    concept RadiatorContainer = container_t<R, Radiator>;
     template <typename R>
-    concept RadiatorContainer = std::ranges::range<R> && std::same_as<std::ranges::range_value_t<R>, Radiator>;
+    concept AntennaContainer = container_t<R, Antenna>;
 
     template <typename T>
     concept IsAntenna = std::same_as<std::decay_t<T>, Antenna>;
 
     template <typename T>
-    constexpr bool is_array = std::disjunction_v<
-        std::is_same<std::decay_t<T>, UniformLinearArray>,
-        std::is_same<std::decay_t<T>, UniformPlanarArray>
-    >;
+    constexpr bool is_array = std::disjunction_v<std::is_same<std::decay_t<T>, UniformLinearArray>, std::is_same<std::decay_t<T>, UniformPlanarArray>>;
 
-    constexpr std::string_view get_type_name(const Antenna& ant)
+    [[nodiscard]] constexpr std::string_view get_type_name(const Antenna& ant)
     {
         auto active_enum = static_cast<AntennaType>(ant.index());
         return magic_enum::enum_name(active_enum);
     }
 
-    constexpr std::string const& id(Antenna const& antenna)
+    [[nodiscard]] constexpr std::string const& get_id(Antenna const& antenna)
     {
         return std::visit([](auto& ant) -> std::string const& { return ant.id; }, antenna);
     }
 
-    constexpr Reference* origin(Antenna& antenna)
+    [[nodiscard]] constexpr std::string const& get_origin_id(Antenna& antenna)
     {
-        return std::visit([](auto& ant) -> Reference* { return ant.origin; }, antenna);
+        return std::visit([](auto& ant) -> std::string const& { return ant.origin_id; }, antenna);
+    }
+
+    [[nodiscard]] constexpr Reference*& get_origin(Antenna& antenna)
+    {
+        return std::visit([](auto& ant) -> Reference*& { return ant.origin; }, antenna);
     }
 
     template <typename T, IsAntenna A>
-    constexpr decltype(auto) cast(A& antenna)
+    [[nodiscard]] constexpr decltype(auto) cast(A& antenna)
     {
         if (auto specified = std::get_if<T>(&antenna); specified) { return *specified; }
         throw SimulationError("Antenna cast failed: {} has type {}, but {} was requested", static_cast<const void*>(&antenna), get_type_name(antenna),
@@ -98,37 +101,48 @@ namespace antenna
      */
     [[nodiscard]] ScalarField<double> get_power_field(Antenna const& tx, Antenna& rx, math::NumParams const& num_params);
 
-    void resolve_origins(AntennaContainer auto& antennas, ReferenceContainer auto& references);
-    void resolve_origins(RadiatorContainer auto& radiators, ReferenceContainer auto& references);
-    [[nodiscard]] Antenna& get(AntennaContainer auto& antennas, std::string const& id);
+    /**
+     * Interconnect all antennas to their reference, i.d., resolving the origins ".origin_id" ids to their actual pointer ".origin".
+     * If an antenna is a RadiatorArray, the function recurses for each array element.
+     * Important: After this function call, the references must remain at their memory location.
+     * Otherwise, the pointers become invalid which will cause segmentations faults.
+     * This function is idempotent.
+     * @param antennas std::span of antennas that get interconnected
+     * @param references std::span of references that are provided for the antennas and looked through
+     */
+    void resolve_origins(std::span<Antenna> antennas, std::span<Reference> references);
+
+    /**
+     * Interconnect all radiators to their reference, i.d., resolving the origins ".origin_id" ids to their actual pointer ".origin".
+     * Important: After this function call, the references must remain at their memory location.
+     * Otherwise, the pointers become invalid which will cause segmentations faults.
+     * This function is idempotent.
+     * @param radiators std::span of radiators that get interconnected
+     * @param references std::span of references that are provided for the antennas and looked through
+     */
+    void resolve_origins(std::span<Radiator> radiators, std::span<Reference> references);
+
+    /**
+     * Interconnect all antennas to their reference, i.d., resolving the origins ".origin_id" ids to their actual pointer ".origin".
+     * If an antenna is a RadiatorArray, the function recurses for each array element.
+     * Important: After this function call, the references must remain at their memory location.
+     * Otherwise, the pointers become invalid which will cause segmentations faults.
+     * This function is idempotent.
+     * @param antennas std::initializer_list of antennas that get interconnected
+     * @param references std::initializer_list of references that are provided for the antennas and looked through
+     */
+    void resolve_origins(std::initializer_list<std::reference_wrapper<Antenna>> antennas, std::initializer_list<std::reference_wrapper<Reference>> references);
+
+    /**
+     * Interconnect all radiators to their reference, i.d., resolving the origins ".origin_id" ids to their actual pointer ".origin".
+     * Important: After this function call, the references must remain at their memory location.
+     * Otherwise, the pointers become invalid which will cause segmentations faults.
+     * This function is idempotent.
+     * @param radiators std::initializer_list of radiators that get interconnected
+     * @param references std::initializer_list of references that are provided for the antennas and looked through
+     */
+    void resolve_origins(std::initializer_list<std::reference_wrapper<Radiator>> radiators, std::initializer_list<std::reference_wrapper<Reference>> references);
+
+    [[nodiscard]] Antenna& get(std::span<Antenna> antennas, std::string const& id);
 
 } // namespace antenna
-
-void antenna::resolve_origins(AntennaContainer auto& antennas, ReferenceContainer auto& references)
-{
-    for (Antenna& ant : antennas)
-    {
-        std::string const& origin_id = std::visit([](auto& a) -> std::string const& { return a.origin_id; }, ant);
-        Reference** origin = std::visit([](auto& a) -> Reference** { return &a.origin; }, ant);
-        auto const it = std::ranges::find(references, origin_id, &Reference::id);
-        if (it == references.end()) { throw SimulationError("Antenna '{}' has non-existing origin '{}'", id(ant), origin_id); }
-        *origin = std::to_address(it);
-    }
-}
-
-void antenna::resolve_origins(RadiatorContainer auto& radiators, ReferenceContainer auto& references)
-{
-    for (Radiator& rad : radiators)
-    {
-        auto const it = std::ranges::find(references, rad.origin_id, &Reference::id);
-        if (it == references.end()) { throw SimulationError("Antenna '{}' has non-existing origin '{}'", id(rad), rad.origin_id); }
-        rad.origin = std::to_address(it);
-    }
-}
-
-Antenna& antenna::get(AntennaContainer auto& antennas, std::string const& id)
-{
-    auto const it = std::ranges::find(antennas, id, [](auto& ant) { return std::visit([](auto& a) { return a.id; }, ant); });
-    if (it == antennas.end()) { throw SimulationError("Could not find antenna with id '{}'", id); }
-    return *it;
-}

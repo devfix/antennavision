@@ -23,7 +23,7 @@ namespace factory
     template <typename ContainerType>
     auto& find_radiator_by_id(ContainerType&& radiators, std::string_view const id)
     {
-        if (auto const it = std::ranges::find_if(radiators, [id](auto const& radiator) { return antenna::id(radiator) == id; });
+        if (auto const it = std::ranges::find_if(radiators, [id](auto const& radiator) { return antenna::get_id(radiator) == id; });
             it != radiators.end())
         {
             return **it;

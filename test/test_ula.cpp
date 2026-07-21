@@ -38,7 +38,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
       "type": "ULA",
       "id": "ula1",
       "ref": "ref_ula",
-      "rot": { "roll": 0.5, "pitch": 0.0, "yaw": 0.5 },
+      "rot": { "roll": "0.5*pi", "pitch": 0, "yaw": "0.5*pi" },
       "spacing": "wavelength * 0.5",
       "size": 8,
       "radiator": {
@@ -81,7 +81,7 @@ TEST_CASE("ULA gain", "[TestULA]")
     {
       "id": "ref_ula",
       "origin": "",
-      "rot": { "yaw": 0.0, "pitch": -0.5, "roll": 0.0}
+      "rot": { "yaw": 0, "pitch": "-0.5*pi", "roll": 0}
     },
     {
       "id": "ref_rx_start",
@@ -101,11 +101,7 @@ TEST_CASE("ULA gain", "[TestULA]")
       "ref": "ref_ula",
       "spacing": "wavelength * 0.5",
       "size": 3,
-      "rot": {
-        "yaw": 0.0,
-        "pitch": 0.5,
-        "roll": 0.0
-      },
+      "rot": { "yaw": 0, "pitch": "0.5*pi", "roll": 0 },
       "radiator": {
         "type": "HertzianDipole"
       }
@@ -176,29 +172,17 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
     {
       "id": "ref_ula",
       "origin": "",
-      "rot": {
-        "yaw": 0.0,
-        "pitch": -0.5,
-        "roll": 0.0
-      }
+      "rot": { "yaw": 0, "pitch": "-0.5*pi", "roll": 0 }
     },
     {
       "id": "ref_rx_start",
       "origin": "",
-      "pos": {
-        "x": 0,
-        "y": "distance",
-        "z": "-distance/2"
-      }
+      "pos": [0, "distance", "-distance/2"]
     },
     {
       "id": "ref_rx_stop",
       "origin": "",
-      "pos": {
-        "x": 0,
-        "y": "distance",
-        "z": "distance/2"
-      }
+      "pos": [0, "distance", "distance/2"]
     }
   ],
   "antennas": [
@@ -208,11 +192,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
       "ref": "ref_ula",
       "spacing": "wavelength * 0.5",
       "size": 3,
-      "rot": {
-        "yaw": 0.0,
-        "pitch": 0.5,
-        "roll": 0.0
-      },
+      "rot": { "yaw": 0, "pitch": "0.5*pi", "roll": 0 },
       "radiator": {
         "type": "HertzianDipole"
       }
@@ -232,7 +212,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
     Reference const& ref_stop = setup->get_reference("ref_rx_stop");
     auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
 
-    pos_t const pos_start = antenna::origin(rx)->global_pos();
+    pos_t const pos_start = antenna::get_origin(rx)->global_pos();
     pos_t const pos_end = ref_stop.global_pos();
 
     auto [distances, variant_gains] = voltage_field.eval_line(pos_start, pos_end);

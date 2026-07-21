@@ -103,7 +103,7 @@ namespace nlohmann {
             double const roll = js.at("roll").template get<double>();
             double const pitch = js.at("pitch").template get<double>();
             double const yaw = js.at("yaw").template get<double>();
-            value = Quaternion(roll * pi, pitch * pi, yaw * pi);
+            value = Quaternion(roll, pitch, yaw);
         }
         else {
             throw JsonType::type_error::create(

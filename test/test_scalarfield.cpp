@@ -23,7 +23,7 @@ TEST_CASE("ScalarField", "[ScalarField]")
     {
       "id": "ref_ula",
       "origin": "",
-      "rot": { "roll": 0.0, "pitch": 0.5, "yaw": 0.0 }
+      "rot": { "roll": 0, "pitch": "0.5*pi", "yaw": 0 }
     },
     {
       "id": "ref_rx_start",
@@ -43,7 +43,7 @@ TEST_CASE("ScalarField", "[ScalarField]")
       "ref": "ref_ula",
       "spacing": "wavelength * 0.5",
       "size": 16,
-      "rot": { "roll": 0.0, "pitch": -0.5, "yaw": 0.0 },
+      "rot": { "roll": 0, "pitch": "-0.5*pi", "yaw": 0 },
       "radiator": {
         "type": "HertzianDipole"
       }

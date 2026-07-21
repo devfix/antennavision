@@ -57,19 +57,19 @@ TEST_CASE("setup with rotation", "[Setup]")
       "id": "ref1",
       "origin": "",
       "pos": [1, 0, 0],
-      "rot": { "yaw": 0.5, "pitch": 0.0, "roll": 0.0 }
+      "rot": { "yaw": "0.5*pi", "pitch": 0, "roll": 0 }
     },
     {
       "id": "ref2",
       "origin": "ref1",
       "pos": [1, 0, 0],
-      "rot": { "yaw": 0.0, "pitch": -0.5, "roll": 0.0 }
+      "rot": { "yaw": 0, "pitch": "-0.5*pi", "roll": 0 }
     },
     {
       "id": "ref3",
       "origin": "ref2",
       "pos": [1, 0, 0],
-      "rot": { "yaw": -0.5, "pitch": 0.0, "roll": -0.5 }
+      "rot": { "yaw": "-0.5*pi", "pitch": 0, "roll": "-0.5*pi" }
     }
   ]
 }
@@ -124,9 +124,9 @@ TEST_CASE("setup context with references", "[Setup]")
     "x": 1.0,
     "y": 2.0,
     "z": 3.0,
-    "yaw": 0.1,
-    "pitch": 0.2,
-    "roll": 0.3
+    "yaw": "0.1*pi",
+    "pitch": "0.2*pi",
+    "roll": "0.3*pi"
   },
   "references": [
     {

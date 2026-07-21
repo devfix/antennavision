@@ -24,7 +24,7 @@ namespace
     void extract_variables(factory::Context& context)
     {
         if (!context.desc.contains("variables")) { return; }
- for (auto& variables = context.desc.at("variables"); const auto& [raw_key, val] : variables.items())
+        for (auto& variables = context.desc.at("variables"); const auto& [raw_key, val] : variables.items())
         {
             try
             {
@@ -36,18 +36,19 @@ namespace
                 std::string key(stripped_key);
                 if (val.is_string())
                 {
-                    if (is_double) { context.variables.at(key) = factory::parse_double(val.get<std::string>(), context.variables); }
+                    if (is_double) { context.variables[key] = factory::parse_double(val.get<std::string>(), context.variables); }
                     else
                     {
-                        context.variables.at(key) = factory::parse_int(val.get<std::string>(), context.variables);
+                        context.variables[key] = factory::parse_int(val.get<std::string>(), context.variables);
                     }
                 }
                 else if (val.is_number())
                 {
-                    if (is_double) { context.variables.at(key) = val.get<double>(); }
+                    if (is_double) { context.variables[key] = val.is_number_float() ? val.get<double>() : static_cast<double>(val.get<std::int64_t>()); }
                     else
                     {
-                        context.variables.at(key) = val.get<std::int64_t>();
+                        context.variables[key] =
+                            val.is_number_float() ? static_cast<std::int64_t>(std::roundl(val.get<long double>())) : val.get<std::int64_t>();
                     }
                 }
                 else
@@ -125,7 +126,7 @@ namespace
                 auto azimuth_angles = RealArray(azimuth_angles_vec.size(), 1);
                 std::ranges::transform(azimuth_angles_vec, azimuth_angles.begin(), [](auto const v) { return v * nc::constants::pi; });
                 Antenna const& ant = antenna::get(context.antennas, factory::get_string(task_desc, "antenna"));
-                task_name = std::format("{}.{}", type, antenna::id(ant));
+                task_name = std::format("{}.{}", type, antenna::get_id(ant));
                 context.tasks.emplace_back(task_name, [&ant, azimuth_angles] { plot::plot_directivity_over_polar(ant, azimuth_angles, {}); });
             }
             else if (type == "plot_gain_over_straight")
@@ -139,7 +140,7 @@ namespace
                 pos_t const pos_start = ref_start.global_pos();
                 pos_t const pos_end = ref_stop.global_pos();
                 auto power_field = antenna::get_voltage_field(tx, rx, num_params);
-                task_name = std::format("{}.{}.{}", type, antenna::id(tx), antenna::id(rx));
+                task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
                 context.tasks.emplace_back(task_name, [power_field, pos_start, pos_end] { plot::plot_gain_over_line(power_field, pos_start, pos_end); });
             }
             else if (type == "plot_voltage_field")
@@ -148,7 +149,7 @@ namespace
                 Antenna& rx = antenna::get(context.antennas, factory::get_string(task_desc, "rx"));
                 auto geo = context.geometries.at(factory::get_string(task_desc, "geometry"));
                 auto voltage_field = antenna::get_voltage_field(tx, rx, context.num_params);
-                task_name = std::format("{}.{}.{}", type, antenna::id(tx), antenna::id(rx));
+                task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
                 context.tasks.emplace_back(task_name, [voltage_field, geo] { plot::plot_field_over_geometry(voltage_field, geo); });
             }
             // else if (type == "plot_gain_over_sphere")
@@ -208,15 +209,6 @@ std::unique_ptr<Setup> Setup::from_json(nlohmann::ordered_json const& js, timeut
     extract_antennas(context);
     Reference::resolve_origins(context.references);
     antenna::resolve_origins(context.antennas, context.references);
-    for (auto& ant : context.antennas)
-    {
-        std::visit(
-            [&context](auto& a)
-            {
-                if constexpr (antenna::is_array<decltype(a)>) { antenna::resolve_origins(a.elements, context.references); }
-            },
-            ant);
-    }
     extract_geometries(context);
     extract_tasks(context);
     factory::assert_empty(context.desc);

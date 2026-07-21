@@ -11,7 +11,7 @@
 struct Reference; // forward declaration
 
 template <typename R>
-concept ReferenceContainer = std::ranges::range<R> && std::same_as<std::ranges::range_value_t<R>, Reference>;
+concept ReferenceContainer = container_t<R, Reference>;
 
 /**
  * Class "Reference" of Aggregate Type
@@ -27,7 +27,6 @@ struct Reference
     [[nodiscard]] vec_t global_from_local_vec(vec_t const& vec_local) const;
     [[nodiscard]] pos_t localize(Reference const& reference) const;
     [[nodiscard]] pos_t global_pos() const;
-    void reset();
 
     /**
      * Search a reference by id and return reference to it
@@ -38,10 +37,22 @@ struct Reference
     [[nodiscard]] static Reference& get(ReferenceContainer auto& references, std::string const& target_id);
 
     /**
-     * Interconnect the references in a container, i.d., resolving non-empty origin ".origin_id" ids to their actual pointer ".origin"
-     * @param references std::ranges::range that hold References
+     * Interconnect all references, i.d., resolving non-empty origins ".origin_id" ids to their actual pointer ".origin".
+     * Important: After this function call, the references must remain at their memory location.
+     * Otherwise, the pointers become invalid which will cause segmentations faults.
+     * This function is idempotent.
+     * @param refs std::span that holds the references
      */
-    static void resolve_origins(ReferenceContainer auto& references);
+    static void resolve_origins(std::span<Reference> refs);
+
+    /**
+     * Interconnect all references, i.d., resolving non-empty origins ".origin_id" ids to their actual pointer ".origin".
+     * Important: After this function call, the references must remain at their memory location.
+     * Otherwise, the pointers become invalid which will cause segmentations faults.
+     * This function is idempotent.
+     * @param refs std::initializer_list that holds the references
+     */
+    static void resolve_origins(std::initializer_list<std::reference_wrapper<Reference>> refs);
 
     std::string id; /// identifier name for the reference
     std::string origin_id; /// name of the origin, may be empty string
@@ -57,16 +68,4 @@ Reference& Reference::get(ReferenceContainer auto& references, std::string const
     auto const it = std::ranges::find(references, target_id, &Reference::id);
     if (it == references.end()) { throw SimulationError("Could not find reference with id '{}'", target_id); }
     return *it;
-}
-
-void Reference::resolve_origins(ReferenceContainer auto& references)
-{
-    for (Reference& ref : references)
-    {
-        if (ref.origin_id.length() != 0)
-        {
-            if (ref.id == ref.origin_id) { throw SimulationError("Reference '{}' has itself as the origin", ref.id); }
-            ref.origin = &Reference::get(references, ref.origin_id);
-        }
-    }
 }

@@ -53,10 +53,10 @@ TEST_CASE("reference with yaw and pitch", "[Reference]")
 TEST_CASE("cascaded references without rotation", "[CascadedReferences]")
 {
     std::list<Reference> refs;
-    Reference &ref1= refs.emplace_back("ref1", "", pos_t{1, 0, 0}, Quaternion{0, 0, 0});
-    Reference &ref2= refs.emplace_back("ref2", "ref1", pos_t{0, 1, 0}, Quaternion{0, 0, 0});
-    Reference &ref3= refs.emplace_back("ref3", "ref2", pos_t{0, 0, 1}, Quaternion{0, 0, 0});
-    Reference::resolve_origins(refs);
+    Reference ref1("ref1", "", pos_t{1, 0, 0}, Quaternion{0, 0, 0});
+    Reference ref2("ref2", "ref1", pos_t{0, 1, 0}, Quaternion{0, 0, 0});
+    Reference ref3("ref3", "ref2", pos_t{0, 0, 1}, Quaternion{0, 0, 0});
+    Reference::resolve_origins({ref1, ref2, ref3});
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);
@@ -67,10 +67,10 @@ TEST_CASE("cascaded references without rotation", "[CascadedReferences]")
 TEST_CASE("cascaded references with rotation", "[CascadedReferences]")
 {
     std::list<Reference> refs;
-    Reference &ref1 = refs.emplace_back("ref1", "", pos_t{1, 0, 0}, Quaternion{0, 0, pi / 2});
-    Reference &ref2 = refs.emplace_back("ref2", "ref1", pos_t{1, 0, 0}, Quaternion{0, -pi / 2, 0});
-    Reference &ref3 = refs.emplace_back("ref3", "ref2", pos_t{1, 0, 0}, Quaternion{-pi / 2, 0, -pi / 2});
-    Reference::resolve_origins(refs);
+    Reference ref1("ref1", "", pos_t{1, 0, 0}, Quaternion{0, 0, pi / 2});
+    Reference ref2("ref2", "ref1", pos_t{1, 0, 0}, Quaternion{0, -pi / 2, 0});
+    Reference ref3("ref3", "ref2", pos_t{1, 0, 0}, Quaternion{-pi / 2, 0, -pi / 2});
+    Reference::resolve_origins({ref1, ref2, ref3});
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);

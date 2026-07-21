@@ -3,6 +3,7 @@
 //
 
 #include "reference.hpp"
+#include <ranges>
 #include "math.hpp"
 #include "simulationerror.hpp"
 
@@ -10,7 +11,21 @@ namespace
 {
     void assert_origin(Reference const* ref)
     {
-        if (ref->origin_id.length() != 0 && ref->origin == nullptr) { throw SimulationError("Reference '{}' has unconfigured origin '{}'", ref->id, ref->origin_id); }
+        if (ref->origin_id.length() != 0 && ref->origin == nullptr) { throw SimulationError("Reference '{}' has unresolved origin '{}'", ref->id, ref->origin_id); }
+    }
+
+    void resolve_origins_impl(std::span<Reference*> references)
+    {
+        for (Reference* ref : references)
+        {
+            if (ref->origin_id.length() != 0)
+            {
+                if (ref->id == ref->origin_id) { throw SimulationError("Reference '{}' has itself as the origin", ref->id); }
+                auto const it = std::ranges::find(references, ref->origin_id, [](Reference* ref) -> std::string const& { return ref->id; });
+                if (it == references.end()) { throw SimulationError("Reference '{}' has non-existing origin '{}'", ref->id, ref->origin_id); }
+                ref->origin = *it;
+            }
+        }
     }
 } // namespace
 
@@ -49,4 +64,14 @@ pos_t Reference::localize(Reference const& reference) const { return local_from_
 
 pos_t Reference::global_pos() const { return global_from_local_pos(POS_ZERO); }
 
-void Reference::reset() { throw std::runtime_error("REMOVE THIS FUNCTION"); }
+void Reference::resolve_origins(std::span<Reference> refs)
+{
+    std::vector<Reference*> ref_vec = refs | std::views::transform([](Reference& ref) { return std::addressof(ref); }) | std::ranges::to<std::vector>();
+    resolve_origins_impl(ref_vec);
+}
+
+void Reference::resolve_origins(std::initializer_list<std::reference_wrapper<Reference>> refs)
+{
+    std::vector<Reference*> ref_vec = refs | std::views::transform([](Reference& ref) { return std::addressof(ref); }) | std::ranges::to<std::vector>();
+    resolve_origins_impl(ref_vec);
+}
