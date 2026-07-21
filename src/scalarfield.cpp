@@ -34,7 +34,7 @@ template <typename ScalarType>
 std::pair<pos_t, double> ScalarField<ScalarType>::argmax_arc_abs(geometry::CircleArc const& arc) const
 {
     math::OptParams const params{[&](double angle) -> double { return -std::abs(field(arc.get_pos(angle), num_params.system_wavelength)); },
-                                 -0.5 * arc.angle_span(), 0.5 * arc.angle_span(), num_params};
+                                 -0.5 * arc.angle_span, 0.5 * arc.angle_span, num_params};
     auto [angle_max, f_min] = math::f_min(params);
     pos_t pos_max = arc.get_pos(angle_max);
     return {pos_max, std::abs(field(pos_max, num_params.system_wavelength))};
@@ -44,18 +44,18 @@ template <typename ScalarType>
 std::pair<pos_t, double> ScalarField<ScalarType>::calc_beamwidth(geometry::CircleArc const& arc, double const ratio) const
 {
     auto const [pos_beam, intensity] = argmax_arc_abs(arc);
-    auto circle_hpbw = geometry::CircleArc(arc.center(), arc.normal(), pos_beam - arc.center(), arc.radius(), arc.angle_span());
+    auto circle_hpbw = geometry::CircleArc("", arc.center, arc.normal, pos_beam - arc.center, POS_ZERO, arc.radius, arc.angle_span).normalized();
     math::OptParams const params{[&](double const angle) -> double
                                  {
                                      pos_t const pos = circle_hpbw.get_pos(angle);
                                      return math::square(std::abs(field(pos, num_params.system_wavelength)) - ratio * intensity);
                                  },
-                                 0.0, 0.5 * arc.angle_span(), num_params};
+                                 0.0, 0.5 * arc.angle_span, num_params};
     auto [angle1, eps1] = math::f_min(params);
 
-    circle_hpbw = circle_hpbw.rotate(-0.5 * arc.angle_span());
+    circle_hpbw = circle_hpbw.rotate(-0.5 * arc.angle_span);
     auto [angle2_inv, eps2] = math::f_min(params);
-    double angle2 = 0.5 * arc.angle_span() - angle2_inv;
+    double angle2 = 0.5 * arc.angle_span - angle2_inv;
 
     return {pos_beam, angle1 + angle2};
 }
@@ -85,12 +85,12 @@ std::tuple<PositionArray, SurfacePositionArray, std::variant<RealArray, ComplexA
     {
         std::print("k_ax2 = {:04d} / {:04d}\n", k_ax2, num_params.n_linear2);
         double const f_ax2 = static_cast<double>(k_ax2) / static_cast<double>(num_params.n_linear2 - 1);
-        double const y = (f_ax2 - 0.5) * rectangle.height();
+        double const y = (f_ax2 - 0.5) * rectangle.height;
         for (RealArray::index_type k_ax1 = 0; k_ax1 < num_params.n_linear1; k_ax1++)
         {
             double const f_ax1 = static_cast<double>(k_ax1) / static_cast<double>(num_params.n_linear1 - 1);
-            double const x = (f_ax1 - 0.5) * rectangle.width();
-            auto const pos = rectangle.center() + x * rectangle.e1() + y * rectangle.e2();
+            double const x = (f_ax1 - 0.5) * rectangle.width;
+            auto const pos = rectangle.center + x * rectangle.e1 + y * rectangle.e2;
             positions(k_ax2, k_ax1) = pos;
             surface_positions(k_ax2, k_ax1) = {x, y};
             values(k_ax2, k_ax1) = field(pos, num_params.system_wavelength);
@@ -113,7 +113,7 @@ std::tuple<PositionArray, SurfacePositionArray, std::variant<RealArray, ComplexA
         double const f_polar = static_cast<double>(k_polar) / static_cast<double>(num_params.n_polar - 1);
 
         // Map to polar angle offset: theta in [-polar/2, polar/2]
-        double const polar = (f_polar - 0.5) * sr.polar_span();
+        double const polar = (f_polar - 0.5) * sr.polar_span;
         double const sin_polar = std::sin(polar);
         double const cos_polar = std::cos(polar);
 
@@ -123,15 +123,15 @@ std::tuple<PositionArray, SurfacePositionArray, std::variant<RealArray, ComplexA
             double const f_azimuth = static_cast<double>(k_azimuth) / static_cast<double>(num_params.n_azimuth - 1);
 
             // Map to azimuthal angle offset: phi in [-azimuth/2, azimuth/2]
-            double const azimuth = (f_azimuth - 0.5) * sr.azimuth_span();
+            double const azimuth = (f_azimuth - 0.5) * sr.azimuth_span;
             double const sin_azimuth = std::sin(azimuth);
             double const cos_azimuth = std::cos(azimuth);
 
             // Compute local unit vector on the sphere's surface relative to the sphere center
-            auto const local_normal = cos_polar * cos_azimuth * sr.normal() + cos_polar * sin_azimuth * sr.e1() + sin_polar * sr.e2();
+            auto const local_normal = cos_polar * cos_azimuth * sr.normal + cos_polar * sin_azimuth * sr.e1 + sin_polar * sr.e2;
 
             // Project outward to the sphere's surface
-            auto const pos = sr.center() + sr.radius() * local_normal;
+            auto const pos = sr.center + sr.radius * local_normal;
 
             positions(k_polar, k_azimuth) = pos;
             surface_positions(k_polar, k_azimuth) = {azimuth, polar};

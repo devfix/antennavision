@@ -7,7 +7,6 @@
 #include <nlohmann/json.hpp>
 #include "setup.hpp"
 
-
 TEST_CASE("ScalarField", "[ScalarField]")
 {
     ojson const js = ojson::parse(R"JSON(
@@ -70,19 +69,19 @@ TEST_CASE("ScalarField", "[ScalarField]")
     auto const setup = Setup::from_json(js);
     auto const distance = setup->get_double("distance");
     auto const& tx = setup->get_antenna("ula1");
-    auto & rx = setup->get_antenna("receiver");
+    auto& rx = setup->get_antenna("receiver");
     auto voltage_field = antenna::get_voltage_field(tx, rx, setup->num_params());
     {
-        auto [pos_abs_max, _] = voltage_field.argmax_line_abs(pos_t(0, distance, -0.5*distance), pos_t(0, distance, 0.5*distance));
+        auto [pos_abs_max, _] = voltage_field.argmax_line_abs(pos_t(0, distance, -0.5 * distance), pos_t(0, distance, 0.5 * distance));
         REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
     }
     {
-        geometry::CircleArc arc(POS_ZERO, pos_t(1.0, 0.0, 0.0), pos_t(0.0, distance, 0), distance, 0.5*pi);
+        auto arc = geometry::CircleArc("", POS_ZERO, pos_t(1.0, 0.0, 0.0), pos_t(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
         auto [pos_abs_max, _] = voltage_field.argmax_arc_abs(arc);
         REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
     }
     {
-        geometry::CircleArc arc(POS_ZERO, pos_t(1.0, 0.0, 0.0), pos_t(0.0, 1.0, 0.0), distance, 0.5*pi);
+        auto arc = geometry::CircleArc("", POS_ZERO, pos_t(1.0, 0.0, 0.0), pos_t(0.0, 1.0, 0.0), POS_ZERO, distance, 0.5 * pi).normalized();
         auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(arc, sqrt2_2);
         REQUIRE(beamwidth == Catch::Approx(0.11053292584412225));
     }

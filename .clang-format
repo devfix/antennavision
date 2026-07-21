@@ -55,7 +55,7 @@ SpacesInCStyleCastParentheses: false
 SpacesInParentheses: false
 TabWidth: 4
 
-# devfix changes:
+# === devfix changes ===
 SeparateDefinitionBlocks: Always
 AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: true
@@ -64,5 +64,13 @@ AllowShortLambdasOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: true
 PointerAlignment: Left
 AlignAfterOpenBracket: DontAlign
+
+# Do not attempt to pack arguments onto a single line if they are already broken up
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+# Keeps function call arguments on separate lines if wrapped
+BinPackArguments: false
+BinPackParameters: false
 
 ...
