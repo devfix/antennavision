@@ -54,7 +54,19 @@ namespace geometry
 
     template <any_json_t JsonType>
     void to_json(JsonType& js, CircleArc const& c)
-    { js = JsonType{{"center", c.center}, {"normal", c.normal}, {"e1", c.e1}, {"e2", c.e2}, {"radius", c.radius}, {"angle_span", c.angle_span}}; }
+    {
+        js = JsonType{
+            //
+            {"id", c.id},
+            {"center", c.center},
+            {"normal", c.normal},
+            {"e1", c.e1},
+            {"e2", c.e2},
+            {"radius", c.radius},
+            {"angle_span", c.angle_span}
+            //
+        };
+    }
 
     template <any_json_t JsonType>
     void from_json(JsonType const& js, CircleArc& c)
@@ -62,13 +74,14 @@ namespace geometry
         serialization::assert_structure(js,
             "geometry::CircleArc",
             {
-                {"center", json::value_t::object},
-                {"normal", json::value_t::object},
-                {"e1", json::value_t::object},
+                {"id", json::value_t::string},
+                {"center", json::value_t::array},
+                {"normal", json::value_t::array},
+                {"e1", json::value_t::array},
                 {"radius", json::value_t::number_float},
                 {"angle_span", json::value_t::number_float},
             },
-            {{"e2", json::value_t::object}});
+            {{"e2", json::value_t::array}});
         c = CircleArc{js.at("id").template get<std::string>(),
             js.at("center").template get<pos_t>(),
             js.at("normal").template get<pos_t>(),
@@ -81,7 +94,19 @@ namespace geometry
 
     template <any_json_t JsonType>
     void to_json(JsonType& js, Rectangle const& r)
-    { js = JsonType{{"center", r.center}, {"normal", r.normal}, {"e1", r.e1}, {"e2", r.e2}, {"width", r.width}, {"height", r.height}}; }
+    {
+        js = JsonType{
+            //
+            {"id", r.id},
+            {"center", r.center},
+            {"normal", r.normal},
+            {"e1", r.e1},
+            {"e2", r.e2},
+            {"width", r.width},
+            {"height", r.height}
+            //
+        };
+    }
 
     template <any_json_t JsonType>
     void from_json(JsonType const& js, Rectangle& r)
@@ -89,13 +114,14 @@ namespace geometry
         serialization::assert_structure(js,
             "geometry::Rectangle",
             {
-                {"center", json::value_t::object},
-                {"normal", json::value_t::object},
-                {"e1", json::value_t::object},
+                {"id", json::value_t::string},
+                {"center", json::value_t::array},
+                {"normal", json::value_t::array},
+                {"e1", json::value_t::array},
                 {"width", json::value_t::number_float},
                 {"height", json::value_t::number_float},
             },
-            {{"e2", json::value_t::object}});
+            {{"e2", json::value_t::array}});
         r = Rectangle{js.at("id").template get<std::string>(),
             js.at("center").template get<pos_t>(),
             js.at("normal").template get<pos_t>(),
@@ -109,13 +135,18 @@ namespace geometry
     template <any_json_t JsonType>
     void to_json(JsonType& js, SphericalRectangle const& sr)
     {
-        js = JsonType{{"center", sr.center},
+        js = JsonType{
+            //
+            {"id", sr.id},
+            {"center", sr.center},
             {"normal", sr.normal},
             {"e1", sr.e1},
             {"e2", sr.e2},
             {"radius", sr.radius},
             {"polar_span", sr.polar_span},
-            {"azimuth_span", sr.azimuth_span}};
+            {"azimuth_span", sr.azimuth_span}
+            //
+        };
     }
 
     template <any_json_t JsonType>
@@ -124,22 +155,24 @@ namespace geometry
         serialization::assert_structure(js,
             "geometry::SphericalRectangle",
             {
-                {"center", json::value_t::object},
-                {"normal", json::value_t::object},
-                {"e1", json::value_t::object},
+                {"id", json::value_t::string},
+                {"center", json::value_t::array},
+                {"normal", json::value_t::array},
+                {"e1", json::value_t::array},
                 {"radius", json::value_t::number_float},
                 {"polar_span", json::value_t::number_float},
                 {"azimuth_span", json::value_t::number_float},
             },
-            {{"e2", json::value_t::object}});
-        sr = SphericalRectangle{js.at("id").template get<std::string>(),
+            {{"e2", json::value_t::array}});
+        sr = SphericalRectangle(js.at("id").template get<std::string>(),
             js.at("center").template get<pos_t>(),
             js.at("normal").template get<pos_t>(),
             js.at("e1").template get<pos_t>(),
             POS_ZERO,
             js.at("radius").template get<double>(),
             js.at("polar_span").template get<double>(),
-            js.at("azimuth_span").template get<double>()}.normalized();
+            js.at("azimuth_span").template get<double>())
+                 .normalized();
     }
 } // namespace geometry
 
