@@ -4,6 +4,8 @@
 
 #include "geometry.hpp"
 #include <nlohmann/json.hpp>
+
+#include "memory.hpp"
 #include "serialization.hpp"
 #include "simulationerror.hpp"
 
@@ -82,14 +84,14 @@ namespace geometry
                 {"angle_span", json::value_t::number_float},
             },
             {{"e2", json::value_t::array}});
-        c = CircleArc{js.at("id").template get<std::string>(),
+        reconstruct_at(c, CircleArc{js.at("id").template get<std::string>(),
             js.at("center").template get<pos_t>(),
             js.at("normal").template get<pos_t>(),
             js.at("e1").template get<pos_t>(),
             POS_ZERO,
             js.at("radius").template get<double>(),
             js.at("angle_span").template get<double>()}
-                .normalized();
+                        .normalized());
     }
 
     template <any_json_t JsonType>
@@ -122,14 +124,15 @@ namespace geometry
                 {"height", json::value_t::number_float},
             },
             {{"e2", json::value_t::array}});
-        r = Rectangle{js.at("id").template get<std::string>(),
-            js.at("center").template get<pos_t>(),
-            js.at("normal").template get<pos_t>(),
-            js.at("e1").template get<pos_t>(),
-            POS_ZERO,
-            js.at("width").template get<double>(),
-            js.at("height").template get<double>()}
-                .normalized();
+        reconstruct_at(r,
+            Rectangle{js.at("id").template get<std::string>(),
+                js.at("center").template get<pos_t>(),
+                js.at("normal").template get<pos_t>(),
+                js.at("e1").template get<pos_t>(),
+                POS_ZERO,
+                js.at("width").template get<double>(),
+                js.at("height").template get<double>()}
+                .normalized());
     }
 
     template <any_json_t JsonType>
@@ -164,15 +167,16 @@ namespace geometry
                 {"azimuth_span", json::value_t::number_float},
             },
             {{"e2", json::value_t::array}});
-        sr = SphericalRectangle(js.at("id").template get<std::string>(),
-            js.at("center").template get<pos_t>(),
-            js.at("normal").template get<pos_t>(),
-            js.at("e1").template get<pos_t>(),
-            POS_ZERO,
-            js.at("radius").template get<double>(),
-            js.at("polar_span").template get<double>(),
-            js.at("azimuth_span").template get<double>())
-                 .normalized();
+        reconstruct_at(sr,
+            SphericalRectangle(js.at("id").template get<std::string>(),
+                js.at("center").template get<pos_t>(),
+                js.at("normal").template get<pos_t>(),
+                js.at("e1").template get<pos_t>(),
+                POS_ZERO,
+                js.at("radius").template get<double>(),
+                js.at("polar_span").template get<double>(),
+                js.at("azimuth_span").template get<double>())
+                .normalized());
     }
 } // namespace geometry
 

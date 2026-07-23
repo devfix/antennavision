@@ -6,7 +6,8 @@
 
 #include <variant>
 
-#include "types.hpp"
+#include "types/math.hpp"
+#include "types/json.hpp"
 
 namespace geometry
 {
@@ -32,13 +33,13 @@ namespace geometry
 
         [[nodiscard]] pos_t constexpr get_pos(double angle) const noexcept { return center + radius * (std::cos(angle) * e1 + std::sin(angle) * e2); }
 
-        std::string id; /// id of the geometry
-        pos_t center; /// center position
-        pos_t normal; /// normal direction, together with center defines circle plane
-        pos_t e1; /// first unit vector (see ascii sketch)
-        pos_t e2; /// second unit vector (see ascii sketch)
-        double radius{}; /// circle radius
-        double angle_span{}; /// angle span of the arc
+        std::string const id; /// id of the geometry
+        pos_t const center; /// center position
+        pos_t const normal; /// normal direction, together with center defines circle plane
+        pos_t const e1; /// first unit vector (see ascii sketch)
+        pos_t const e2; /// second unit vector (see ascii sketch)
+        double const radius{}; /// circle radius
+        double const angle_span{}; /// angle span of the arc
     };
 
     template <any_json_t JsonType>
@@ -62,13 +63,13 @@ namespace geometry
     {
         [[nodiscard]] Rectangle normalized() const;
 
-        std::string id; /// id of the geometry
-        pos_t center; /// center position
-        pos_t normal; /// normal direction, together with center defines rectangle plane
-        pos_t e1; /// first unit vector (see ascii sketch)
-        pos_t e2; /// second unit vector (see ascii sketch)
-        double width{}; /// rectangle width, view from above if normal is pointing up
-        double height{}; /// rectangle height, view from above if normal is pointing up
+        std::string const id; /// id of the geometry
+        pos_t const center; /// center position
+        pos_t const normal; /// normal direction, together with center defines rectangle plane
+        pos_t const e1; /// first unit vector (see ascii sketch)
+        pos_t const e2; /// second unit vector (see ascii sketch)
+        double const width{}; /// rectangle width, view from above if normal is pointing up
+        double const height{}; /// rectangle height, view from above if normal is pointing up
     };
 
     template <any_json_t JsonType>
@@ -81,14 +82,14 @@ namespace geometry
     {
         [[nodiscard]] SphericalRectangle normalized() const;
 
-        std::string id; /// id of the geometry
-        pos_t center; /// center position of the sphere
-        pos_t normal; /// surface normal at the center of the curved surface
-        pos_t e1; /// first tangent unit vector
-        pos_t e2; /// second tangent unit vector
-        double radius{}; /// sphere radius
-        double polar_span{}; /// total span of polar angle
-        double azimuth_span{}; /// total span of azimuthal angle
+        std::string const id; /// id of the geometry
+        pos_t const center; /// center position of the sphere
+        pos_t const normal; /// surface normal at the center of the curved surface
+        pos_t const e1; /// first tangent unit vector
+        pos_t const e2; /// second tangent unit vector
+        double const radius{}; /// sphere radius
+        double const polar_span{}; /// total span of polar angle
+        double const azimuth_span{}; /// total span of azimuthal angle
     };
 
     template <any_json_t JsonType>

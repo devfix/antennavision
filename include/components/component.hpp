@@ -6,7 +6,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include "types.hpp"
+#include "../types/math.hpp"
 
 struct Component
 {

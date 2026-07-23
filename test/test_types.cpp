@@ -5,7 +5,8 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
-#include "types.hpp"
+#include "types/math.hpp"
+#include "types/json.hpp"
 
 // Helper to check if two quaternions represent the same physical 3D rotation
 inline void REQUIRE_ROTATIONS_EQUAL(const Quaternion& q1, const Quaternion& q2) {

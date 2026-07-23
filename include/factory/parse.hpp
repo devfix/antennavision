@@ -9,8 +9,9 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+#include "types/math.hpp"
+#include "types/json.hpp"
 #include "simulationerror.hpp"
-#include "types.hpp"
 
 namespace factory
 {

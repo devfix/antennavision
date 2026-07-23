@@ -7,6 +7,7 @@
 #include <nlopt.hpp>
 #include <print>
 #include <utility>
+#include "memory.hpp"
 
 template <typename ScalarType>
 ScalarField<ScalarType>::ScalarField(std::string_view id, field_t&& field, reset_t&& reset, math::NumParams const& num_params) :
@@ -53,7 +54,8 @@ std::pair<pos_t, double> ScalarField<ScalarType>::calc_beamwidth(geometry::Circl
                                  0.0, 0.5 * arc.angle_span, num_params};
     auto [angle1, eps1] = math::f_min(params);
 
-    circle_hpbw = circle_hpbw.rotate(-0.5 * arc.angle_span);
+    reconstruct_at(circle_hpbw, circle_hpbw.rotate(-0.5 * arc.angle_span));
+
     auto [angle2_inv, eps2] = math::f_min(params);
     double angle2 = 0.5 * arc.angle_span - angle2_inv;
 

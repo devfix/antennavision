@@ -5,8 +5,7 @@
 #pragma once
 
 #include "simulationerror.hpp"
-#include "types.hpp"
-
+#include "types/math.hpp"
 
 /**
  * Class "Reference" of Aggregate Type

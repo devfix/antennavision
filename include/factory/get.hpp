@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <nlohmann/json_fwd.hpp>
 
-#include "types.hpp"
+#include "types/math.hpp"
 
 namespace factory
 {

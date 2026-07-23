@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <map>
 #include <vector>
-#include "types.hpp"
+#include "types/math.hpp"
 
 struct UlaCodebook
 {

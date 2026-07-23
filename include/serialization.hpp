@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "types.hpp"
 #include <string_view>
 #include "reference.hpp"
 #include "simulationerror.hpp"
+#include "types/json.hpp"
 
 namespace serialization
 {

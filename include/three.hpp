@@ -7,7 +7,8 @@
 #include <ansi_color.hpp>
 #include <vector>
 #include "color.hpp"
-#include "types.hpp"
+#include "types/math.hpp"
+#include "types/json.hpp"
 
 namespace three
 {

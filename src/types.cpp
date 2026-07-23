@@ -2,7 +2,8 @@
 // Created by core on 2026-07-14.
 //
 
-#include "types.hpp"
+#include "../include/types/json.hpp"
+#include "../include/types/math.hpp"
 #include <nlohmann/json.hpp>
 
 namespace nlohmann {

@@ -9,10 +9,7 @@
 #include <vector>
 
 #include "components/antenna.hpp"
-#include "components/radiator.hpp"
-#include "components/radiatorarray.hpp"
 #include "scalarfield.hpp"
-#include "types.hpp"
 
 namespace plot
 {

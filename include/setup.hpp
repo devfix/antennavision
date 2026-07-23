@@ -11,7 +11,7 @@
 #include "factory/make.hpp"
 #include "scalarfield.hpp"
 #include "timeutil.hpp"
-#include "types.hpp"
+#include "types/math.hpp"
 
 struct Setup
 {

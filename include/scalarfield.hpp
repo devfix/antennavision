@@ -10,7 +10,7 @@
 
 #include "geometry.hpp"
 #include "math.hpp"
-#include "types.hpp"
+#include "types/math.hpp"
 
 template <typename ScalarType>
 struct ScalarField

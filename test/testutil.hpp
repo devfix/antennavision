@@ -6,8 +6,8 @@
 
 #include <NumCpp/Functions/isclose.hpp>
 #include <catch2/catch_approx.hpp>
+#include "types/math.hpp"
 #include "reference.hpp"
-#include "types.hpp"
 
 static constexpr double TEST_MARGIN = 1e-6;
 

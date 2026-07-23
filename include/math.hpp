@@ -9,7 +9,8 @@
 #include <iterator>
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
-#include "types.hpp"
+#include "types/math.hpp"
+#include "types/json.hpp"
 
 namespace math
 {
