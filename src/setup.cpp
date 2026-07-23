@@ -9,11 +9,11 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <print>
+#include "eval.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
 #include "factory/parse.hpp"
-#include "plot.hpp"
 #include "simulationerror.hpp"
 #include "three.hpp"
 
@@ -114,10 +114,7 @@ namespace
         if (!context.desc.contains("geometries")) { return; }
         for (auto& geometries = context.desc.at("geometries"); auto& desc : geometries)
         {
-            auto id = factory::get_string(desc, "id", false, false);
-            Geometry geo = factory::make_geometry(desc, context);
-            context.geometries.emplace(id, std::move(geo));
-            factory::assert_empty(desc);
+            context.geometries.push_back(factory::make_geometry(desc, context));
         }
         context.desc.erase("geometries");
     }
@@ -143,7 +140,7 @@ namespace
                 std::ranges::transform(azimuth_angles_vec, azimuth_angles.begin(), [](auto const v) { return v * nc::constants::pi; });
                 Antenna const& ant = antenna::get(context.antennas, factory::get_string(task_desc, "antenna"));
                 task_name = std::format("{}.{}", type, antenna::get_id(ant));
-                context.tasks.emplace_back(task_name, [&ant, azimuth_angles] { plot::plot_directivity_over_polar(ant, azimuth_angles, {}); });
+                context.tasks.emplace_back(task_name, [&ant, azimuth_angles] { eval::plot_directivity_over_polar(ant, azimuth_angles, {}); });
             }
             else if (type == "plot_gain_over_straight")
             {
@@ -157,16 +154,16 @@ namespace
                 pos_t const pos_end = ref_stop.global_pos();
                 auto power_field = antenna::get_voltage_field(tx, rx, num_params);
                 task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
-                context.tasks.emplace_back(task_name, [power_field, pos_start, pos_end] { plot::plot_gain_over_line(power_field, pos_start, pos_end); });
+                context.tasks.emplace_back(task_name, [power_field, pos_start, pos_end] { eval::plot_gain_over_line(power_field, pos_start, pos_end); });
             }
             else if (type == "plot_voltage_field")
             {
                 Antenna const& tx = antenna::get(context.antennas, factory::get_string(task_desc, "tx"));
                 Antenna& rx = antenna::get(context.antennas, factory::get_string(task_desc, "rx"));
-                auto geo = context.geometries.at(factory::get_string(task_desc, "geometry"));
+                auto geo = geometry::get(context.geometries, factory::get_string(task_desc, "geometry"));
                 auto voltage_field = antenna::get_voltage_field(tx, rx, context.num_params);
                 task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
-                context.tasks.emplace_back(task_name, [voltage_field, geo] { plot::plot_field_over_geometry(voltage_field, geo); });
+                context.tasks.emplace_back(task_name, [voltage_field, geo] { eval::plot_field_over_geometry(voltage_field, geo); });
             }
             // else if (type == "plot_gain_over_sphere")
             // {

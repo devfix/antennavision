@@ -30,14 +30,20 @@ namespace math
     template <any_json_t JsonType>
     void to_json(JsonType& js, NumParams const& num_params)
     {
-        js = JsonType{{"wavelength", num_params.system_wavelength}, {"n_polar", num_params.n_polar}, {"n_azimuth", num_params.n_azimuth},
-            {"n_linear1", num_params.n_linear1}, {"n_linear2", num_params.n_linear2}, {"xtol_rel", num_params.xtol_rel}, {"ftol_rel", num_params.ftol_rel}};
+        js = JsonType{{"wavelength", num_params.system_wavelength},
+            {"n_polar", num_params.n_polar},
+            {"n_azimuth", num_params.n_azimuth},
+            {"n_linear1", num_params.n_linear1},
+            {"n_linear2", num_params.n_linear2},
+            {"xtol_rel", num_params.xtol_rel},
+            {"ftol_rel", num_params.ftol_rel}};
     }
 
     template <any_json_t JsonType>
     void from_json(JsonType const& js, NumParams& num_params)
     {
-        serialization::assert_structure(js, "math::NumParams",
+        serialization::assert_structure(js,
+            "math::NumParams",
             {
                 {"system_wavelength", json::value_t::number_float},
             },
@@ -93,29 +99,41 @@ namespace math
         return std::atan2(vec1.cross(vec2).norm(), vec1.dot(vec2));
     }
 
+    pos_t get_ort_dir(pos_t const& dir)
+    {
+        auto const dir_initial = dir.normalize();
+
+        // We need to rotate around an arbitrary axis orthogonal to dir and "search" for a viable orthogonal direction
+        // We create the cross-product between dir and each unit vector, these vectors our candidates
+        std::array<std::tuple<pos_t, double>, 3> dir_orts{{
+            {dir_initial.cross(pos_t(1, 0, 0)), 0},
+            {dir_initial.cross(pos_t(0, 1, 0)), 0},
+            {dir_initial.cross(pos_t(0, 0, 1)), 0} //
+        }};
+        // for each candidate we determine its norm
+        for (auto& [v, len] : dir_orts) { len = v.norm(); }
+
+        // we identify the candidate with the largest norm
+        auto const dir_ort_best = std::get<0>(*std::max_element(dir_orts.begin(),
+            dir_orts.end(),
+            [](std::tuple<pos_t, double> const& a, std::tuple<pos_t, double> const& b) { return std::get<1>(a) < std::get<1>(b); }));
+
+        // normalize and return the best candidate
+        return dir_ort_best.normalize();
+    }
+
     Quaternion quaternion_from_directions(pos_t dir_initial, pos_t dir_target)
     {
         double const angle = angle_between_vectors(dir_initial, dir_target);
-        if (std::abs(angle) < NUMERICAL_MARGIN) { return {}; } // identity quaternion
 
-        if (std::abs(pi - std::abs(angle)) < NUMERICAL_MARGIN)
-        {
-            // We need to rotate around an arbitrary axis orthogonal to dir_initial.
-            dir_initial = dir_initial.normalize();
+        // case 1: dir_initial and dir_target are equal -> return identity quaternion
+        if (std::abs(angle) < NUMERICAL_MARGIN) return {};
 
-            // We "search" for a viable orthogonal direction
-            std::array<std::tuple<pos_t, double>, 3> dir_orts{
-                {{dir_initial.cross(pos_t(1, 0, 0)), 0}, {dir_initial.cross(pos_t(0, 1, 0)), 0}, {dir_initial.cross(pos_t(0, 0, 1)), 0}}};
-            for (auto& [dir, len] : dir_orts) { len = dir.norm(); }
-            auto const dir_ort_best = std::get<0>(*std::max_element(dir_orts.begin(), dir_orts.end(),
-                [](std::tuple<pos_t, double> const& a, std::tuple<pos_t, double> const& b) { return std::get<1>(a) < std::get<1>(b); }));
-            return {dir_ort_best.normalize(), nc::constants::pi};
-        }
-        else
-        {
-            auto dir_ort = dir_initial.cross(dir_target); // orthogonal axis
-            return {dir_ort.normalize(), angle};
-        }
+        // case 2: angle == +/- pi -> the rotation can take place around any orthogonal axis by angle pi
+        if (std::abs(pi - std::abs(angle)) < NUMERICAL_MARGIN) return {get_ort_dir(dir_initial), nc::constants::pi};
+
+        // case 3: angle is not special (no edge case) -> use cross product as orthogonal axis and rotate by angle
+        return {dir_initial.cross(dir_target).normalize(), angle};
     }
 
     std::pair<double, double> sici(double x)

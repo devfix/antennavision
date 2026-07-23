@@ -17,8 +17,7 @@ struct ScalarField
 {
     using field_t = std::function<ScalarType(pos_t const& pos, double wavelength)>;
     using reset_t = std::function<void()>;
-    ScalarField(std::string_view id, field_t&& field, reset_t&& reset, math::NumParams const& num_params);
-    ~ScalarField();
+    ScalarField(std::string_view id, field_t&& field, math::NumParams const& num_params);
 
     [[nodiscard]] std::pair<pos_t, double> argmax_line_abs(pos_t const& pos_a, pos_t const& pos_b) const;
 
@@ -26,7 +25,7 @@ struct ScalarField
 
     [[nodiscard]] std::pair<pos_t, double> calc_beamwidth(geometry::CircleArc const& arc, double ratio) const;
 
-    [[nodiscard]] std::pair<PositionArray, std::variant<RealArray, ComplexArray>> eval_line(pos_t const& pos_start, pos_t const& pos_end) const;
+    [[nodiscard]] std::pair<Vec3Array, ComplexArray> eval_geometry(geometry::Geometry const& geo, double wavelength) const;
 
     [[nodiscard]] std::pair<PositionArray, RealArray> eval_line_abs(pos_t const& pos_start, pos_t const& pos_end) const
     {
@@ -49,7 +48,7 @@ struct ScalarField
     math::NumParams const num_params;
 
 private:
-    reset_t const reset;
+    [[nodiscard]] ComplexArray eval(Vec3Array const& positions, double wavelength) const;
 };
 
 using GenericScalarField = std::variant<ScalarField<complex_t>, ScalarField<double>>;

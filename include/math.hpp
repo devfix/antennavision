@@ -57,6 +57,9 @@ namespace math
     vec_t constexpr rotate(vec_t const& vec, Quaternion const& quaternion) { return nc::dot(quaternion.toDCM(), vec); }
 
     double angle_between_vectors(pos_t vec1, pos_t vec2);
+
+    [[nodiscard]] pos_t get_ort_dir(pos_t const& dir);
+
     Quaternion quaternion_from_directions(pos_t dir_initial, pos_t dir_target);
 
     std::pair<double, double> sici(double x);

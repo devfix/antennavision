@@ -11,7 +11,7 @@
 #include "components/antenna.hpp"
 #include "scalarfield.hpp"
 
-namespace plot
+namespace eval
 {
     void plot_directivity_over_polar(Antenna const& antenna, RealArray const& azimuth_angles, math::NumParams const& num_params);
 

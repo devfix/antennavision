@@ -21,10 +21,10 @@ using var_t = std::variant<double, std::int64_t>;
 // array types
 using RealArray = nc::NdArray<double>;
 using ComplexArray = nc::NdArray<complex_t>;
-using PositionArray = nc::NdArray<pos_t>;
-using SurfacePositionArray = nc::NdArray<nc::Vec2>;
-using VectorArray = nc::NdArray<vec_t>;
-using QuaternionArray = nc::NdArray<Quaternion>; // probably never used but we already define it here
+using Vec2Array = nc::NdArray<nc::Vec2>;
+using Vec3Array = nc::NdArray<nc::Vec3>;
+// using VectorArray = nc::NdArray<vec_t>;
+// using QuaternionArray = nc::NdArray<Quaternion>; // probably never used but we already define it here
 
 // mathematical and physical constants
 constexpr double pi = std::numbers::pi;

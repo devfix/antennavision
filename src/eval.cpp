@@ -2,15 +2,15 @@
 // Created by Tristan Krause on 2026-06-05.
 //
 
-#include "plot.hpp"
+#include <nlohmann/json.hpp>
 #include <print>
 #include <variant>
-#include <nlohmann/json.hpp>
 #include "NumCpp/Functions/linspace.hpp"
+#include "eval.hpp"
 #include "setup.hpp"
 #include "simulationerror.hpp"
 
-void plot::plot_directivity_over_polar(Antenna const& antenna, RealArray const& azimuth_angles, math::NumParams const& num_params)
+void eval::plot_directivity_over_polar(Antenna const& antenna, RealArray const& azimuth_angles, math::NumParams const& num_params)
 {
     auto& radiator = antenna::cast<Radiator>(antenna);
 
@@ -46,7 +46,7 @@ void plot::plot_directivity_over_polar(Antenna const& antenna, RealArray const& 
     ofs << js.dump(2) << '\n';
 }
 
-void plot::plot_field_over_geometry(GenericScalarField const& scalar_field, Geometry const& geometry)
+void eval::plot_field_over_geometry(GenericScalarField const& scalar_field, Geometry const& geometry)
 {
     if (auto r = std::get_if<geometry::Rectangle>(&geometry); r)
     {
@@ -61,7 +61,7 @@ void plot::plot_field_over_geometry(GenericScalarField const& scalar_field, Geom
     throw SimulationError("Not implemented");
 }
 
-void plot::plot_gain_over_line(GenericScalarField const& scalar_field, pos_t const& pos_start, pos_t const& pos_end)
+void eval::plot_gain_over_line(GenericScalarField const& scalar_field, pos_t const& pos_start, pos_t const& pos_end)
 {
     std::string name = std::format("{}.{}", __func__, scalarfield::get_id(scalar_field));
     std::println("Creating plot: {}", name);
@@ -82,7 +82,7 @@ void plot::plot_gain_over_line(GenericScalarField const& scalar_field, pos_t con
     ofs << js.dump(2) << '\n';
 }
 
-void plot::plot_gain_over_rectangle(GenericScalarField const& scalar_field, geometry::Rectangle const& rectangle)
+void eval::plot_gain_over_rectangle(GenericScalarField const& scalar_field, geometry::Rectangle const& rectangle)
 {
     std::string name = std::format("{}.{}", __func__, scalarfield::get_id(scalar_field));
     std::println("Creating plot: {}", name);
@@ -100,7 +100,7 @@ void plot::plot_gain_over_rectangle(GenericScalarField const& scalar_field, geom
     ofs << js.dump(2) << '\n';
 }
 
-void plot::plot_gain_over_spherical_rectangle(GenericScalarField const& scalar_field, geometry::SphericalRectangle const& sr)
+void eval::plot_gain_over_spherical_rectangle(GenericScalarField const& scalar_field, geometry::SphericalRectangle const& sr)
 {
     std::string name = std::format("{}.{}", __func__, scalarfield::get_id(scalar_field));
     std::println("Creating plot: {}", name);

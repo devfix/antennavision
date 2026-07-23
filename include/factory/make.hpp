@@ -19,7 +19,7 @@ namespace factory
         math::NumParams num_params;
         std::vector<Reference> references;
         std::vector<Antenna> antennas;
-        std::map<std::string, Geometry> geometries;
+        std::vector<Geometry> geometries;
         std::list<std::pair<std::string, task_t>> tasks;
     };
 
