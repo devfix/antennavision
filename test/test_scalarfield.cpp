@@ -1,5 +1,5 @@
 //
-// Created by core on 2026-07-14.
+// Created by Tristan Krause on 2026-07-14.
 //
 
 #include <catch2/catch_approx.hpp>

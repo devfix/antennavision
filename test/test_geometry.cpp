@@ -1,5 +1,5 @@
 //
-// Created by core on 2026-07-22.
+// Created by Tristan Krause on 2026-07-22.
 //
 
 #include <catch2/catch_test_macros.hpp>
@@ -10,6 +10,65 @@
 #include "simulationerror.hpp"
 
 using Catch::Matchers::WithinAbs;
+
+TEST_CASE("Line Properties and JSON Serialization", "[geometry][line][json]")
+{
+    SECTION("Member functions compute correct length and positions")
+    {
+        geometry::Line const line{"line_01", {0.0, 0.0, 0.0}, {3.0, 4.0, 0.0}};
+
+        CHECK(line.id() == "line_01");
+        CHECK_THAT(line.length(), WithinAbs(5.0, 1e-9));
+
+        // Test position interpolation along t in [0, 1]
+        auto const start_pos = line.pos_at(0.0);
+        CHECK_THAT(start_pos.x, WithinAbs(0.0, 1e-9));
+        CHECK_THAT(start_pos.y, WithinAbs(0.0, 1e-9));
+        CHECK_THAT(start_pos.z, WithinAbs(0.0, 1e-9));
+
+        auto const mid_pos = line.pos_at(0.5);
+        CHECK_THAT(mid_pos.x, WithinAbs(1.5, 1e-9));
+        CHECK_THAT(mid_pos.y, WithinAbs(2.0, 1e-9));
+        CHECK_THAT(mid_pos.z, WithinAbs(0.0, 1e-9));
+
+        auto const end_pos = line.pos_at(1.0);
+        CHECK_THAT(end_pos.x, WithinAbs(3.0, 1e-9));
+        CHECK_THAT(end_pos.y, WithinAbs(4.0, 1e-9));
+        CHECK_THAT(end_pos.z, WithinAbs(0.0, 1e-9));
+    }
+
+    SECTION("Round-trip serialization preserves values")
+    {
+        geometry::Line const line{"line_01", {1.0, -2.0, 3.5}, {4.0, 2.0, 3.5}};
+
+        nlohmann::json const js = line;
+
+        CHECK(js.at("id") == line.id());
+        CHECK(js.at("pos1") == line.pos1());
+        CHECK(js.at("pos2") == line.pos2());
+
+        auto const deserialized = js.get<geometry::Line>();
+
+        CHECK(deserialized.id() == line.id());
+        CHECK_THAT(deserialized.pos1().x, WithinAbs(1.0, 1e-9));
+        CHECK_THAT(deserialized.pos1().y, WithinAbs(-2.0, 1e-9));
+        CHECK_THAT(deserialized.pos1().z, WithinAbs(3.5, 1e-9));
+        CHECK_THAT(deserialized.pos2().x, WithinAbs(4.0, 1e-9));
+        CHECK_THAT(deserialized.pos2().y, WithinAbs(2.0, 1e-9));
+        CHECK_THAT(deserialized.pos2().z, WithinAbs(3.5, 1e-9));
+    }
+
+    SECTION("Deserialization throws on missing or invalid structure")
+    {
+        // Missing 'pos2'
+        nlohmann::json const js_missing = {
+            {"id", "line_invalid"},
+            {"pos1", {0.0, 0.0, 0.0}}
+        };
+
+        REQUIRE_THROWS(js_missing.get<geometry::Line>());
+    }
+}
 
 TEST_CASE("CircleArc JSON Serialization and Deserialization", "[geometry][json]")
 {
