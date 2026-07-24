@@ -64,12 +64,12 @@ struct Radiator
     };
 
     [[nodiscard]] static vec_t get_elv_spherical_standing_wave(double dipole_length, double wavelength, double polar);
-    [[nodiscard]] static double calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, math::NumParams const& num_params);
+    [[nodiscard]] static double calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, setup::NumParams const& num_params);
 
     [[nodiscard]] vec_t get_elv_spherical_from_cartesian(pos_t const& pos_local, double wavelength) const;
 
-    [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, math::NumParams const& num_params) const;
-    [[nodiscard]] double calc_directivity_from_cartesian(pos_t const& pos_local, math::NumParams const& num_params) const;
+    [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, setup::NumParams const& num_params) const;
+    [[nodiscard]] double calc_directivity_from_cartesian(pos_t const& pos_local, setup::NumParams const& num_params) const;
 
     std::string id; /// identifier name
     std::string origin_id; /// name of the origin reference

@@ -20,74 +20,16 @@ namespace math
 {
     namespace
     {
+        template <typename T>
+        [[nodiscard]] constexpr double dbl(T val) noexcept
+        { return static_cast<double>(val); }
+
         double objective_function(unsigned n, const double* x, double* grad, void* data)
         {
             auto params = static_cast<OptParams*>(data);
             return params->fn(*x);
         }
     } // namespace
-
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, NumParams const& num_params)
-    {
-        js = JsonType{{"wavelength", num_params.system_wavelength},
-            {"n_polar", num_params.n_polar},
-            {"n_azimuth", num_params.n_azimuth},
-            {"n_linear1", num_params.n_linear1},
-            {"n_linear2", num_params.n_linear2},
-            {"xtol_rel", num_params.xtol_rel},
-            {"ftol_rel", num_params.ftol_rel}};
-    }
-
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, NumParams& num_params)
-    {
-        serialization::assert_structure(js,
-            "math::NumParams",
-            {
-                {"system_wavelength", json::value_t::number_float},
-            },
-            {
-                {"n_polar", json::value_t::number_unsigned},
-                {"n_azimuth", json::value_t::number_unsigned},
-                {"n_linear1", json::value_t::number_unsigned},
-                {"n_linear2", json::value_t::number_unsigned},
-                {"xtol_rel", json::value_t::number_float},
-                {"ftol_rel", json::value_t::number_float},
-            });
-        num_params = DEFAULT_NUM_PARAMS; // apply default values and overwrite them with specific ones afterward
-        js.at("system_wavelength").get_to(num_params.system_wavelength);
-        if (js.contains("n_polar")) { js.at("n_polar").get_to(num_params.n_polar); }
-        if (js.contains("n_azimuth")) { js.at("n_azimuth").get_to(num_params.n_azimuth); }
-        if (js.contains("n_linear1")) { js.at("n_linear1").get_to(num_params.n_linear1); }
-        if (js.contains("n_linear2")) { js.at("n_linear2").get_to(num_params.n_linear2); }
-        if (js.contains("xtol_rel")) { js.at("xtol_rel").get_to(num_params.xtol_rel); }
-        if (js.contains("ftol_rel")) { js.at("ftol_rel").get_to(num_params.ftol_rel); }
-    }
-
-    NumParams NumParams::configure(NumParams const& num_params)
-    {
-        NumParams copy = DEFAULT_NUM_PARAMS;
-        if (num_params.system_wavelength) { copy.system_wavelength = num_params.system_wavelength; }
-        if (num_params.n_polar) { copy.n_polar = num_params.n_polar; }
-        if (num_params.n_azimuth) { copy.n_azimuth = num_params.n_azimuth; }
-        if (num_params.n_linear1) { copy.n_linear1 = num_params.n_linear1; }
-        if (num_params.n_linear2) { copy.n_linear2 = num_params.n_linear2; }
-        if (num_params.xtol_rel) { copy.xtol_rel = num_params.xtol_rel; }
-        if (num_params.ftol_rel) { copy.system_wavelength = num_params.ftol_rel; }
-        return copy;
-    }
-
-    void NumParams::check() const
-    {
-        assert(system_wavelength > 0);
-        assert(n_polar > 0);
-        assert(n_azimuth > 0);
-        assert(n_linear1 > 0);
-        assert(n_linear2 > 0);
-        assert(xtol_rel > 0);
-        assert(ftol_rel > 0);
-    }
 
     double angle_between_vectors(pos_t vec1, pos_t vec2)
     {
@@ -150,45 +92,51 @@ namespace math
         return egamma + std::log(x) - cix + 0.5 * std::sin(x) * (si2x - 2.0 * six) + 0.5 * std::cos(x) * (egamma + std::log(0.5 * x) + ci2x - 2.0 * cix);
     }
 
-    std::pair<double, double> f_min(OptParams const& optimization_params)
+    OptResult f_min(OptParams opt_params)
     {
-        auto const& n_samples = optimization_params.num_params.n_linear1;
-        std::vector<double> abs_values(n_samples, 0.0);
-        double const delta = optimization_params.x_b - optimization_params.x_a;
-        for (std::size_t k = 0; k < n_samples; k++)
-        {
-            double const f = static_cast<double>(k) / static_cast<double>(n_samples - 1);
-            abs_values[k] = optimization_params.fn(optimization_params.x_a + f * delta);
-        }
-        std::size_t const k_max = std::distance(abs_values.begin(), std::ranges::min_element(abs_values));
-        std::size_t const k_a = std::max(static_cast<std::size_t>(0), k_max - 1);
-        std::size_t const k_b = std::min(n_samples - 1, k_max + 1);
-        double const f_a = static_cast<double>(k_a) / static_cast<double>(n_samples - 1);
-        double const f_b = static_cast<double>(k_b) / static_cast<double>(n_samples - 1);
-
-        OptParams params_nlopt(optimization_params);
-        params_nlopt.x_a = optimization_params.x_a + f_a * delta;
-        params_nlopt.x_b = optimization_params.x_a + f_b * delta;
-
-        double const x_lower = std::min(params_nlopt.x_a, params_nlopt.x_b);
-        double const x_upper = std::max(params_nlopt.x_a, params_nlopt.x_b);
+        double const t_lower = std::min(opt_params.t_a, opt_params.t_b);
+        double const t_upper = std::max(opt_params.t_a, opt_params.t_b);
 
         nlopt_opt opt = nlopt_create(NLOPT_LN_BOBYQA, 1); // set algorithm and dimension of x
-        nlopt_set_min_objective(opt, objective_function, &params_nlopt);
-        nlopt_set_lower_bounds(opt, &x_lower);
-        nlopt_set_upper_bounds(opt, &x_upper);
-        nlopt_set_xtol_rel(opt, optimization_params.num_params.xtol_rel);
-        nlopt_set_ftol_rel(opt, optimization_params.num_params.ftol_rel);
-        double x = 0.5 * (params_nlopt.x_a + params_nlopt.x_b); // initial guess
-        double min_f;
-        nlopt_result const result = nlopt_optimize(opt, &x, &min_f);
+        nlopt_set_min_objective(opt, objective_function, &opt_params);
+        nlopt_set_lower_bounds(opt, &t_lower);
+        nlopt_set_upper_bounds(opt, &t_upper);
+        nlopt_set_xtol_rel(opt, opt_params.num_params.xtol_rel);
+        nlopt_set_ftol_rel(opt, opt_params.num_params.ftol_rel);
+        double t = 0.5 * (opt_params.t_a + opt_params.t_b); // initial guess
+        double f_min;
+        nlopt_result const result = nlopt_optimize(opt, &t, &f_min);
         nlopt_destroy(opt);
         if (result < 0) { throw SimulationError("Error: nlopt returned '{}'", magic_enum::enum_name(result)); }
-        return {x, min_f};
+        return {t, f_min};
+    }
+
+    OptScanResult scan_f_min(OptParams const& opt_params)
+    {
+        auto const& n_samples = opt_params.num_params.n_linear1;
+        OptScanResult opt_result;
+        opt_result.scan_t.resize(n_samples);
+        opt_result.scan_f.resize(n_samples);
+        double const delta = opt_params.t_b - opt_params.t_a;
+        for (std::size_t k = 0; k < n_samples; k++)
+        {
+            double const u = dbl(k) / dbl(n_samples - 1); // u in [0,1]
+            double const t = opt_params.t_a + u * delta;
+            opt_result.scan_t[k] = t;
+            opt_result.scan_f[k] = opt_params.fn(t);
+        }
+        opt_result.k_min = std::distance(opt_result.scan_f.begin(), std::ranges::min_element(opt_result.scan_f));
+        opt_result.k_lower = std::max(static_cast<std::size_t>(0), opt_result.k_min - 1);
+        opt_result.k_upper = std::min(n_samples - 1, opt_result.k_min + 1);
+        double const u_lower = dbl(opt_result.k_lower) / dbl(n_samples - 1);
+        double const u_upper = dbl(opt_result.k_upper) / dbl(n_samples - 1);
+
+        OptParams params_nlopt(opt_params);
+        params_nlopt.t_a = opt_params.t_a + u_lower * delta;
+        params_nlopt.t_b = opt_params.t_a + u_upper * delta;
+
+        opt_result.opt = f_min(params_nlopt); // perform the nl precide optimization
+
+        return opt_result;
     }
 } // namespace math
-
-template void math::to_json(nlohmann::json&, math::NumParams const&);
-template void math::to_json(nlohmann::ordered_json&, math::NumParams const&);
-template void math::from_json(nlohmann::json const&, math::NumParams&);
-template void math::from_json(nlohmann::ordered_json const&, math::NumParams&);

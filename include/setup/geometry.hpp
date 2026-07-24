@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include <utility>
 #include <variant>
-
 #include "types/json.hpp"
 #include "types/math.hpp"
 
@@ -13,13 +13,15 @@ namespace geometry
 {
     struct Line
     {
-        [[nodiscard]] Line(std::string const& id, pos_t const& pos1, pos_t const& pos2) : id_(id), pos1_(pos1), pos2_(pos2) {}
+        [[nodiscard]] Line() = default;
 
-        [[nodiscard]] std::string id() const { return id_; }
+        [[nodiscard]] Line(std::string id, pos_t const& pos1, pos_t const& pos2) : id_(std::move(id)), pos1_(pos1), pos2_(pos2) {}
 
-        [[nodiscard]] pos_t pos1() const { return pos1_; }
+        [[nodiscard]] std::string const& id() const { return id_; }
 
-        [[nodiscard]] pos_t pos2() const { return pos2_; }
+        [[nodiscard]] pos_t const& pos1() const { return pos1_; }
+
+        [[nodiscard]] pos_t const& pos2() const { return pos2_; }
 
         [[nodiscard]] double length() const { return (pos2_ - pos1_).norm(); }
 
@@ -54,26 +56,28 @@ namespace geometry
     //             |
     struct CircleArc
     {
+        [[nodiscard]] CircleArc() = default;
+
         [[nodiscard]] CircleArc( //
-            std::string const& id,
+            std::string id,
             pos_t const& center,
             pos_t const& normal,
             pos_t const& e1,
             pos_t const& e2,
             double radius,
             double angle_span) //
-            : id_(id), center_(center), normal_(normal), e1_(e1), e2(e2), radius_(radius), angle_span_(angle_span)
+            : id_(std::move(id)), center_(center), normal_(normal), e1_(e1), e2_(e2), radius_(radius), angle_span_(angle_span)
         {}
 
-        [[nodiscard]] std::string id() const { return id_; }
+        [[nodiscard]] std::string const& id() const { return id_; }
 
-        [[nodiscard]] pos_t center() const { return center_; }
+        [[nodiscard]] pos_t const& center() const { return center_; }
 
-        [[nodiscard]] pos_t normal() const { return normal_; }
+        [[nodiscard]] pos_t const& normal() const { return normal_; }
 
-        [[nodiscard]] pos_t e1() const { return e1_; }
+        [[nodiscard]] pos_t const& e1() const { return e1_; }
 
-        [[nodiscard]] pos_t e3() const { return e2; }
+        [[nodiscard]] pos_t const& e2() const { return e2_; }
 
         [[nodiscard]] double radius() const { return radius_; }
 
@@ -81,9 +85,11 @@ namespace geometry
 
         [[nodiscard]] double length() const { return radius_ * angle_span_; }
 
-        [[nodiscard]] pos_t constexpr pos_at_angle(double angle) const noexcept { return center_ + radius_ * (std::cos(angle) * e1_ + std::sin(angle) * e2); }
+        [[nodiscard]] pos_t constexpr pos_at_angle(double angle) const noexcept { return center_ + radius_ * (std::cos(angle) * e1_ + std::sin(angle) * e2_); }
 
-        [[nodiscard]] pos_t constexpr pos_at(double t) const noexcept { return pos_at_angle((t - 0.5) * angle_span_); }
+        [[nodiscard]] double constexpr angle_at(double t) const noexcept { return (t - 0.5) * angle_span_; }
+
+        [[nodiscard]] pos_t constexpr pos_at(double t) const noexcept { return pos_at_angle(angle_at(t)); }
 
         [[nodiscard]] CircleArc normalized() const;
         [[nodiscard]] CircleArc rotate(double angle) const;
@@ -93,10 +99,9 @@ namespace geometry
         pos_t center_; /// center position
         pos_t normal_; /// normal direction, together with center defines circle plane
         pos_t e1_; /// first unit vector (see ascii sketch)
-        pos_t e2; /// second unit vector (see ascii sketch)
+        pos_t e2_; /// second unit vector (see ascii sketch)
         double radius_{}; /// circle radius
         double angle_span_{}; /// angle span of the arc
-        CircleArc() = default;
     };
 
     template <any_json_t JsonType>
@@ -118,26 +123,28 @@ namespace geometry
     //        vec e1
     struct Rectangle
     {
-        [[nodiscard]] Rectangle(//
-            std::string const& id,
+        [[nodiscard]] Rectangle() = default;
+
+        [[nodiscard]] Rectangle( //
+            std::string id,
             pos_t const& center,
             pos_t const& normal,
             pos_t const& e1,
             pos_t const& e2,
             double width,
             double height) //
-            : id_(id), center_(center), normal_(normal), e1_(e1), e2_(e2), width_(width), height_(height)
+            : id_(std::move(id)), center_(center), normal_(normal), e1_(e1), e2_(e2), width_(width), height_(height)
         {}
 
-        [[nodiscard]] std::string id() const { return id_; }
+        [[nodiscard]] std::string const& id() const { return id_; }
 
-        [[nodiscard]] pos_t center() const { return center_; }
+        [[nodiscard]] pos_t const& center() const { return center_; }
 
-        [[nodiscard]] pos_t normal() const { return normal_; }
+        [[nodiscard]] pos_t const& normal() const { return normal_; }
 
-        [[nodiscard]] pos_t e1() const { return e1_; }
+        [[nodiscard]] pos_t const& e1() const { return e1_; }
 
-        [[nodiscard]] pos_t e2() const { return e2_; }
+        [[nodiscard]] pos_t const& e2() const { return e2_; }
 
         [[nodiscard]] double width() const { return width_; }
 
@@ -165,8 +172,10 @@ namespace geometry
 
     struct SphericalRectangle
     {
-        [[nodiscard]] SphericalRectangle(//
-            std::string const& id,
+        [[nodiscard]] SphericalRectangle() = default;
+
+        [[nodiscard]] SphericalRectangle( //
+            std::string id,
             pos_t const& center,
             pos_t const& normal,
             pos_t const& e1,
@@ -174,18 +183,18 @@ namespace geometry
             double radius,
             double polar_span,
             double azimuth_span) //
-            : id_(id), center_(center), normal_(normal), e1_(e1), e2_(e2), radius_(radius), polar_span_(polar_span), azimuth_span_(azimuth_span)
+            : id_(std::move(id)), center_(center), normal_(normal), e1_(e1), e2_(e2), radius_(radius), polar_span_(polar_span), azimuth_span_(azimuth_span)
         {}
 
-        [[nodiscard]] std::string id() const { return id_; }
+        [[nodiscard]] std::string const& id() const { return id_; }
 
-        [[nodiscard]] pos_t center() const { return center_; }
+        [[nodiscard]] pos_t const& center() const { return center_; }
 
-        [[nodiscard]] pos_t normal() const { return normal_; }
+        [[nodiscard]] pos_t const& normal() const { return normal_; }
 
-        [[nodiscard]] pos_t e1() const { return e1_; }
+        [[nodiscard]] pos_t const& e1() const { return e1_; }
 
-        [[nodiscard]] pos_t e2() const { return e2_; }
+        [[nodiscard]] pos_t const& e2() const { return e2_; }
 
         [[nodiscard]] double radius() const { return radius_; }
 
@@ -224,6 +233,8 @@ namespace geometry
     }
 
     [[nodiscard]] Geometry& get(std::span<Geometry> geometries, std::string const& id);
+
+    Vec3Array get_positions(Geometry const& geo, std::size_t n_linear1, std::size_t n_linear2);
 
     namespace curve
     {

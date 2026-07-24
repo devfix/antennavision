@@ -269,7 +269,7 @@ namespace factory
         return make_radiator(desc, context);
     }
 
-    Geometry make_geometry(ojson& desc, Context& context)
+    geometry::Geometry make_geometry(ojson& desc, Context& context)
     {
         auto const id = get_string(desc, "id", false);
         assert_valid_id(id);

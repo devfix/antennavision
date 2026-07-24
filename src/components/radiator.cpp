@@ -53,7 +53,7 @@ vec_t Radiator::get_elv_spherical_standing_wave(double const dipole_length, doub
     return {0.0, polar_comp, 0.0};
 }
 
-double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, math::NumParams const& num_params)
+double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, setup::NumParams const& num_params)
 {
     num_params.check();
     auto const polar_edges = nc::linspace(0.0, pi, num_params.n_polar + 1);
@@ -89,13 +89,13 @@ vec_t Radiator::get_elv_spherical_from_cartesian(pos_t const& pos_local, double 
     return elv_spherical(polar, azimuth, wavelength);
 }
 
-double Radiator::calc_directivity_from_spherical(double polar, double azimuth, math::NumParams const& num_params) const
+double Radiator::calc_directivity_from_spherical(double polar, double azimuth, setup::NumParams const& num_params) const
 {
     return math::square(math::norm(elv_spherical(polar, azimuth, num_params.system_wavelength))) /
         calc_mean_squared_effective_length(elv_spherical, num_params);
 }
 
-double Radiator::calc_directivity_from_cartesian(pos_t const& pos_local, math::NumParams const& num_params) const
+double Radiator::calc_directivity_from_cartesian(pos_t const& pos_local, setup::NumParams const& num_params) const
 {
     auto const [r, polar, azimuth] = math::spherical_from_cartesian(pos_local);
     return calc_directivity_from_spherical(polar, azimuth, num_params);

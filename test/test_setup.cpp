@@ -5,7 +5,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
 
-#include "../include/setup.hpp"
+#include "../include/setup/setup.hpp"
 #include "testutil.hpp"
 
 TEST_CASE("setup without rotation", "[Setup]")

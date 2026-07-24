@@ -2,7 +2,7 @@
 // Created by core on 04.07.26.
 //
 
-#include "scalarfield.hpp"
+#include "../include/eval/scalarfield.old.hpp"
 #include <ansi_color.hpp>
 #include <nlopt.hpp>
 #include <print>

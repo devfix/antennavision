@@ -8,9 +8,9 @@
 #include <functional>
 #include <variant>
 
-#include "geometry.hpp"
-#include "math.hpp"
-#include "types/math.hpp"
+#include "../geometry.hpp"
+#include "../math.hpp"
+#include "../types/math.hpp"
 
 template <typename ScalarType>
 struct ScalarField
@@ -26,22 +26,6 @@ struct ScalarField
     [[nodiscard]] std::pair<pos_t, double> calc_beamwidth(geometry::CircleArc const& arc, double ratio) const;
 
     [[nodiscard]] std::pair<Vec3Array, ComplexArray> eval_geometry(geometry::Geometry const& geo, double wavelength) const;
-
-    [[nodiscard]] std::pair<PositionArray, RealArray> eval_line_abs(pos_t const& pos_start, pos_t const& pos_end) const
-    {
-        auto const [positions, values] = eval_line(pos_start, pos_end);
-        return {positions, std::visit([](auto const& v) -> RealArray { return nc::abs(v); }, values)};
-    }
-
-    [[nodiscard]] std::tuple<PositionArray, SurfacePositionArray, std::variant<RealArray, ComplexArray>>eval_plane(geometry::Rectangle const& rectangle) const;
-
-    [[nodiscard]] std::tuple<PositionArray, SurfacePositionArray, RealArray> eval_plane_abs(geometry::Rectangle const& rectangle) const
-    {
-        auto const [positions, surface_positions, values] = eval_plane(rectangle);
-        return {positions, surface_positions, std::visit([](auto const& v) -> RealArray { return nc::abs(v); }, values)};
-    }
-
-    [[nodiscard]] std::tuple<PositionArray, SurfacePositionArray, std::variant<RealArray, ComplexArray>> eval_sphere(geometry::SphericalRectangle const& sr) const;
 
     std::string const id;
     field_t const field;

@@ -11,37 +11,32 @@
 #include <optional>
 #include "types/math.hpp"
 #include "types/json.hpp"
+#include "setup/numparams.hpp"
 
 namespace math
 {
-    struct NumParams
-    {
-        double system_wavelength{};
-        std::size_t n_polar{};
-        std::size_t n_azimuth{};
-        std::size_t n_linear1{};
-        std::size_t n_linear2{};
-        double xtol_rel{};
-        double ftol_rel{};
-
-        [[nodiscard]] static NumParams configure(NumParams const& num_params);
-        void check() const;
-    };
-
-    NumParams constexpr DEFAULT_NUM_PARAMS = {.n_polar = 101, .n_azimuth = 201, .n_linear1 = 101, .n_linear2 = 101, .xtol_rel = 1e-8, .ftol_rel = 1e-8};
-
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, NumParams const& num_params);
-
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, NumParams& num_params);
-
     struct OptParams
     {
         std::function<double(double x)> fn; // objective function that gets minimized
-        double x_a;
-        double x_b;
-        NumParams const& num_params;
+        double t_a;
+        double t_b;
+        setup::NumParams const& num_params;
+    };
+
+    struct OptResult
+    {
+        double t_min{};
+        double f_min{};
+    };
+
+    struct OptScanResult
+    {
+        OptResult opt{};
+        std::vector<double> scan_t;
+        std::vector<double> scan_f;
+        std::size_t k_min;
+        std::size_t k_lower;
+        std::size_t k_upper;
     };
 
     template <typename R, typename T1, typename T2, typename T3>
@@ -133,7 +128,10 @@ namespace math
         return get_rot_mat_from_spherical(polar, azimuth);
     }
 
-    std::pair<double, double> f_min(OptParams const& optimization_params);
+    OptResult f_min(OptParams opt_params);
+
+    OptScanResult scan_f_min(OptParams const& opt_params);
+
 
     /**
      * Finds the index of the element closest to the target value.

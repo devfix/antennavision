@@ -7,11 +7,11 @@
 #include <filesystem>
 #include <functional>
 #include <list>
-#include "factory/find.hpp"
-#include "factory/make.hpp"
-#include "scalarfield.hpp"
-#include "timeutil.hpp"
-#include "types/math.hpp"
+#include "../eval/scalarfield.hpp"
+#include "../factory/find.hpp"
+#include "../factory/make.hpp"
+#include "../timeutil.hpp"
+#include "../types/math.hpp"
 
 struct Setup
 {
@@ -31,7 +31,7 @@ struct Setup
 
     [[nodiscard]] std::map<std::string, var_t> const& variables() const { return variables_; }
 
-    [[nodiscard]] math::NumParams const& num_params() const { return num_params_; }
+    [[nodiscard]] setup::NumParams const& num_params() const { return num_params_; }
 
     [[nodiscard]] std::span<const Reference> references() const { return references_; }
 
@@ -46,7 +46,7 @@ private:
     std::string name_;
     timeutil::timestamp_t timestamp_;
     std::map<std::string, var_t> variables_;
-    math::NumParams num_params_;
+    setup::NumParams num_params_;
     std::vector<Reference> references_;
     std::vector<Antenna> antennas_;
     std::list<std::pair<std::string, task_t>> tasks_;

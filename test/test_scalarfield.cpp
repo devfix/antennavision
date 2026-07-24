@@ -5,7 +5,8 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
-#include "setup.hpp"
+#include "../include/setup/setup.hpp"
+#include "eval/voltagefield.hpp"
 
 TEST_CASE("ScalarField", "[ScalarField]")
 {
@@ -67,22 +68,25 @@ TEST_CASE("ScalarField", "[ScalarField]")
 }
 )JSON");
     auto const setup = Setup::from_json(js);
+    auto& wavelength = setup->num_params().system_wavelength;
     auto const distance = setup->get_double("distance");
     auto const& tx = setup->get_antenna("ula1");
     auto& rx = setup->get_antenna("receiver");
-    auto voltage_field = antenna::get_voltage_field(tx, rx, setup->num_params());
+
+    auto voltage_field = VoltageField(tx ,rx, setup->num_params());
     {
-        auto [pos_abs_max, _] = voltage_field.argmax_line_abs(pos_t(0, distance, -0.5 * distance), pos_t(0, distance, 0.5 * distance));
-        REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
+        auto line = geometry::Line("", pos_t(0, distance, -0.5 * distance), pos_t(0, distance, 0.5 * distance));
+        auto result = voltage_field.argmax_curve_abs(line, wavelength);
+        REQUIRE((result.pos - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
     }
     {
         auto arc = geometry::CircleArc("", POS_ZERO, pos_t(1.0, 0.0, 0.0), pos_t(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
-        auto [pos_abs_max, _] = voltage_field.argmax_arc_abs(arc);
-        REQUIRE((pos_abs_max - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
+        auto result = voltage_field.argmax_curve_abs(arc, wavelength);
+        REQUIRE((result.pos - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
     }
     {
         auto arc = geometry::CircleArc("", POS_ZERO, pos_t(1.0, 0.0, 0.0), pos_t(0.0, 1.0, 0.0), POS_ZERO, distance, 0.5 * pi).normalized();
-        auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(arc, sqrt2_2);
+        auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(arc, wavelength, sqrt2_2);
         REQUIRE(beamwidth == Catch::Approx(0.11053292584412225));
     }
 }

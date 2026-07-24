@@ -7,7 +7,7 @@
 #include <functional>
 #include <string>
 #include <unordered_map>
-#include "setup.hpp"
+#include "setup/setup.hpp"
 
 #define BUILTIN_FUNCTION(name, ...)                                                                                                                            \
     void name(__VA_ARGS__); /* declare function */                                                                                                                      \

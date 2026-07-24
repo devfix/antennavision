@@ -4,7 +4,7 @@
 #include <ranges>
 #include "bitmap.hpp"
 #include "builtin.hpp"
-#include "include/setup.hpp"
+#include "include/setup/setup.hpp"
 #include "manifest.hpp"
 
 namespace

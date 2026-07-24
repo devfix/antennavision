@@ -5,12 +5,13 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
+#include "../include/setup/setup.hpp"
 #include "NumCpp/Coordinates/Cartesian.hpp"
 #include "NumCpp/Functions/abs.hpp"
 #include "NumCpp/Functions/angle.hpp"
 #include "components/radiator.hpp"
+#include "eval/voltagefield.hpp"
 #include "math.hpp"
-#include "setup.hpp"
 #include "testutil.hpp"
 
 TEST_CASE("ULA position and rotation", "[TestULA]")
@@ -216,13 +217,14 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
     auto const& tx = setup->get_antenna("ula1");
     auto& rx = setup->get_antenna("receiver");
     Reference const& ref_stop = setup->get_reference("ref_rx_stop");
-    auto voltage_field = antenna::get_voltage_field(tx, rx, setup->num_params());
+    auto voltage_field = VoltageField(tx, rx, setup->num_params());
 
     pos_t const pos_start = antenna::get_origin(rx)->global_pos();
     pos_t const pos_end = ref_stop.global_pos();
 
-    auto [distances, variant_gains] = voltage_field.eval_line(pos_start, pos_end);
-    auto gains = std::get<ComplexArray>(variant_gains);
+    geometry::Line line("", pos_start, pos_end);
+    auto result = voltage_field.eval_geometry(line, setup->num_params().system_wavelength);
+    auto &gains = result.values;
     auto const gains_abs = nc::abs(gains);
     auto const idx_max = nc::argmax(gains_abs);
     auto const gain_votage_abs_max = gains(idx_max, 0).item();

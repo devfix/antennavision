@@ -2,7 +2,7 @@
 // Created by core on 2026-07-14.
 //
 
-#include "geometry.hpp"
+#include "../../include/setup/geometry.hpp"
 #include <nlohmann/json.hpp>
 
 #include "math.hpp"
@@ -14,6 +14,10 @@ namespace geometry
 {
     namespace
     {
+        // Concept: Checks if type T belongs to the Curve variant
+        template <typename T, typename Variant>
+        concept is_variant_alternative = requires(T val) { Variant{val}; };
+
         void assert_orthogonality(pos_t const& normal, pos_t const& e1, pos_t const& e2, std::string_view object)
         {
             if (std::abs(normal.dot(e1)) > NUMERICAL_MARGIN) { throw SimulationError("Invalid {} definition: normal and e1 must be orthogonal", object); }
@@ -33,13 +37,13 @@ namespace geometry
 
     CircleArc CircleArc::normalized() const
     {
-        auto const [new_normal, new_e1, new_e2] = normalize_base(e1_, e2, normal_, "CircleArc");
+        auto const [new_normal, new_e1, new_e2] = normalize_base(e1_, e2_, normal_, "CircleArc");
         return {id_, center_, new_normal, new_e1, new_e2, radius_, angle_span_};
     }
 
     CircleArc CircleArc::rotate(double angle) const
     {
-        auto const new_e1 = std::cos(angle) * e1_ + std::sin(angle) * e2;
+        auto const new_e1 = std::cos(angle) * e1_ + std::sin(angle) * e2_;
         return {id_, center_, normal_, new_e1, normal_.cross(new_e1), radius_, angle_span_};
     }
 
@@ -78,9 +82,9 @@ namespace geometry
     void to_json(JsonType& js, Line const& l)
     {
         js = JsonType{
-            {"id", l.id_},
-            {"pos1", l.pos1_},
-            {"pos2", l.pos2_} //
+            {"id", l.id()},
+            {"pos1", l.pos1()},
+            {"pos2", l.pos2()} //
         };
     }
 
@@ -107,13 +111,13 @@ namespace geometry
     void to_json(JsonType& js, CircleArc const& c)
     {
         js = JsonType{
-            {"id", c.id_},
-            {"center", c.center_},
-            {"normal", c.normal_},
-            {"e1", c.e1_},
-            {"e2", c.e2},
-            {"radius", c.radius_},
-            {"angle_span", c.angle_span_} //
+            {"id", c.id()},
+            {"center", c.center()},
+            {"normal", c.normal()},
+            {"e1", c.e1()},
+            {"e2", c.e2()},
+            {"radius", c.radius()},
+            {"angle_span", c.angle_span()} //
         };
     }
 
@@ -146,13 +150,13 @@ namespace geometry
     void to_json(JsonType& js, Rectangle const& r)
     {
         js = JsonType{
-            {"id", r.id_},
-            {"center", r.center_},
-            {"normal", r.normal_},
-            {"e1", r.e1_},
-            {"e2", r.e2_},
-            {"width", r.width_},
-            {"height", r.height_} //
+            {"id", r.id()},
+            {"center", r.center()},
+            {"normal", r.normal()},
+            {"e1", r.e1()},
+            {"e2", r.e2()},
+            {"width", r.width()},
+            {"height", r.height()} //
         };
     }
 
@@ -185,14 +189,14 @@ namespace geometry
     void to_json(JsonType& js, SphericalRectangle const& sr)
     {
         js = JsonType{
-            {"id", sr.id_},
-            {"center", sr.center_},
-            {"normal", sr.normal_},
-            {"e1", sr.e1_},
-            {"e2", sr.e2_},
-            {"radius", sr.radius_},
-            {"polar_span", sr.polar_span_},
-            {"azimuth_span", sr.azimuth_span_} //
+            {"id", sr.id()},
+            {"center", sr.center()},
+            {"normal", sr.normal()},
+            {"e1", sr.e1()},
+            {"e2", sr.e2()},
+            {"radius", sr.radius()},
+            {"polar_span", sr.polar_span()},
+            {"azimuth_span", sr.azimuth_span()} //
         };
     }
 
@@ -225,9 +229,43 @@ namespace geometry
 
     Geometry& get(std::span<Geometry> geometries, std::string const& id)
     {
-        auto const it = std::ranges::find(geometries, id, [](auto& geo) { return std::visit([](auto& g) { return g.id; }, geo); });
+        auto const it = std::ranges::find(geometries, id, [](auto& geo) { return std::visit([](auto& g) { return g.id(); }, geo); });
         if (it == geometries.end()) { throw SimulationError("Could not find geometry with id '{}'", id); }
         return *it;
+    }
+
+    Vec3Array get_positions(Geometry const& geo, std::size_t n_linear1, std::size_t n_linear2)
+        {
+            return  std::visit(
+            [&n_linear1, &n_linear2]<typename T>(T const& shape) -> Vec3Array
+            {
+                if constexpr (is_variant_alternative<T, Curve>)
+                {
+                    Vec3Array positions(n_linear1, 1);
+                    for (ComplexArray::index_type k = 0; k < n_linear1; k++)
+                    {
+                        double const t = static_cast<double>(k) / static_cast<double>(n_linear1 - 1);
+                        positions(k, 0) = geometry::curve::get_pos_at(shape, t);
+                    }
+                    return positions;
+                }
+                else
+                {
+                    Vec3Array positions(n_linear2, n_linear1);
+                    for (ComplexArray::index_type k2 = 0; k2 < n_linear2; k2++)
+                    {
+                        double const t2 = static_cast<double>(k2) / static_cast<double>(n_linear2 - 1);
+                        for (RealArray::index_type k1 = 0; k1 < n_linear1; k1++)
+                        {
+                            double const t1 = static_cast<double>(k1) / static_cast<double>(n_linear1 - 1);
+                            positions(k2, k1) = geometry::surface::get_pos_at(shape, t1, t2);
+                        }
+                    }
+                    return positions;
+                }
+            },
+            geo);
+
     }
 } // namespace geometry
 

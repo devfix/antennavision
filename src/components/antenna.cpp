@@ -11,7 +11,7 @@ namespace antenna
 {
     namespace
     {
-        complex_t calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, math::NumParams const& num_params)
+        complex_t calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, setup::NumParams const& num_params)
         {
             if (tx.origin == nullptr) { throw SimulationError("TX Radiator '{}' has unresolved origin '{}'", tx.id, tx.origin_id); }
             if (rx.origin == nullptr) { throw SimulationError("RX Radiator '{}' has unresolved origin '{}'", rx.id, rx.origin_id); }
@@ -69,7 +69,7 @@ namespace antenna
         }
     } // namespace
 
-    complex_t calc_voltage_gain(Antenna const& tx, Antenna const& rx, math::NumParams const& num_params)
+    complex_t calc_voltage_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params)
     {
         Radiator const& radiator_rx = cast<Radiator>(rx);
         return std::visit(
@@ -81,9 +81,7 @@ namespace antenna
                 {
                     complex_t gain = 0;
                     for (std::size_t k = 0; k < ant_tx.elements.size(); k++)
-                    {
                         gain += ant_tx.coefficients[k] * calc_voltage_gain_direct(ant_tx.elements[k], radiator_rx, num_params);
-                    }
                     return gain;
                 }
                 else
@@ -94,30 +92,21 @@ namespace antenna
             tx);
     }
 
-    double calc_power_gain(Antenna const& tx, Antenna const& rx, math::NumParams const& num_params)
+    double calc_power_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params)
     { return math::square(std::abs(calc_voltage_gain(tx, rx, num_params))); }
 
-    ScalarField<complex_t> get_voltage_field(Antenna const& tx, Antenna& rx, math::NumParams const& num_params)
-    {
-        return {std::format("voltage-field.{}.{}", get_id(tx), get_id(rx)),
-            [&tx, &rx, num_params](pos_t const& pos, double const wavelength) -> complex_t
-            {
-                get_origin(rx)->pos = pos;
-                return calc_voltage_gain(tx, rx, num_params);
-            },
-            [] {}, num_params};
-    }
+    // ScalarField<double> get_power_field(Antenna const& tx, Antenna& rx, setup::NumParams const& num_params)
+    // {
+    // TODO implement me
 
-    ScalarField<double> get_power_field(Antenna const& tx, Antenna& rx, math::NumParams const& num_params)
-    {
-        return {std::format("power-field.{}.{}", get_id(tx), get_id(rx)),
-            [&tx, &rx, num_params](pos_t const& pos, double const wavelength) -> double
-            {
-                get_origin(rx)->pos = pos;
-                return calc_power_gain(tx, rx, num_params);
-            },
-            [] {}, num_params};
-    }
+    // return {std::format("power-field.{}.{}", get_id(tx), get_id(rx)),
+    //     [&tx, &rx, num_params](pos_t const& pos, double const wavelength) -> double
+    //     {
+    //         get_origin(rx)->pos = pos;
+    //         return calc_power_gain(tx, rx, num_params);
+    //     },
+    //     [] {}, num_params};
+    // }
 
     void resolve_origins(std::span<Antenna> antennas, std::span<Reference> references)
     {

@@ -2,14 +2,14 @@
 // Created by Tristan Krause on 2026-05-26.
 //
 
-#include "setup.hpp"
+#include "../../include/setup/setup.hpp"
 #include <algorithm>
 #include <ansi_color.hpp>
 #include <fstream>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <print>
-#include "eval.hpp"
+#include "../../include/eval/output.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
@@ -140,30 +140,32 @@ namespace
                 std::ranges::transform(azimuth_angles_vec, azimuth_angles.begin(), [](auto const v) { return v * nc::constants::pi; });
                 Antenna const& ant = antenna::get(context.antennas, factory::get_string(task_desc, "antenna"));
                 task_name = std::format("{}.{}", type, antenna::get_id(ant));
-                context.tasks.emplace_back(task_name, [&ant, azimuth_angles] { eval::plot_directivity_over_polar(ant, azimuth_angles, {}); });
+                context.tasks.emplace_back(task_name, [&ant, azimuth_angles] { eval::output::directivity_over_polar(ant, azimuth_angles, {}); });
             }
             else if (type == "plot_gain_over_straight")
             {
-                Antenna const& tx = antenna::get(context.antennas, factory::get_string(task_desc, "tx"));
-                Antenna& rx = antenna::get(context.antennas, factory::get_string(task_desc, "rx"));
-                Reference& ref_start = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_start"));
-                Reference const& ref_stop = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_stop"));
-                double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
-                math::NumParams num_params{.system_wavelength = wavelength};
-                pos_t const pos_start = ref_start.global_pos();
-                pos_t const pos_end = ref_stop.global_pos();
-                auto power_field = antenna::get_voltage_field(tx, rx, num_params);
-                task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
-                context.tasks.emplace_back(task_name, [power_field, pos_start, pos_end] { eval::plot_gain_over_line(power_field, pos_start, pos_end); });
+                throw SimulationError("This task is outdated");
+                // Antenna const& tx = antenna::get(context.antennas, factory::get_string(task_desc, "tx"));
+                // Antenna& rx = antenna::get(context.antennas, factory::get_string(task_desc, "rx"));
+                // Reference& ref_start = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_start"));
+                // Reference const& ref_stop = factory::find_reference_by_id(context.references, factory::get_string(task_desc, "ref_stop"));
+                // double wavelength = factory::get_double(task_desc, "wavelength", context.variables);
+                // setup::NumParams num_params{.system_wavelength = wavelength};
+                // pos_t const pos_start = ref_start.global_pos();
+                // pos_t const pos_end = ref_stop.global_pos();
+                // VoltageField voltage_field(tx, rx, num_params);
+                // auto power_field = antenna::get_voltage_field(tx, rx, num_params);
+                // task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
+                // context.tasks.emplace_back(task_name, [voltage_field, pos_start, pos_end] { eval::plot_gain_over_line(power_field, pos_start, pos_end); });
             }
             else if (type == "plot_voltage_field")
             {
                 Antenna const& tx = antenna::get(context.antennas, factory::get_string(task_desc, "tx"));
                 Antenna& rx = antenna::get(context.antennas, factory::get_string(task_desc, "rx"));
                 auto geo = geometry::get(context.geometries, factory::get_string(task_desc, "geometry"));
-                auto voltage_field = antenna::get_voltage_field(tx, rx, context.num_params);
+                VoltageField voltage_field(tx, rx, context.num_params);
                 task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
-                context.tasks.emplace_back(task_name, [voltage_field, geo] { eval::plot_field_over_geometry(voltage_field, geo); });
+                context.tasks.emplace_back(task_name, [voltage_field, geo] { eval::output::voltagefield_over_geometry(voltage_field, geo); });
             }
             // else if (type == "plot_gain_over_sphere")
             // {
@@ -181,7 +183,7 @@ namespace
             //     pos_t const center = ref_center.global_pos();
             //     pos_t const pos_rect = ref_rect.global_pos();
             //     auto sr = geometry::SphericalRectangle::make(center, pos_rect, polar * pi, azimuth * pi, dir_north);
-            //     math::NumParams num_params{.wavelength = wavelength, .n_polar = n_points_polar, .n_azimuth = n_points_azimuth};
+            //     setup::NumParams num_params{.wavelength = wavelength, .n_polar = n_points_polar, .n_azimuth = n_points_azimuth};
             //     auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
             //     task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
             //     context.tasks.emplace_back(task_name, [voltage_field, sr] { plot::plot_gain_over_spherical_rectangle(voltage_field, sr); });

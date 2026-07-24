@@ -74,43 +74,45 @@ namespace builtin
             auto js_configured = js_template;
             js_configured.at("antennas").at(0).at("size") = n_elements;
 
-            math::NumParams num_params;
+            setup::NumParams num_params;
             num_params.n_linear1 = 201;
             {
-                json json_rot;
-                json_rot["roll"] = 0.0;
-                json_rot["pitch"] = 0.5;
-                json_rot["yaw"] = 0.0;
-                js_configured.at("antennas").at(0)["rot"] = json_rot;
-                auto const setup = Setup::from_json(js_configured);
-                num_params.system_wavelength = setup->get_double("wavelength");
-                auto const distance = setup->get_double("distance");
-                auto& tx = setup->get_antenna("tx");
-                auto& rx = setup->get_antenna("rx");
-                auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
-                auto circle = geometry::CircleArc("", POS_ZERO, pos_t(0, 0, 1), pos_t(0, 1, 0), POS_ZERO, distance, 0.5*pi).normalized();
-
-                auto [pos_beam, beamwidth_axial] = voltage_field.calc_beamwidth(circle, sqrt2_2);
-                beamwidths_axial.push_back(beamwidth_axial);
-                if (n_elements == n_elements_max) { setup->export_to_three(".", "axial"); }
+                // TODO implement me
+                // json json_rot;
+                // json_rot["roll"] = 0.0;
+                // json_rot["pitch"] = 0.5;
+                // json_rot["yaw"] = 0.0;
+                // js_configured.at("antennas").at(0)["rot"] = json_rot;
+                // auto const setup = Setup::from_json(js_configured);
+                // num_params.system_wavelength = setup->get_double("wavelength");
+                // auto const distance = setup->get_double("distance");
+                // auto& tx = setup->get_antenna("tx");
+                // auto& rx = setup->get_antenna("rx");
+                // auto voltage_field = antenna::get_voltage_field(tx, rx, num_params); // TODO implement me
+                // auto circle = geometry::CircleArc("", POS_ZERO, pos_t(0, 0, 1), pos_t(0, 1, 0), POS_ZERO, distance, 0.5*pi).normalized();
+                //
+                // auto [pos_beam, beamwidth_axial] = voltage_field.calc_beamwidth(circle, sqrt2_2);
+                // beamwidths_axial.push_back(beamwidth_axial);
+                // if (n_elements == n_elements_max) { setup->export_to_three(".", "axial"); }
             }
             {
-                json json_rot;
-                json_rot["roll"] = 0.0;
-                json_rot["pitch"] = 0.0;
-                json_rot["yaw"] = 0.0;
-                js_configured.at("antennas").at(0)["rot"] = json_rot;
-                auto const setup = Setup::from_json(js_configured);
-                num_params.system_wavelength = setup->get_double("wavelength");
-                auto const distance = setup->get_double("distance");
-                auto& tx = setup->get_antenna("tx");
-                auto& rx = setup->get_antenna("rx");
-                auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
-                auto circle = geometry::CircleArc("", POS_ZERO, pos_t(0, 0, 1), pos_t(0, 1, 0), POS_ZERO, distance, 0.5*pi).normalized();
-
-                auto [pos_beam, beamwidth_lateral] = voltage_field.calc_beamwidth(circle, sqrt2_2);
-                beamwidths_lateral.push_back(beamwidth_lateral);
-                if (n_elements == n_elements_max) { setup->export_to_three(".", "lateral"); }
+                // TODO implement me
+                // json json_rot;
+                // json_rot["roll"] = 0.0;
+                // json_rot["pitch"] = 0.0;
+                // json_rot["yaw"] = 0.0;
+                // js_configured.at("antennas").at(0)["rot"] = json_rot;
+                // auto const setup = Setup::from_json(js_configured);
+                // num_params.system_wavelength = setup->get_double("wavelength");
+                // auto const distance = setup->get_double("distance");
+                // auto& tx = setup->get_antenna("tx");
+                // auto& rx = setup->get_antenna("rx");
+                // auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
+                // auto circle = geometry::CircleArc("", POS_ZERO, pos_t(0, 0, 1), pos_t(0, 1, 0), POS_ZERO, distance, 0.5*pi).normalized();
+                //
+                // auto [pos_beam, beamwidth_lateral] = voltage_field.calc_beamwidth(circle, sqrt2_2);
+                // beamwidths_lateral.push_back(beamwidth_lateral);
+                // if (n_elements == n_elements_max) { setup->export_to_three(".", "lateral"); }
             }
         }
 
