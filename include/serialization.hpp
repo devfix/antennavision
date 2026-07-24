@@ -11,14 +11,24 @@
 
 namespace serialization
 {
+
     struct JsonField
     {
         template <typename T>
-        constexpr JsonField(char const* name, T type) : name(name), type(static_cast<std::uint8_t>(type))
-        {}
+        constexpr JsonField(char const* name, T type) : name(name), types({static_cast<std::uint8_t>(type)})
+        { add_additional_types();}
 
-        const char* name;
-        std::uint8_t type;
+        template <typename T>
+        constexpr JsonField(char const* name, std::initializer_list<T> types_lst) : name(name)
+        {
+            std::ranges::transform(types_lst, std::back_insert_iterator(types), [](T t) { return static_cast<std::uint8_t>(t); });
+            add_additional_types();
+        }
+
+        void add_additional_types();
+
+        char const* name;
+        std::vector<std::uint8_t> types;
     };
 
     template <any_json_t JsonType>
@@ -30,4 +40,3 @@ void to_json(JsonType& j, Reference const& ref);
 
 template <any_json_t JsonType>
 void from_json(JsonType const& j, Reference& ref);
-

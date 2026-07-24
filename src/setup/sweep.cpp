@@ -57,7 +57,7 @@ namespace setup::sweep
                 {"id", json::value_t::string},
                 {"begin", json::value_t::number_float},
                 {"end", json::value_t::number_float},
-                {"size", json::value_t::number_unsigned}, //
+                {"size", json::value_t::number_integer}, //
             },
             {
                 {"values", json::value_t::array} //
@@ -93,7 +93,7 @@ namespace setup::sweep
                 {"id", json::value_t::string},
                 {"begin", json::value_t::number_float},
                 {"end", json::value_t::number_float},
-                {"size", json::value_t::number_unsigned}, //
+                {"size", json::value_t::number_integer}, //
             },
             {
                 {"base", json::value_t::number_float},
