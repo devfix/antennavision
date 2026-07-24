@@ -4,11 +4,12 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <span>
 #include <variant>
 #include <vector>
-#include <algorithm>
+#include "types/json.hpp"
 
 namespace setup::sweep
 {
@@ -16,7 +17,10 @@ namespace setup::sweep
     {
         [[nodiscard]] ListSweep() = default;
 
-        [[nodiscard]] explicit ListSweep(std::span<double> values) : values_(values.begin(), values.end()) { std::ranges::sort(values_); };
+        [[nodiscard]] explicit ListSweep(std::string id, std::span<double const> values) : id_(std::move(id)), values_(values.begin(), values.end())
+        { std::ranges::sort(values_); };
+
+        [[nodiscard]] std::string const& id() const noexcept { return id_; }
 
         [[nodiscard]] std::size_t size() const noexcept { return values_.size(); }
 
@@ -27,92 +31,87 @@ namespace setup::sweep
         [[nodiscard]] double end_val() const noexcept { return values_.back(); }
 
     private:
+        std::string id_;
         std::vector<double> values_;
     };
+
+    template <any_json_t JsonType>
+    void to_json(JsonType& js, ListSweep const& sweep);
+
+    template <any_json_t JsonType>
+    void from_json(JsonType const& js, ListSweep& sweep);
 
     struct LinearSweep
     {
         [[nodiscard]] LinearSweep() = default;
 
-        [[nodiscard]] explicit LinearSweep(double value_begin, double value_end, std::size_t n_values) :
-            value_begin_(value_begin), value_end_(value_end), n_values_(n_values)
+        [[nodiscard]] explicit LinearSweep(std::string id, double value_begin, double value_end, std::size_t size) :
+            id_(std::move(id)), value_begin_(value_begin), value_end_(value_end), size_(size)
         {}
 
-        [[nodiscard]] std::size_t size() const noexcept { return n_values_; }
+        [[nodiscard]] std::string const& id() const noexcept { return id_; }
 
-        [[nodiscard]] std::vector<double> values() const noexcept
-        {
-            std::vector<double> values(n_values_);
-            for (std::size_t k = 0; k < n_values_; ++k)
-            {
-                double const t = static_cast<double>(k) / (n_values_ - 1); // t in [0,1]
-                values[k] = value_begin_ + t * (value_end_ - value_begin_);
-            }
-            return values;
-        }
+        [[nodiscard]] std::size_t size() const noexcept { return size_; }
+
+        [[nodiscard]] std::vector<double> values() const noexcept;
 
         [[nodiscard]] double begin_val() const noexcept { return value_begin_; }
 
         [[nodiscard]] double end_val() const noexcept { return value_end_; }
 
     private:
+        std::string id_;
+        std::size_t size_{};
         double value_begin_{};
         double value_end_{};
-        std::size_t n_values_{};
     };
+
+    template <any_json_t JsonType>
+    void to_json(JsonType& js, LinearSweep const& sweep);
+
+    template <any_json_t JsonType>
+    void from_json(JsonType const& js, LinearSweep& sweep);
+
 
     struct LogSweep
     {
         [[nodiscard]] LogSweep() = default;
 
-        [[nodiscard]] explicit LogSweep(double value_begin, double value_end, std::size_t n_values, double base = std::numbers::e) :
-            value_begin_(value_begin), value_end_(value_end), n_values_(n_values), base_(base)
+        [[nodiscard]] explicit LogSweep(std::string id, double value_begin, double value_end, std::size_t size, double base = 10.0) :
+            id_(std::move(id)), value_begin_(value_begin), value_end_(value_end), size_(size), base_(base)
         {}
 
-        [[nodiscard]] std::size_t size() const noexcept { return n_values_; }
+        [[nodiscard]] std::string const& id() const noexcept { return id_; }
 
-        [[nodiscard]] std::vector<double> values() const noexcept
-        {
-            std::vector<double> values(n_values_);
-            for (std::size_t k = 0; k < n_values_; ++k)
-            {
-                double const t = static_cast<double>(k) / (n_values_ - 1); // t in [0,1]
-                double const u = (std::pow(base_, t) - 1) / (base_ - 1); // u in [0,1]
-                values[k] = value_begin_ + u * (value_end_ - value_begin_);
-            }
-            return values;
-        }
+        [[nodiscard]] std::size_t size() const noexcept { return size_; }
+
+        [[nodiscard]] std::vector<double> values() const noexcept;
 
         [[nodiscard]] double begin_val() const noexcept { return value_begin_; }
 
         [[nodiscard]] double end_val() const noexcept { return value_end_; }
 
+        [[nodiscard]] double base() const noexcept { return base_; }
+
     private:
+        std::string id_;
+        std::size_t size_{};
         double value_begin_{};
         double value_end_{};
-        std::size_t n_values_{};
         double base_{};
     };
 
+    template <any_json_t JsonType>
+    void to_json(JsonType& js, LogSweep const& sweep);
+
+    template <any_json_t JsonType>
+    void from_json(JsonType const& js, LogSweep& sweep);
+
     using Sweep = std::variant<ListSweep, LinearSweep, LogSweep>;
 
-    [[nodiscard]] inline std::size_t get_size(Sweep const& sweep)
-    {
-        return std::visit([](auto const& s) -> std::size_t { return s.size(); }, sweep);
-    }
-
-    [[nodiscard]] inline std::vector<double> get_values(Sweep const& sweep)
-    {
-        return std::visit([](auto const& s) { return s.values(); }, sweep);
-    }
-
-    [[nodiscard]] inline double get_begin_val(Sweep const& sweep)
-    {
-        return std::visit([](auto const& s) -> double { return s.begin_val(); }, sweep);
-    }
-
-    [[nodiscard]] inline double get_end_val(Sweep const& sweep)
-    {
-        return std::visit([](auto const& s) -> double { return s.end_val(); }, sweep);
-    }
+    [[nodiscard]] std::string const& get_id(Sweep const& sweep);
+    [[nodiscard]] std::size_t get_size(Sweep const& sweep);
+    [[nodiscard]] std::vector<double> get_values(Sweep const& sweep);
+    [[nodiscard]] double get_begin_val(Sweep const& sweep);
+    [[nodiscard]] double get_end_val(Sweep const& sweep);
 } // namespace setup::sweep
