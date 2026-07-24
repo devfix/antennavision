@@ -1,5 +1,5 @@
 //
-// Created by core on 2026-07-14.
+// Created by Tristan Krause on 2026-07-14.
 //
 
 #include "../../include/setup/geometry.hpp"

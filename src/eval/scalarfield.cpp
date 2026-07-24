@@ -1,5 +1,5 @@
 //
-// Created by core on 2026-07-23.
+// Created by Tristan Krause on 2026-07-23.
 //
 
 #include "eval/scalarfield.hpp"

@@ -1,5 +1,5 @@
 //
-// Created by core on 30.06.26.
+// Created by Tristan Krause on 30.06.26.
 //
 
 #pragma once

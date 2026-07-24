@@ -1,5 +1,5 @@
 //
-// Created by core on 2026-07-12.
+// Created by Tristan Krause on 2026-07-12.
 //
 
 #include "components/uniformlineararray.hpp"

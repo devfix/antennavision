@@ -1,5 +1,5 @@
 //
-// Created by core on 2026-07-13.
+// Created by Tristan Krause on 2026-07-13.
 //
 
 #include "components/antenna.hpp"

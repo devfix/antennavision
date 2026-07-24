@@ -1,5 +1,5 @@
 //
-// Created by core on 21.06.26.
+// Created by Tristan Krause on 21.06.26.
 //
 
 #include <nlohmann/json.hpp>
