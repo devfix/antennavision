@@ -66,16 +66,17 @@ ScalarField<Derived, ScalarT>::find_curve_peak_and_cutoffs(geometry::Curve const
 {
     std::string const& curve_id = std::visit([](auto const& shape) -> std::string const& { return shape.id(); }, curve);
 
-    // step 1: find the maximum
     // Important: math::scan_f_min and math::f_min find a local minimum. We want to find a maximum we flip the sign in the objective function.
     // The data in opt_peak, opt_left, and opt_right is therefor inverted as well!
+
+    // step 1: find the maximum
     math::OptParams const params_max{
         [this, &curve, &wavelength](double const t) -> double { return -std::abs(field(geometry::curve::get_pos_at(curve, t), wavelength)); },
         0.0,
         1.0,
         num_params //
     };
-    auto opt_peak = math::scan_f_min(params_max);
+    auto const opt_peak = math::scan_f_min(params_max);
     if (opt_peak.k_min < 2 or opt_peak.k_min > opt_peak.scan_t.size() - 3)
     {
         throw SimulationError("Curve maximum is at begin or end of curve '{}'", curve_id);
@@ -83,14 +84,14 @@ ScalarField<Derived, ScalarT>::find_curve_peak_and_cutoffs(geometry::Curve const
     double const f_peak = -opt_peak.opt.f_min;
     double const thres = ratio * f_peak;
 
-    // step 2: find left cutoff bound
+    // step 2: find left cutoff search bound
     std::size_t k_lower = opt_peak.k_min;
-    for (; k_lower > 0 and -opt_peak.scan_f[k_lower] >= thres; --k_lower);
+    for (; k_lower > 0 and -opt_peak.scan_f[k_lower] >= thres; --k_lower) {}
     if (k_lower == 0) { throw SimulationError("Could not find left cutoff bound of curve '{}'", curve_id); }
 
-    // step 3: find right cutoff bound
+    // step 3: find right cutoff search bound
     std::size_t k_upper = opt_peak.k_min;
-    for (; k_upper > 0 and -opt_peak.scan_f[k_upper] >= thres; ++k_upper);
+    for (; k_upper > 0 and -opt_peak.scan_f[k_upper] >= thres; ++k_upper) {}
     if (k_upper == opt_peak.scan_t.size() - 1) { throw SimulationError("Could not find right cutoff bound of curve '{}'", curve_id); }
 
     // step 4: find left cutoff
@@ -101,7 +102,7 @@ ScalarField<Derived, ScalarT>::find_curve_peak_and_cutoffs(geometry::Curve const
         opt_peak.opt.t_min,
         num_params //
     };
-    auto opt_left = math::f_min(params_left);
+    auto const opt_left = math::f_min(params_left);
 
     // step 5: find right cutoff
     math::OptParams const params_right{
@@ -111,7 +112,7 @@ ScalarField<Derived, ScalarT>::find_curve_peak_and_cutoffs(geometry::Curve const
         dbl(k_upper) / dbl(opt_peak.scan_t.size() - 1),
         num_params //
     };
-    auto opt_right = math::f_min(params_right);
+    auto const opt_right = math::f_min(params_right);
 
     return {
         opt_left.t_min,
@@ -129,25 +130,6 @@ std::pair<pos_t, double> ScalarField<Derived, ScalarT>::calc_beamwidth(geometry:
     auto curve_peak_span = find_curve_peak_and_cutoffs(arc, wavelength, ratio);
     double angle_span = std::abs(arc.angle_at(curve_peak_span.t_left) - arc.angle_at(curve_peak_span.t_right));
     return {curve_peak_span.pos_peak, angle_span};
-
-    // auto const [pos_beam, intensity] = argmax_arc_abs(arc);
-    // auto circle_hpbw = geometry::CircleArc("", arc.center(), arc.normal(), pos_beam - arc.center(), POS_ZERO, arc.radius(), arc.angle_span()).normalized();
-    // math::OptParams const params{[&](double const angle) -> double
-    //     {
-    //         pos_t const pos = circle_hpbw.pos_at_angle(angle);
-    //         return math::square(std::abs(field(pos, num_params.system_wavelength)) - ratio * intensity);
-    //     },
-    //     0.0,
-    //     0.5 * arc.angle_span(),
-    //     num_params};
-    // auto [angle1, eps1] = math::f_min(params);
-    //
-    // reconstruct_at(circle_hpbw, circle_hpbw.rotate(-0.5 * arc.angle_span()));
-    //
-    // auto [angle2_inv, eps2] = math::f_min(params);
-    // double angle2 = 0.5 * arc.angle_span() - angle2_inv;
-    //
-    // return {pos_beam, angle1 + angle2};
 }
 
 // -----------------------------------------------------------------------------
