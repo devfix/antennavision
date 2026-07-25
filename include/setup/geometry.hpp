@@ -6,6 +6,7 @@
 
 #include <utility>
 #include <variant>
+#include "serialization.hpp"
 #include "types/json.hpp"
 #include "types/math.hpp"
 
@@ -15,22 +16,22 @@ namespace geometry
     {
         [[nodiscard]] Line() = default;
 
-        [[nodiscard]] Line(std::string id, pos_t const& pos1, pos_t const& pos2) : id_(std::move(id)), pos1_(pos1), pos2_(pos2) {}
+        [[nodiscard]] Line(std::string id, pos_t const& pos1, pos_t const& pos2) : id_(std::move(id)), pos_begin_(pos1), pos_end_(pos2) {}
 
         [[nodiscard]] std::string const& id() const { return id_; }
 
-        [[nodiscard]] pos_t const& pos1() const { return pos1_; }
+        [[nodiscard]] pos_t const& pos_begin() const { return pos_begin_; }
 
-        [[nodiscard]] pos_t const& pos2() const { return pos2_; }
+        [[nodiscard]] pos_t const& pos_end() const { return pos_end_; }
 
-        [[nodiscard]] double length() const { return (pos2_ - pos1_).norm(); }
+        [[nodiscard]] double length() const { return (pos_end_ - pos_begin_).norm(); }
 
-        [[nodiscard]] pos_t constexpr pos_at(double t) const { return pos1_ + t * (pos2_ - pos1_); }
+        [[nodiscard]] pos_t constexpr pos_at(double t) const { return pos_begin_ + t * (pos_end_ - pos_begin_); }
 
     private:
         std::string id_; /// id of the geometry
-        pos_t pos1_; /// first position of the line (start)
-        pos_t pos2_; /// second position of the line (end)
+        pos_t pos_begin_; /// first position of the line (start)
+        pos_t pos_end_; /// second position of the line (end)
     };
 
     template <any_json_t JsonType>

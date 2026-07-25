@@ -1,5 +1,5 @@
 //
-// Created by Tristan Krause on 01.07.26.
+// Created by Tristan Krause on 2026-07-01.
 //
 
 #include "timeutil.hpp"

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "simulationerror.hpp"
+#include "types/json.hpp"
 #include "types/math.hpp"
 
 /**
@@ -56,3 +57,9 @@ struct Reference
     // last argument since optional for brace-initializer list
     Reference* origin{}; /// pointer to the origin
 };
+
+template <any_json_t JsonType>
+void to_json(JsonType& j, Reference const& ref);
+
+template <any_json_t JsonType>
+void from_json(JsonType const& j, Reference& ref);

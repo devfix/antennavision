@@ -1,5 +1,5 @@
 //
-// Created by Tristan Krause on 21.06.26.
+// Created by Tristan Krause on 2026-06-21.
 //
 
 #include <nlohmann/json.hpp>

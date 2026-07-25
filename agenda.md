@@ -18,11 +18,11 @@
 - [x] added geometries (rectangle, spherical rectangle) as separate definitons in the json and refer to them
 - [ ] add tests: UPA gain at different points
 - [ ] add tests: UPA gain over spherical rectangle
-- [ ] rename plot to eval or something similar
+- [x] rename plot to eval or something similar
 - [ ] second definition of spherical rectangle
 - [ ] visualize the screens in the 3D view
-- [ ] CRTP instead of lambdas for the field
-- [ ] dplot
+- [x] CRTP instead of lambdas for the field
+- [x] dplot
 - [ ] multi-threaded computation
 - [ ] ~~implement PS~~
 - [ ] implement connections between components

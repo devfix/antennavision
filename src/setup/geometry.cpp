@@ -83,8 +83,8 @@ namespace geometry
     {
         js = JsonType{
             {"id", l.id()},
-            {"pos1", l.pos1()},
-            {"pos2", l.pos2()} //
+            {"pos_begin", l.pos_begin()},
+            {"pos_end", l.pos_end()} //
         };
     }
 
@@ -95,15 +95,15 @@ namespace geometry
             "geometry::Rectangle",
             {
                 {"id", json::value_t::string},
-                {"pos1", json::value_t::array},
-                {"pos2", json::value_t::array},
+                {"pos_begin", json::value_t::array},
+                {"pos_end", json::value_t::array},
             },
             {});
         reconstruct_at(l,
             Line{
                 js.at("id").template get<std::string>(),
-                js.at("pos1").template get<pos_t>(),
-                js.at("pos2").template get<pos_t>() //
+                js.at("pos_begin").template get<pos_t>(),
+                js.at("pos_end").template get<pos_t>() //
             });
     }
 

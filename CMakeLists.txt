@@ -67,7 +67,8 @@ FetchContent_MakeAvailable(nlopt)
 FetchContent_Declare(
         Cephes
         GIT_REPOSITORY https://github.com/jeremybarnes/cephes.git
-        GIT_TAG master
+        GIT_TAG        master
+        GIT_SHALLOW    TRUE
 )
 FetchContent_MakeAvailable(Cephes)
 add_library(CephesSiCi STATIC
@@ -90,7 +91,7 @@ endif()
 ######### ansi_color
 FetchContent_Declare(
         ansi_color
-        URL https://github.com/devfix/ansi_color/archive/refs/heads/main.zip
+        URL      https://github.com/devfix/ansi_color/archive/refs/heads/main.zip
         URL_HASH SHA256=cdebb0f9e5f48d7e61599247acb8dbf6210bf55e39a19e77446fdde50d1dd7f7
 )
 FetchContent_MakeAvailable(ansi_color)
@@ -105,28 +106,21 @@ set(JSON_FastTests OFF CACHE INTERNAL "")
 set(JSON_CompiledMode ON CACHE BOOL "" FORCE) # <--- This forces it to compile
 FetchContent_Declare(
         json
-        URL https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.tar.gz
-        URL_HASH SHA256=4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG        v3.12.0
+        GIT_SHALLOW    TRUE
+        SYSTEM# <--- This treats all exported headers as system include paths, supress all deprecation warnings
 )
 FetchContent_MakeAvailable(json)
-#########
-
-
-######### dplotpp
-#FetchContent_Declare(
-#        dplotpp
-#        GIT_REPOSITORY https://github.com/devfix/dplotpp.git
-#        GIT_TAG        main
-#)
-#FetchContent_MakeAvailable(dplotpp)
 #########
 
 
 ######### exprtk
 FetchContent_Declare(
         exprtk
-        URL https://github.com/ArashPartow/exprtk/archive/refs/heads/master.zip
-        URL_HASH SHA256=9e9dd13f1f3c841e22dceb4e7e005812f4f4c0bf37410ab822f37426c632923e
+        GIT_REPOSITORY https://github.com/ArashPartow/exprtk.git
+        GIT_TAG        66883f0ddb034371ef38f2799f772c05bc904571
+        GIT_SHALLOW    TRUE
 )
 FetchContent_MakeAvailable(exprtk)
 if(NOT TARGET exprtk)
@@ -139,8 +133,9 @@ endif()
 ######### Catch2
 FetchContent_Declare(
         Catch2
-        URL https://github.com/catchorg/Catch2/archive/refs/tags/v3.15.0.tar.gz
-        URL_HASH SHA256=9650c55e497759cc39b977e45524bc8acb15256061c112080916ab6cb0b1ea66
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG        v3.15.2
+        GIT_SHALLOW    TRUE
 )
 FetchContent_MakeAvailable(Catch2)
 #########

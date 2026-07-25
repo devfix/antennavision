@@ -1,5 +1,5 @@
 //
-// Created by Tristan Krause on 18.06.26.
+// Created by Tristan Krause on 2026-06-18.
 //
 
 #include "factory/make.hpp"
@@ -30,8 +30,8 @@ namespace factory
             return true;
         }
 
-        std::vector<std::complex<double>> load_upa_codebook(
-            const std::filesystem::path& filepath, const std::string& ratio_key, const std::string& row, const std::string& col)
+        std::vector<std::complex<double>>
+        load_upa_codebook(const std::filesystem::path& filepath, const std::string& ratio_key, const std::string& row, const std::string& col)
         {
             // 1. Open and parse the JSON file
             std::ifstream file(filepath);
@@ -89,29 +89,7 @@ namespace factory
                 }
             }
         }
-    } // namespace
 
-    Reference make_reference(ojson& desc, Context const& context)
-    {
-        try
-        {
-            try_resolve_double_expressions(desc, context.variables, "pos");
-            try_resolve_double_expressions(desc, context.variables, "rot");
-            Reference const ref = desc.get<Reference>();
-            assert_valid_id(ref.id);
-            return ref;
-            // std::println(
-            //     "{}Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]{}",
-            //     fg4::bright_black, id, origin_id, pos.x, pos.y, pos.z, rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi, reset);
-        }
-        catch (...)
-        {
-            std::throw_with_nested(SimulationError("Failed to parse reference:\n{}", desc.dump(2)));
-        }
-    }
-
-    namespace
-    {
         Radiator make_radiator(ojson& desc, Context& context)
         {
             auto const id = get_string(desc, "id");
@@ -132,7 +110,8 @@ namespace factory
                 std::ranges::transform(effective_length_defs, effective_length_parts.begin(), parse_polar_azimuth_function);
                 auto effective_length = [effective_length_parts](double const polar, double const azimuth, double const wavelength) -> ComplexArray
                 {
-                    return {effective_length_parts[0](polar, azimuth, wavelength), effective_length_parts[1](polar, azimuth, wavelength),
+                    return {effective_length_parts[0](polar, azimuth, wavelength),
+                        effective_length_parts[1](polar, azimuth, wavelength),
                         effective_length_parts[2](polar, azimuth, wavelength)};
                 };
                 return {id, origin_id, std::move(effective_length)};
@@ -249,52 +228,112 @@ namespace factory
                 desc.erase("codebook");
             }
             assert(size_x * size_y == coeffs.size());
-            return UniformPlanarArray{
-                {.id = id, .origin_id = origin_id, .elements = std::move(array_radiators), .coefficients = std::move(coeffs)}, size_x, size_y};
+            return UniformPlanarArray{{.id = id, .origin_id = origin_id, .elements = std::move(array_radiators), .coefficients = std::move(coeffs)},
+                size_x,
+                size_y};
         }
     } // namespace
 
+    Reference make_reference(ojson& desc, Context const& context)
+    {
+        try
+        {
+            try_resolve_double_expressions(desc, context.variables, "pos");
+            try_resolve_double_expressions(desc, context.variables, "rot");
+            Reference const ref = desc.get<Reference>();
+            assert_valid_id(ref.id);
+            return ref;
+            // std::println(
+            //     "{}Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]{}",
+            //     fg4::bright_black, id, origin_id, pos.x, pos.y, pos.z, rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi, reset);
+        }
+        catch (...)
+        {
+            std::throw_with_nested(SimulationError("Failed to parse reference:\n{}", desc.dump(2)));
+        }
+    }
+
     Antenna make_antenna(ojson& desc, Context& context)
     {
-        // we only read the id, type and ref (origin id) from the description but do not delete them yet
-        auto const id = get_string(desc, "id", false);
-        assert_valid_id(id);
-        auto const type = get_string(desc, "type", false);
-        auto const origin_id = get_string(desc, "ref", false, true);
-        std::println("{}Creating antenna [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
+        try
+        {
+            // we only read the id, type and ref (origin id) from the description but do not delete them yet
+            auto const id = get_string(desc, "id", false);
+            assert_valid_id(id);
+            auto const type = get_string(desc, "type", false);
+            auto const origin_id = get_string(desc, "ref", false, true);
+            std::println("{}Creating antenna [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
 
-        // depending on the type make a ULA, UPA or single radiator as the antenna
-        if (type == "ULA") { return make_ula(desc, context); }
-        if (type == "UPA") { return make_upa(desc, context); }
-        return make_radiator(desc, context);
+            // depending on the type make a ULA, UPA or single radiator as the antenna
+            if (type == "ULA") { return make_ula(desc, context); }
+            if (type == "UPA") { return make_upa(desc, context); }
+            return make_radiator(desc, context);
+        }
+        catch (...)
+        {
+            std::throw_with_nested(SimulationError("Failed to parse antenna:\n{}", desc.dump(2)));
+        }
     }
 
     geometry::Geometry make_geometry(ojson& desc, Context& context)
     {
-        auto const id = get_string(desc, "id", false);
-        assert_valid_id(id);
-        auto const type = get_string(desc, "type");
-        std::println("{}Creating geometry [id: '{}', type: '{}']{}", fg4::bright_black, id, type, reset);
+        try
+        {
+            if (!desc.contains("type")) throw SimulationError("Missing geometry type");
+            if (desc.at("type").type() != nlohmann::json::value_t::string)
+                throw SimulationError("Geometry attribute type must be string, but is {}", desc.at("type").type_name());
+            auto const type = desc.at("type").get<std::string>();
+            desc.erase("type");
 
-        // depending on the type make the geometry
-        if (type == "CircleArc")
-        {
-            geometry::CircleArc a;
-            desc.get_to(a);
-            return a;
+            // std::println("{}Creating geometry [id: '{}', type: '{}']{}", fg4::bright_black, id, type, reset);
+
+            geometry::Geometry geo;
+            if (type == "Line")
+            {
+                try_resolve_double_expressions(desc, context.variables, "pos_begin");
+                try_resolve_double_expressions(desc, context.variables, "pos_end");
+                geo = desc.get<geometry::Line>();
+            }
+            else if (type == "CircleArc")
+            {
+                try_resolve_double_expressions(desc, context.variables, "center");
+                try_resolve_double_expressions(desc, context.variables, "normal");
+                try_resolve_double_expressions(desc, context.variables, "e1");
+                try_resolve_double_expressions(desc, context.variables, "e2");
+                try_resolve_double_expressions(desc, context.variables, "radius");
+                try_resolve_double_expressions(desc, context.variables, "angle_span");
+                geo = desc.get<geometry::CircleArc>();
+            }
+            else if (type == "Rectangle")
+            {
+                try_resolve_double_expressions(desc, context.variables, "center");
+                try_resolve_double_expressions(desc, context.variables, "normal");
+                try_resolve_double_expressions(desc, context.variables, "e1");
+                try_resolve_double_expressions(desc, context.variables, "e2");
+                try_resolve_double_expressions(desc, context.variables, "width");
+                try_resolve_double_expressions(desc, context.variables, "height");
+                geo = desc.get<geometry::Rectangle>();
+            }
+            else if (type == "SphericalRectangle")
+            {
+                try_resolve_double_expressions(desc, context.variables, "center");
+                try_resolve_double_expressions(desc, context.variables, "normal");
+                try_resolve_double_expressions(desc, context.variables, "e1");
+                try_resolve_double_expressions(desc, context.variables, "e2");
+                try_resolve_double_expressions(desc, context.variables, "radius");
+                try_resolve_double_expressions(desc, context.variables, "polar_span");
+                try_resolve_double_expressions(desc, context.variables, "azimuth_span");
+                geo = desc.get<geometry::SphericalRectangle>();
+            }
+            else
+                throw SimulationError("Unknown geometry type '{}'", type);
+
+            assert_valid_id(geometry::get_id(geo));
+            return geo;
         }
-        if (type == "Rectangle")
+        catch (...)
         {
-            geometry::Rectangle r;
-            desc.get_to(r);
-            return r;
+            std::throw_with_nested(SimulationError("Failed to parse geometry:\n{}", desc.dump(2)));
         }
-        if (type == "SphericalRectangle")
-        {
-            geometry::SphericalRectangle sr;
-            desc.get_to(sr);
-            return sr;
-        }
-        throw SimulationError("Unknown geometry type '{}'", type);
     }
 } // namespace factory

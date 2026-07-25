@@ -1,6 +1,7 @@
 //
 // Created by Tristan Krause on 2026-05-26.
 //
+
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include "reference.hpp"

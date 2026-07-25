@@ -4,6 +4,8 @@
 
 #include "reference.hpp"
 #include <ranges>
+#include <nlohmann/json.hpp>
+#include "serialization.hpp"
 #include "math.hpp"
 #include "simulationerror.hpp"
 
@@ -82,3 +84,46 @@ void Reference::resolve_origins(std::initializer_list<std::reference_wrapper<Ref
     std::vector<Reference*> ref_vec = refs | std::views::transform([](Reference& ref) { return std::addressof(ref); }) | std::ranges::to<std::vector>();
     resolve_origins_impl(ref_vec);
 }
+
+template <any_json_t JsonType>
+void to_json(JsonType& js, Reference const& ref)
+{
+    js = JsonType{
+            {"id", ref.id},
+            {"origin", ref.origin ? ref.origin->id : ""},
+            {"pos", ref.pos},
+            {"rot", ref.rot},
+        };
+}
+
+template <any_json_t JsonType>
+void from_json(JsonType const& js, Reference& ref)
+{
+    serialization::assert_structure(js,
+        "Reference",
+        {
+            {"id", json::value_t::string},
+            {"origin", json::value_t::string},
+        },
+        {
+            {"pos", json::value_t::array},
+            {"rot", json::value_t::object},
+        });
+    std::string id;
+    std::string origin;
+    pos_t pos;
+    Quaternion rot;
+
+    js.at("id").get_to(id);
+    js.at("origin").get_to(origin);
+    if (js.contains("pos")) { js.at("pos").get_to(pos); }
+    if (js.contains("rot")) { js.at("rot").get_to(rot); }
+
+    ref = Reference{.id = id, .origin_id = origin, .pos = pos, .rot = rot};
+}
+
+// Reference Instantiations
+template void to_json(nlohmann::json&, Reference const&);
+template void to_json(nlohmann::ordered_json&, Reference const&);
+template void from_json(nlohmann::json const&, Reference&);
+template void from_json(nlohmann::ordered_json const&, Reference&);

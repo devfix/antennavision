@@ -4,14 +4,14 @@
 
 #pragma once
 
+#include <complex>
 #include <string_view>
-#include "reference.hpp"
-#include "simulationerror.hpp"
 #include "types/json.hpp"
+#include "simulationerror.hpp"
+#include "reference.hpp"
 
 namespace serialization
 {
-
     struct JsonField
     {
         template <typename T>
@@ -35,8 +35,59 @@ namespace serialization
     void assert_structure(JsonType const& js, std::string_view structure_name, std::vector<JsonField> const& mandatory, std::vector<JsonField> const& optional);
 } // namespace serialization
 
-template <any_json_t JsonType>
-void to_json(JsonType& j, Reference const& ref);
 
-template <any_json_t JsonType>
-void from_json(JsonType const& j, Reference& ref);
+// ====================================================================================
+// JSON Serializer for non-standard 3rd party types
+// ====================================================================================
+namespace nlohmann
+{
+    // --- std::complex Serializer ---
+    template <typename T>
+    struct adl_serializer<std::complex<T>>
+    {
+        template <any_json_t JsonType>
+        static void to_json(JsonType& js, const std::complex<T>& value);
+        template <any_json_t JsonType>
+        static void from_json(const JsonType& j, std::complex<T>& value);
+    };
+
+    // --- nc::Vec2 Serializer ---
+    template <>
+    struct adl_serializer<nc::Vec2>
+    {
+        template <any_json_t JsonType>
+        static void to_json(JsonType& js, const nc::Vec2& value);
+        template <any_json_t JsonType>
+        static void from_json(const JsonType& s, nc::Vec2& value);
+    };
+
+    // --- nc::Vec3 Serializer ---
+    template <>
+    struct adl_serializer<nc::Vec3>
+    {
+        template <any_json_t JsonType>
+        static void to_json(JsonType& js, const nc::Vec3& value);
+        template <any_json_t JsonType>
+        static void from_json(const JsonType& js, nc::Vec3& value);
+    };
+
+    // --- nc::rotations::Quaternion Serializer ---
+    template <>
+    struct adl_serializer<nc::rotations::Quaternion>
+    {
+        template <any_json_t JsonType>
+        static void to_json(JsonType& js, const nc::rotations::Quaternion& value);
+        template <any_json_t JsonType>
+        static void from_json(const JsonType& js, nc::rotations::Quaternion& value);
+    };
+
+    // --- nc::NdArray Serializer ---
+    template <typename T>
+    struct adl_serializer<nc::NdArray<T>>
+    {
+        template <any_json_t JsonType>
+        static void to_json(JsonType& js, const nc::NdArray<T>& value);
+        template <any_json_t JsonType>
+        static void from_json(const JsonType& j, nc::NdArray<T>& value);
+    };
+} // namespace nlohmann

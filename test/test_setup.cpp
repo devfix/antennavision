@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 
 #include "../include/setup/setup.hpp"
+#include "catch2/catch_approx.hpp"
 #include "testutil.hpp"
 
 TEST_CASE("setup without rotation", "[Setup]")

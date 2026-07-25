@@ -5,6 +5,7 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
+#include "serialization.hpp"
 #include "types/math.hpp"
 #include "types/json.hpp"
 

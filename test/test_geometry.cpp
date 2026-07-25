@@ -44,18 +44,18 @@ TEST_CASE("Line Properties and JSON Serialization", "[geometry][line][json]")
         nlohmann::json const js = line;
 
         CHECK(js.at("id") == line.id());
-        CHECK(js.at("pos1") == line.pos1());
-        CHECK(js.at("pos2") == line.pos2());
+        CHECK(js.at("pos_begin") == line.pos_begin());
+        CHECK(js.at("pos_end") == line.pos_end());
 
         auto const deserialized = js.get<geometry::Line>();
 
         CHECK(deserialized.id() == line.id());
-        CHECK_THAT(deserialized.pos1().x, WithinAbs(1.0, 1e-9));
-        CHECK_THAT(deserialized.pos1().y, WithinAbs(-2.0, 1e-9));
-        CHECK_THAT(deserialized.pos1().z, WithinAbs(3.5, 1e-9));
-        CHECK_THAT(deserialized.pos2().x, WithinAbs(4.0, 1e-9));
-        CHECK_THAT(deserialized.pos2().y, WithinAbs(2.0, 1e-9));
-        CHECK_THAT(deserialized.pos2().z, WithinAbs(3.5, 1e-9));
+        CHECK_THAT(deserialized.pos_begin().x, WithinAbs(1.0, 1e-9));
+        CHECK_THAT(deserialized.pos_begin().y, WithinAbs(-2.0, 1e-9));
+        CHECK_THAT(deserialized.pos_begin().z, WithinAbs(3.5, 1e-9));
+        CHECK_THAT(deserialized.pos_end().x, WithinAbs(4.0, 1e-9));
+        CHECK_THAT(deserialized.pos_end().y, WithinAbs(2.0, 1e-9));
+        CHECK_THAT(deserialized.pos_end().z, WithinAbs(3.5, 1e-9));
     }
 
     SECTION("Deserialization throws on missing or invalid structure")
