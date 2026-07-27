@@ -36,6 +36,6 @@ bool isclose(T a, T b)
     }                                                                                                                                                          \
     while (0)
 
-void test_inverse_transformation(Reference const& reference, pos_t const& pos);
+void test_inverse_transformation(reference::Reference const& reference, Pos const& pos);
 
-void test_basic_transformations(Reference const& reference);
+void test_basic_transformations(reference::Reference const& reference);

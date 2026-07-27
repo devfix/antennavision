@@ -13,7 +13,7 @@ namespace factory
     template <typename ContainerType>
     auto& find_reference_by_id(ContainerType&& references, std::string_view const id)
     {
-        if (const auto it = std::ranges::find_if(references, [id](Reference const& reference) { return reference.id == id; }); it != references.end())
+        if (const auto it = std::ranges::find_if(references, [id](reference::Reference const& reference) { return reference.id == id; }); it != references.end())
         {
             return *it;
         }

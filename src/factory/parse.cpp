@@ -12,7 +12,7 @@ namespace factory
 {
     namespace
     {
-        long double parse_long_double(std::string const& expr, std::map<std::string, var_t> const& variables)
+        long double parse_long_double(std::string const& expr, std::map<std::string, Var> const& variables)
         {
             exprtk::symbol_table<long double> symbol_table;
             exprtk::expression<long double> expression;
@@ -30,7 +30,7 @@ namespace factory
         }
     } // namespace
 
-    std::function<complex_t(double polar, double azimuth, double wavelength)> parse_polar_azimuth_function(std::string const& expr)
+    std::function<Complex(double polar, double azimuth, double wavelength)> parse_polar_azimuth_function(std::string const& expr)
     {
         // Struct to hold all ExprTk internal state variables safely on the heap
         struct ExpressionContext
@@ -58,7 +58,7 @@ namespace factory
 
         // Return the callable lambda.
         // Capturing 'ctx' by value extends the lifetime of the underlying ExprTk objects.
-        return [ctx](double const polar, double const azimuth, double const wavelength) -> complex_t
+        return [ctx](double const polar, double const azimuth, double const wavelength) -> Complex
         {
             ctx->polar = polar;
             ctx->azimuth = azimuth;
@@ -67,12 +67,12 @@ namespace factory
         };
     }
 
-    double parse_double(std::string const& expr, std::map<std::string, var_t> const& variables)
+    double parse_double(std::string const& expr, std::map<std::string, Var> const& variables)
     {
         return static_cast<double>(parse_long_double(expr, variables));
     }
 
-    std::int64_t parse_int(std::string const& expr, std::map<std::string, var_t> const& variables)
+    std::int64_t parse_int(std::string const& expr, std::map<std::string, Var> const& variables)
     {
         return static_cast<std::int64_t>(std::roundl(parse_long_double(expr, variables)));
     }

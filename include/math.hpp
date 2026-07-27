@@ -49,13 +49,13 @@ namespace math
         return vec;
     }
 
-    vec_t constexpr rotate(vec_t const& vec, Quaternion const& quaternion) { return nc::dot(quaternion.toDCM(), vec); }
+    Vec constexpr rotate(Vec const& vec, Quaternion const& quaternion) { return nc::dot(quaternion.toDCM(), vec); }
 
-    double angle_between_vectors(pos_t vec1, pos_t vec2);
+    double angle_between_vectors(Pos vec1, Pos vec2);
 
-    [[nodiscard]] pos_t get_ort_dir(pos_t const& dir);
+    [[nodiscard]] Pos get_ort_dir(Pos const& dir);
 
-    Quaternion quaternion_from_directions(pos_t dir_initial, pos_t dir_target);
+    Quaternion quaternion_from_directions(Pos dir_initial, Pos dir_target);
 
     std::pair<double, double> sici(double x);
 
@@ -67,9 +67,9 @@ namespace math
      * @param phi angle in Euler's plane
      * @return complex number
      */
-    [[nodiscard]] complex_t constexpr complex_from_polar(double const mag, double const phi) { return {mag * std::cos(phi), mag * std::sin(phi)}; }
+    [[nodiscard]] Complex constexpr complex_from_polar(double const mag, double const phi) { return {mag * std::cos(phi), mag * std::sin(phi)}; }
 
-    [[nodiscard]] std::tuple<double, double, double> constexpr spherical_from_cartesian(pos_t const& pos)
+    [[nodiscard]] std::tuple<double, double, double> constexpr spherical_from_cartesian(Pos const& pos)
     {
         double const r = std::hypot(pos.x, pos.y, pos.z);
         if (r < NUMERICAL_MARGIN) { return {0, 0, 0}; }
@@ -122,7 +122,7 @@ namespace math
         return omega;
     }
 
-    [[nodiscard]] RealArray constexpr get_rot_mat_from_cartesian(pos_t const& pos_local)
+    [[nodiscard]] RealArray constexpr get_rot_mat_from_cartesian(Pos const& pos_local)
     {
         auto const [r, polar, azimuth] = spherical_from_cartesian(pos_local);
         return get_rot_mat_from_spherical(polar, azimuth);

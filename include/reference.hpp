@@ -8,20 +8,31 @@
 #include "types/json.hpp"
 #include "types/math.hpp"
 
-/**
- * Class "Reference" of Aggregate Type
- * Also known as POD (Plain Old Data) / PDS (Passive Data Structure) / DTO (Data Transfer Object)
- */
-struct Reference
+namespace reference
 {
-    static Reference create(std::string const& id, std::string const& origin_id, pos_t const& pos, Quaternion const& rot);
+    /**
+     * Class "Reference" of Aggregate Type
+     * Also known as POD (Plain Old Data) / PDS (Passive Data Structure) / DTO (Data Transfer Object)
+     */
+    struct Reference
+    {
+        static Reference create(std::string const& id, std::string const& origin_id, Pos const& pos, Quaternion const& rot);
 
-    [[nodiscard]] pos_t local_from_global_pos(pos_t const& pos_global) const;
-    [[nodiscard]] pos_t global_from_local_pos(pos_t const& pos_local) const;
-    [[nodiscard]] vec_t local_from_global_vec(vec_t const& vec_global) const;
-    [[nodiscard]] vec_t global_from_local_vec(vec_t const& vec_local) const;
-    [[nodiscard]] pos_t localize(Reference const& reference) const;
-    [[nodiscard]] pos_t global_pos() const;
+        [[nodiscard]] Pos local_from_global_pos(Pos const& pos_global) const;
+        [[nodiscard]] Pos global_from_local_pos(Pos const& pos_local) const;
+        [[nodiscard]] Vec local_from_global_vec(Vec const& vec_global) const;
+        [[nodiscard]] Vec global_from_local_vec(Vec const& vec_local) const;
+        [[nodiscard]] Pos localize(Reference const& reference) const;
+        [[nodiscard]] Pos global_pos() const;
+
+        std::string id; /// identifier name for the reference
+        std::string origin_id; /// name of the origin, may be empty string
+        Pos pos; /// position relative to the origins' zero
+        Quaternion rot; /// rotation relative to the origins' rotation
+
+        // last argument since optional for brace-initializer list
+        Reference* origin{}; /// pointer to the origin
+    };
 
     /**
      * Search a reference by id and return reference to it
@@ -29,7 +40,11 @@ struct Reference
      * @param target_id id of the target references that shall be returned
      * @return reference to matching reference
      */
-    [[nodiscard]] static Reference& get(std::span<Reference> references, std::string const& target_id);
+    [[nodiscard]] Reference const& get(std::span<Reference const> references, std::string const& target_id);
+    [[nodiscard]] Reference& get(std::span<Reference> references, std::string const& target_id);
+
+
+    void resolve_origins(std::span<Reference*> refs);
 
     /**
      * Interconnect all references, i.d., resolving non-empty origins ".origin_id" ids to their actual pointer ".origin".
@@ -38,7 +53,7 @@ struct Reference
      * This function is idempotent.
      * @param refs std::span that holds the references
      */
-    static void resolve_origins(std::span<Reference> refs);
+    void resolve_origins(std::span<Reference> refs);
 
     /**
      * Interconnect all references, i.d., resolving non-empty origins ".origin_id" ids to their actual pointer ".origin".
@@ -47,19 +62,11 @@ struct Reference
      * This function is idempotent.
      * @param refs std::initializer_list that holds the references
      */
-    static void resolve_origins(std::initializer_list<std::reference_wrapper<Reference>> refs);
+    void resolve_origins(std::initializer_list<std::reference_wrapper<Reference>> refs);
 
-    std::string id; /// identifier name for the reference
-    std::string origin_id; /// name of the origin, may be empty string
-    pos_t pos; /// position relative to the origins' zero
-    Quaternion rot; /// rotation relative to the origins' rotation
+    template <any_json_t JsonType>
+    void to_json(JsonType& j, Reference const& ref);
 
-    // last argument since optional for brace-initializer list
-    Reference* origin{}; /// pointer to the origin
-};
-
-template <any_json_t JsonType>
-void to_json(JsonType& j, Reference const& ref);
-
-template <any_json_t JsonType>
-void from_json(JsonType const& j, Reference& ref);
+    template <any_json_t JsonType>
+    void from_json(JsonType const& j, Reference& ref);
+} // namespace reference

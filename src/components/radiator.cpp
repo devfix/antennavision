@@ -19,7 +19,7 @@ Radiator Radiator::HertzianDipole::create(std::string const& id, std::string con
 { return {.id = id, .origin_id = origin_id, .elv_spherical = elv_spherical, .mean_squared_elv = ms_elv}; }
 
 Radiator::elv_spherical_t::result_type Radiator::HertzianDipole::elv_spherical(double const polar, double, double)
-{ return math::vec<complex_t>(0, -HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0); }
+{ return math::vec<Complex>(0, -HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0); }
 
 Radiator::ms_elv_t::result_type Radiator::HertzianDipole::ms_elv(double) { return 2.0 / 3.0 * math::square(HERTZIAN_DIPOLE_LENGTH); }
 
@@ -36,8 +36,8 @@ Radiator::elv_spherical_t::result_type Radiator::StandingWaveDipole::elv_spheric
     double const polar, double const azimuth, double const wavelength, double const dipole_length)
 {
     double const x = pi * dipole_length / wavelength;
-    complex_t const polar_comp = -wavelength / (pi * std::sin(polar)) * (std::cos(x * std::cos(polar)) - cos(x));
-    return math::vec<complex_t>(0, polar_comp, 0);
+    Complex const polar_comp = -wavelength / (pi * std::sin(polar)) * (std::cos(x * std::cos(polar)) - cos(x));
+    return math::vec<Complex>(0, polar_comp, 0);
 }
 
 Radiator::ms_elv_t::result_type Radiator::StandingWaveDipole::ms_elv(double const wavelength, double const dipole_length)
@@ -46,10 +46,10 @@ Radiator::ms_elv_t::result_type Radiator::StandingWaveDipole::ms_elv(double cons
     return 0.5 * math::square(wavelength / pi) * math::q_function(x);
 }
 
-vec_t Radiator::get_elv_spherical_standing_wave(double const dipole_length, double const wavelength, double const polar)
+Vec Radiator::get_elv_spherical_standing_wave(double const dipole_length, double const wavelength, double const polar)
 {
     double const x = pi * dipole_length / wavelength;
-    complex_t polar_comp = -wavelength / (pi * std::sin(polar)) * (std::cos(x * std::cos(polar)) - cos(x));
+    Complex polar_comp = -wavelength / (pi * std::sin(polar)) * (std::cos(x * std::cos(polar)) - cos(x));
     return {0.0, polar_comp, 0.0};
 }
 
@@ -83,7 +83,7 @@ double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_s
     return integral / (4.0 * pi);
 }
 
-vec_t Radiator::get_elv_spherical_from_cartesian(pos_t const& pos_local, double const wavelength) const
+Vec Radiator::get_elv_spherical_from_cartesian(Pos const& pos_local, double const wavelength) const
 {
     auto const [r, polar, azimuth] = math::spherical_from_cartesian(pos_local);
     return elv_spherical(polar, azimuth, wavelength);
@@ -95,7 +95,7 @@ double Radiator::calc_directivity_from_spherical(double polar, double azimuth, s
         calc_mean_squared_effective_length(elv_spherical, num_params);
 }
 
-double Radiator::calc_directivity_from_cartesian(pos_t const& pos_local, setup::NumParams const& num_params) const
+double Radiator::calc_directivity_from_cartesian(Pos const& pos_local, setup::NumParams const& num_params) const
 {
     auto const [r, polar, azimuth] = math::spherical_from_cartesian(pos_local);
     return calc_directivity_from_spherical(polar, azimuth, num_params);

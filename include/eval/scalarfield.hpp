@@ -22,9 +22,9 @@ struct ScalarField
         double t_left;
         double t_peak;
         double t_right;
-        pos_t pos_left;
-        pos_t pos_peak;
-        pos_t pos_right;
+        Pos pos_left;
+        Pos pos_peak;
+        Pos pos_right;
     };
 
     struct EvalResult
@@ -42,12 +42,12 @@ struct ScalarField
     struct ArgMaxResult
     {
         double t{};
-        pos_t pos;
+        Pos pos;
         double max{};
     };
 
     // CRTP Interface: delegates to Derived::field_impl
-    [[nodiscard]] ScalarT field(pos_t const& pos, double wavelength) const { return static_cast<Derived const*>(this)->field_impl(pos, wavelength); }
+    [[nodiscard]] ScalarT field(Pos const& pos, double wavelength) const { return static_cast<Derived const*>(this)->field_impl(pos, wavelength); }
 
     /**
      * Evaluates a field for given positions
@@ -84,7 +84,7 @@ struct ScalarField
 
     [[nodiscard]] CurvePeakSpan find_curve_peak_and_cutoffs(geometry::Curve const& curve, double wavelength, double ratio) const;
 
-    [[nodiscard]] std::pair<pos_t, double> calc_beamwidth(geometry::CircleArc const& arc, double wavelength, double ratio) const;
+    [[nodiscard]] std::pair<Pos, double> calc_beamwidth(geometry::CircleArc const& arc, double wavelength, double ratio) const;
 
     setup::NumParams const& num_params;
 

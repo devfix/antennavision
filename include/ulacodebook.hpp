@@ -16,11 +16,11 @@ struct UlaCodebook
     {
         double angle;
         double focus_distance;
-        std::vector<complex_t> weights;
+        std::vector<Complex> weights;
     };
 
     explicit UlaCodebook(std::filesystem::path const& p);
-    std::vector<complex_t> get_steering_vector(double wavelength, double angle, double focus_distance);
+    std::vector<Complex> get_steering_vector(double wavelength, double angle, double focus_distance);
 
     std::uint32_t n_elements;
     std::uint32_t oversampling_factor;

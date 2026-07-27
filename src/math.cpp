@@ -31,7 +31,7 @@ namespace math
         }
     } // namespace
 
-    double angle_between_vectors(pos_t vec1, pos_t vec2)
+    double angle_between_vectors(Pos vec1, Pos vec2)
     {
         double const norm1 = vec1.norm();
         double const norm2 = vec2.norm();
@@ -41,16 +41,16 @@ namespace math
         return std::atan2(vec1.cross(vec2).norm(), vec1.dot(vec2));
     }
 
-    pos_t get_ort_dir(pos_t const& dir)
+    Pos get_ort_dir(Pos const& dir)
     {
         auto const dir_initial = dir.normalize();
 
         // We need to rotate around an arbitrary axis orthogonal to dir and "search" for a viable orthogonal direction
         // We create the cross-product between dir and each unit vector, these vectors our candidates
-        std::array<std::tuple<pos_t, double>, 3> dir_orts{{
-            {dir_initial.cross(pos_t(1, 0, 0)), 0},
-            {dir_initial.cross(pos_t(0, 1, 0)), 0},
-            {dir_initial.cross(pos_t(0, 0, 1)), 0} //
+        std::array<std::tuple<Pos, double>, 3> dir_orts{{
+            {dir_initial.cross(Pos(1, 0, 0)), 0},
+            {dir_initial.cross(Pos(0, 1, 0)), 0},
+            {dir_initial.cross(Pos(0, 0, 1)), 0} //
         }};
         // for each candidate we determine its norm
         for (auto& [v, len] : dir_orts) { len = v.norm(); }
@@ -58,13 +58,13 @@ namespace math
         // we identify the candidate with the largest norm
         auto const dir_ort_best = std::get<0>(*std::max_element(dir_orts.begin(),
             dir_orts.end(),
-            [](std::tuple<pos_t, double> const& a, std::tuple<pos_t, double> const& b) { return std::get<1>(a) < std::get<1>(b); }));
+            [](std::tuple<Pos, double> const& a, std::tuple<Pos, double> const& b) { return std::get<1>(a) < std::get<1>(b); }));
 
         // normalize and return the best candidate
         return dir_ort_best.normalize();
     }
 
-    Quaternion quaternion_from_directions(pos_t dir_initial, pos_t dir_target)
+    Quaternion quaternion_from_directions(Pos dir_initial, Pos dir_target)
     {
         double const angle = angle_between_vectors(dir_initial, dir_target);
 

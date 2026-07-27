@@ -7,6 +7,7 @@
 #include <locale>
 #include <nlohmann/json.hpp>
 #include <print>
+#include "NumCpp/Functions/var.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/parse.hpp"
@@ -16,6 +17,7 @@ using namespace ansi_color;
 
 namespace factory
 {
+    using reference::Reference;
     namespace
     {
         bool assert_valid_id(std::string_view id)
@@ -40,7 +42,7 @@ namespace factory
             nlohmann::json root;
             file >> root;
 
-            std::vector<complex_t> coeffs;
+            std::vector<Complex> coeffs;
             auto& arr = root.at(ratio_key).at(row).at(col);
             for (std::size_t k = 0; k < arr.size(); k++) { coeffs.push_back(math::complex_from_polar(arr[k][0], arr[k][1])); }
             return coeffs;
@@ -90,7 +92,7 @@ namespace factory
             }
         }
 
-        Radiator make_radiator(ojson& desc, Context& context)
+        Radiator make_radiator(ojson& desc, VarMap const& variables)
         {
             auto const id = get_string(desc, "id");
             auto const origin_id = get_string(desc, "ref", true, true);
@@ -99,14 +101,14 @@ namespace factory
             if (type == "HertzianDipole") { return Radiator::HertzianDipole::create(id, origin_id); }
             if (type == "StandingWaveDipole")
             {
-                try_resolve_double_expressions(desc, context.variables, "dipole_length");
-                auto const dipole_length = get_double(desc, "dipole_length", context.variables);
+                try_resolve_double_expressions(desc, variables, "dipole_length");
+                auto const dipole_length = get_double(desc, "dipole_length", variables);
                 return Radiator::StandingWaveDipole::create(id, origin_id, dipole_length);
             }
             if (type == "CustomRadiator")
             {
                 auto const effective_length_defs = get_string_vec3(desc, "effective_length");
-                std::array<std::function<complex_t(double, double, double)>, 3> effective_length_parts;
+                std::array<std::function<Complex(double, double, double)>, 3> effective_length_parts;
                 std::ranges::transform(effective_length_defs, effective_length_parts.begin(), parse_polar_azimuth_function);
                 auto effective_length = [effective_length_parts](double const polar, double const azimuth, double const wavelength) -> ComplexArray
                 {
@@ -119,42 +121,49 @@ namespace factory
             throw SimulationError("Unknown radiator type '{}'", type);
         }
 
-        Antenna make_ula(ojson& desc, Context& context)
+        antenna::Antenna make_ula(ojson& desc, VarMap const& variables)
         {
-            try_resolve_double_expressions(desc, context.variables, "spacing");
-            try_resolve_int_expressions(desc, context.variables, "size");
-            try_resolve_double_expressions(desc, context.variables, "rot");
+            try_resolve_double_expressions(desc, variables, "spacing");
+            try_resolve_int_expressions(desc, variables, "size");
+            try_resolve_double_expressions(desc, variables, "rot");
 
             auto const id = get_string(desc, "id");
             auto const origin_id = get_string(desc, "ref", true, true);
             auto const type = get_string(desc, "type");
-            auto const spacing = get_double(desc, "spacing", context.variables);
-            auto const size = get_uint(desc, "size", context.variables);
+            auto const spacing = get_double(desc, "spacing", variables);
+            auto const size = get_uint(desc, "size", variables);
             Quaternion rot;
             if (desc.contains("rot")) { desc.at("rot").get_to(rot); }
             auto const prototype_desc = desc.at("radiator");
             desc.erase("radiator");
 
-            pos_t constexpr dir(1.0, 0.0, 0.0);
+            Pos constexpr dir(1.0, 0.0, 0.0);
             double const length = spacing * (size - 1);
-            std::vector<Radiator> array_radiators;
-            context.references.reserve(context.references.size() + size);
-            for (std::decay_t<decltype(size)> i = 0; i < size; i++)
+            std::vector<Radiator> elements;
+            elements.reserve(size);
+            std::vector<Reference> references;
+            references.reserve(size);
+            for (std::size_t k = 0; k < size; k++)
             {
-                double const f = static_cast<double>(i) / static_cast<double>(size - 1);
-                pos_t const pos = dir * (f - 0.5) * length;
-                context.references.push_back(Reference{.id = std::format("{}:ref:{}", id, i), .origin_id = origin_id, .pos = pos, .rot = rot});
+                double const t = static_cast<double>(k) / static_cast<double>(size - 1);
+                Pos const pos = dir * (t - 0.5) * length;
+                references.push_back(Reference{
+                    .id = std::format("{}", k),
+                    .origin_id = origin_id,
+                    .pos = pos,
+                    .rot = rot //
+                });
 
                 // We make a copy of the "backup" description and adapt it for the current element of the ULA
                 ojson ula_element_desc = prototype_desc;
-                ula_element_desc["id"] = std::format("{}:radiator:{}", id, i);
-                ula_element_desc["ref"] = context.references.back().id;
+                ula_element_desc["id"] = std::format("{}", k);
+                ula_element_desc["ref"] = references.back().id;
 
                 // call the make function recursively and append the Radiators to array_radiators
-                array_radiators.push_back(make_radiator(ula_element_desc, context));
+                elements.push_back(make_radiator(ula_element_desc, variables));
             }
 
-            std::vector<complex_t> coeffs(size, 1.0); // default values
+            std::vector<Complex> coeffs(size, 1.0); // default values
             if (desc.contains("codebook"))
             {
                 throw SimulationError("codebook not implemented for ULA");
@@ -165,25 +174,30 @@ namespace factory
                 desc.erase("codebook");
             }
             assert(size == coeffs.size());
-            return UniformLinearArray{{.id = id, .origin_id = origin_id, .elements = std::move(array_radiators), .coefficients = std::move(coeffs)}};
+            return UniformLinearArray{{
+                .id = id,
+                .origin_id = origin_id,
+                .references = references,
+                .elements = std::move(elements),
+                .coefficients = std::move(coeffs) //
+            }};
         }
 
-        Antenna make_upa(ojson& desc, Context& context)
+        antenna::Antenna make_upa(ojson& desc, VarMap const& variables)
         {
-            try_resolve_double_expressions(desc, context.variables, "spacing_x");
-            try_resolve_double_expressions(desc, context.variables, "spacing_y");
-            try_resolve_int_expressions(desc, context.variables, "size_x");
-            try_resolve_int_expressions(desc, context.variables, "size_y");
-            try_resolve_double_expressions(desc, context.variables, "rot");
+            try_resolve_double_expressions(desc, variables, "spacing_x");
+            try_resolve_double_expressions(desc, variables, "spacing_y");
+            try_resolve_int_expressions(desc, variables, "size_x");
+            try_resolve_int_expressions(desc, variables, "size_y");
+            try_resolve_double_expressions(desc, variables, "rot");
 
             auto const id = get_string(desc, "id");
             auto const origin_id = get_string(desc, "ref", true, true);
             auto const type = get_string(desc, "type");
-            Reference& origin = find_reference_by_id(context.references, origin_id);
-            auto const spacing_x = get_double(desc, "spacing_x", context.variables);
-            auto const spacing_y = get_double(desc, "spacing_y", context.variables);
-            auto const size_x = get_uint(desc, "size_x", context.variables);
-            auto const size_y = get_uint(desc, "size_y", context.variables);
+            auto const spacing_x = get_double(desc, "spacing_x", variables);
+            auto const spacing_y = get_double(desc, "spacing_y", variables);
+            auto const size_x = get_uint(desc, "size_x", variables);
+            auto const size_y = get_uint(desc, "size_y", variables);
             Quaternion rot;
             if (desc.contains("rot")) { desc.at("rot").get_to(rot); }
             auto const prototype_desc = desc.at("radiator");
@@ -191,28 +205,35 @@ namespace factory
 
             double const length_x = spacing_x * (size_x - 1);
             double const length_y = spacing_y * (size_y - 1);
-            std::vector<Radiator> array_radiators;
-            context.references.reserve(context.references.size() + size_x * size_y);
+            std::vector<Radiator> elements;
+            elements.reserve(size_x * size_y);
+            std::vector<Reference> references;
+            references.reserve(size_x * size_y);
             for (std::decay_t<decltype(size_y)> y = 0; y < size_y; y++)
             {
                 for (std::decay_t<decltype(size_x)> x = 0; x < size_x; x++)
                 {
                     double const fx = static_cast<double>(x) / static_cast<double>(size_x - 1);
                     double const fy = static_cast<double>(y) / static_cast<double>(size_y - 1);
-                    pos_t const pos = pos_t(1.0, 0.0, 0.0) * (fx - 0.5) * length_x + pos_t(0.0, 1.0, 0.0) * (fy - 0.5) * length_y;
-                    context.references.push_back(Reference{.id = std::format("{}:ref:{}:{}", id, x, y), .origin_id = origin.id, .pos = pos, .rot = rot});
+                    Pos const pos = Pos(1.0, 0.0, 0.0) * (fx - 0.5) * length_x + Pos(0.0, 1.0, 0.0) * (fy - 0.5) * length_y;
+                    references.push_back(Reference{
+                        .id = std::format("ref:{}:{}", x, y),
+                        .origin_id = origin_id,
+                        .pos = pos,
+                        .rot = rot //
+                    });
 
                     // We make a copy of the "backup" description and adapt it for the current element of the ULA
                     ojson ula_element_desc = prototype_desc;
                     ula_element_desc["id"] = std::format("{}:radiator:{}:{}", id, x, y);
-                    ula_element_desc["ref"] = context.references.back().id;
+                    ula_element_desc["ref"] = references.back().id;
 
                     // call the make function recursively and append the Radiators to array_radiators
-                    array_radiators.push_back(make_radiator(ula_element_desc, context));
+                    elements.push_back(make_radiator(ula_element_desc, variables));
                 }
             }
 
-            std::vector<complex_t> coeffs(size_x * size_y, 1.0); // default values
+            std::vector<Complex> coeffs(size_x * size_y, 1.0); // default values
             if (desc.contains("codebook"))
             {
                 auto& codebook = desc.at("codebook");
@@ -228,24 +249,29 @@ namespace factory
                 desc.erase("codebook");
             }
             assert(size_x * size_y == coeffs.size());
-            return UniformPlanarArray{{.id = id, .origin_id = origin_id, .elements = std::move(array_radiators), .coefficients = std::move(coeffs)},
+            return UniformPlanarArray{
+                {
+                    .id = id,
+                    .origin_id = origin_id,
+                    .references = std::move(references),
+                    .elements = std::move(elements),
+                    .coefficients = std::move(coeffs) //
+                },
                 size_x,
-                size_y};
+                size_y //
+            };
         }
     } // namespace
 
-    Reference make_reference(ojson& desc, Context const& context)
+    Reference make_reference(ojson& desc, VarMap const& variables)
     {
         try
         {
-            try_resolve_double_expressions(desc, context.variables, "pos");
-            try_resolve_double_expressions(desc, context.variables, "rot");
+            try_resolve_double_expressions(desc, variables, "pos");
+            try_resolve_double_expressions(desc, variables, "rot");
             Reference const ref = desc.get<Reference>();
             assert_valid_id(ref.id);
             return ref;
-            // std::println(
-            //     "{}Creating reference [id: '{}', origin: '{}', pos: (x={:.3f}, y={:.3f}, z={:.3f}), rotation: (yaw={:.3f}π, pitch={:.3f}π, roll={:.3f}π]{}",
-            //     fg4::bright_black, id, origin_id, pos.x, pos.y, pos.z, rotation.yaw() / pi, rotation.pitch() / pi, rotation.roll() / pi, reset);
         }
         catch (...)
         {
@@ -253,7 +279,7 @@ namespace factory
         }
     }
 
-    Antenna make_antenna(ojson& desc, Context& context)
+    antenna::Antenna make_antenna(ojson& desc, VarMap const& variables)
     {
         try
         {
@@ -265,9 +291,9 @@ namespace factory
             std::println("{}Creating antenna [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
 
             // depending on the type make a ULA, UPA or single radiator as the antenna
-            if (type == "ULA") { return make_ula(desc, context); }
-            if (type == "UPA") { return make_upa(desc, context); }
-            return make_radiator(desc, context);
+            if (type == "ULA") { return make_ula(desc, variables); }
+            if (type == "UPA") { return make_upa(desc, variables); }
+            return make_radiator(desc, variables);
         }
         catch (...)
         {
@@ -275,7 +301,7 @@ namespace factory
         }
     }
 
-    geometry::Geometry make_geometry(ojson& desc, Context& context)
+    geometry::Geometry make_geometry(ojson& desc, VarMap const& variables)
     {
         try
         {
@@ -290,39 +316,39 @@ namespace factory
             geometry::Geometry geo;
             if (type == "Line")
             {
-                try_resolve_double_expressions(desc, context.variables, "pos_begin");
-                try_resolve_double_expressions(desc, context.variables, "pos_end");
+                try_resolve_double_expressions(desc, variables, "pos_begin");
+                try_resolve_double_expressions(desc, variables, "pos_end");
                 geo = desc.get<geometry::Line>();
             }
             else if (type == "CircleArc")
             {
-                try_resolve_double_expressions(desc, context.variables, "center");
-                try_resolve_double_expressions(desc, context.variables, "normal");
-                try_resolve_double_expressions(desc, context.variables, "e1");
-                try_resolve_double_expressions(desc, context.variables, "e2");
-                try_resolve_double_expressions(desc, context.variables, "radius");
-                try_resolve_double_expressions(desc, context.variables, "angle_span");
+                try_resolve_double_expressions(desc, variables, "center");
+                try_resolve_double_expressions(desc, variables, "normal");
+                try_resolve_double_expressions(desc, variables, "e1");
+                try_resolve_double_expressions(desc, variables, "e2");
+                try_resolve_double_expressions(desc, variables, "radius");
+                try_resolve_double_expressions(desc, variables, "angle_span");
                 geo = desc.get<geometry::CircleArc>();
             }
             else if (type == "Rectangle")
             {
-                try_resolve_double_expressions(desc, context.variables, "center");
-                try_resolve_double_expressions(desc, context.variables, "normal");
-                try_resolve_double_expressions(desc, context.variables, "e1");
-                try_resolve_double_expressions(desc, context.variables, "e2");
-                try_resolve_double_expressions(desc, context.variables, "width");
-                try_resolve_double_expressions(desc, context.variables, "height");
+                try_resolve_double_expressions(desc, variables, "center");
+                try_resolve_double_expressions(desc, variables, "normal");
+                try_resolve_double_expressions(desc, variables, "e1");
+                try_resolve_double_expressions(desc, variables, "e2");
+                try_resolve_double_expressions(desc, variables, "width");
+                try_resolve_double_expressions(desc, variables, "height");
                 geo = desc.get<geometry::Rectangle>();
             }
             else if (type == "SphericalRectangle")
             {
-                try_resolve_double_expressions(desc, context.variables, "center");
-                try_resolve_double_expressions(desc, context.variables, "normal");
-                try_resolve_double_expressions(desc, context.variables, "e1");
-                try_resolve_double_expressions(desc, context.variables, "e2");
-                try_resolve_double_expressions(desc, context.variables, "radius");
-                try_resolve_double_expressions(desc, context.variables, "polar_span");
-                try_resolve_double_expressions(desc, context.variables, "azimuth_span");
+                try_resolve_double_expressions(desc, variables, "center");
+                try_resolve_double_expressions(desc, variables, "normal");
+                try_resolve_double_expressions(desc, variables, "e1");
+                try_resolve_double_expressions(desc, variables, "e2");
+                try_resolve_double_expressions(desc, variables, "radius");
+                try_resolve_double_expressions(desc, variables, "polar_span");
+                try_resolve_double_expressions(desc, variables, "azimuth_span");
                 geo = desc.get<geometry::SphericalRectangle>();
             }
             else

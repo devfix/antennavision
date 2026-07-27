@@ -100,10 +100,10 @@ namespace nlohmann {
     }
 
     // Instantiations for std::complex<double>
-    template void adl_serializer<complex_t>::to_json(json&, complex_t const&);
-    template void adl_serializer<complex_t>::to_json(ordered_json&, complex_t const&);
-    template void adl_serializer<complex_t>::from_json(json const&, complex_t&);
-    template void adl_serializer<complex_t>::from_json(ordered_json const&, complex_t&);
+    template void adl_serializer<Complex>::to_json(json&, Complex const&);
+    template void adl_serializer<Complex>::to_json(ordered_json&, Complex const&);
+    template void adl_serializer<Complex>::from_json(json const&, Complex&);
+    template void adl_serializer<Complex>::from_json(ordered_json const&, Complex&);
 
     // ------------------------------------------------------------------------------------
     // nc::Vec2 Serializer
@@ -255,11 +255,11 @@ namespace nlohmann {
     template void adl_serializer<nc::NdArray<double>>::from_json(const ordered_json&, nc::NdArray<double>&);
 
     // Explicit Instantiations for nc::NdArray<complex_t>
-    template struct adl_serializer<nc::NdArray<complex_t>>;
-    template void adl_serializer<nc::NdArray<complex_t>>::to_json(json&, const nc::NdArray<complex_t>&);
-    template void adl_serializer<nc::NdArray<complex_t>>::to_json(ordered_json&, const nc::NdArray<complex_t>&);
-    template void adl_serializer<nc::NdArray<complex_t>>::from_json(const json&, nc::NdArray<complex_t>&);
-    template void adl_serializer<nc::NdArray<complex_t>>::from_json(const ordered_json&, nc::NdArray<complex_t>&);
+    template struct adl_serializer<nc::NdArray<Complex>>;
+    template void adl_serializer<nc::NdArray<Complex>>::to_json(json&, const nc::NdArray<Complex>&);
+    template void adl_serializer<nc::NdArray<Complex>>::to_json(ordered_json&, const nc::NdArray<Complex>&);
+    template void adl_serializer<nc::NdArray<Complex>>::from_json(const json&, nc::NdArray<Complex>&);
+    template void adl_serializer<nc::NdArray<Complex>>::from_json(const ordered_json&, nc::NdArray<Complex>&);
 
     // Explicit Instantiations for nc::NdArray<nc::Vec2>
     template struct adl_serializer<nc::NdArray<nc::Vec2>>;

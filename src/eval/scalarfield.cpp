@@ -17,7 +17,7 @@ nc::NdArray<ScalarT> ScalarField<Derived, ScalarT>::eval(Vec3Array const& positi
 {
 
     nc::NdArray<ScalarT> values(positions.shape());
-    std::ranges::transform(positions, values.begin(), [this, &wavelength](pos_t const& pos) { return field(pos, wavelength); });
+    std::ranges::transform(positions, values.begin(), [this, &wavelength](Pos const& pos) { return field(pos, wavelength); });
     return values;
 }
 
@@ -125,7 +125,7 @@ ScalarField<Derived, ScalarT>::find_curve_peak_and_cutoffs(geometry::Curve const
 }
 
 template <typename Derived, typename ScalarT>
-std::pair<pos_t, double> ScalarField<Derived, ScalarT>::calc_beamwidth(geometry::CircleArc const& arc, double wavelength, double ratio) const
+std::pair<Pos, double> ScalarField<Derived, ScalarT>::calc_beamwidth(geometry::CircleArc const& arc, double wavelength, double ratio) const
 {
     auto curve_peak_span = find_curve_peak_and_cutoffs(arc, wavelength, ratio);
     double angle_span = std::abs(arc.angle_at(curve_peak_span.t_left) - arc.angle_at(curve_peak_span.t_right));
@@ -135,4 +135,4 @@ std::pair<pos_t, double> ScalarField<Derived, ScalarT>::calc_beamwidth(geometry:
 // -----------------------------------------------------------------------------
 // EXPLICIT INSTANTIATION
 // -----------------------------------------------------------------------------
-template struct ScalarField<VoltageField, complex_t>;
+template struct ScalarField<VoltageField, Complex>;

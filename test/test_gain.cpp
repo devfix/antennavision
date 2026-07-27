@@ -13,10 +13,10 @@
 TEST_CASE("Power Gain of auto With X-Translation", "[Gain]")
 {
     auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
-    Reference ref1{.id="ref1"};
-    Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
-    Reference ref2{.id="ref2", .pos= {1000, 0, 0}};
-    Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
+    reference::Reference ref1{.id="ref1"};
+    antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
+    reference::Reference ref2{.id="ref2", .pos= {1000, 0, 0}};
+    antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
     antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -25,7 +25,7 @@ TEST_CASE("Power Gain of auto With X-Translation", "[Gain]")
     REQUIRE(power_gain_actual == Catch::Approx(power_gain_expected));
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 
-    complex_t const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
+    Complex const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
     REQUIRE(math::square(std::abs(voltage_gain_actual)) == Catch::Approx(power_gain_expected));
     REQUIRE(std::arg(voltage_gain_actual) == Catch::Approx(-0.5 * pi));
 }
@@ -33,10 +33,10 @@ TEST_CASE("Power Gain of auto With X-Translation", "[Gain]")
 TEST_CASE("Power Gain of auto With Y-Translation", "[Gain]")
 {
     auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
-    Reference ref1{.id="ref1"};
-    Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
-    Reference ref2{.id="ref2",  .pos={0, 1000, 0}};
-    Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
+    reference::Reference ref1{.id="ref1"};
+    antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
+    reference::Reference ref2{.id="ref2",  .pos={0, 1000, 0}};
+    antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
     antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -45,7 +45,7 @@ TEST_CASE("Power Gain of auto With Y-Translation", "[Gain]")
     REQUIRE(power_gain_actual == Catch::Approx(power_gain_expected));
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 
-    complex_t const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
+    Complex const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
     REQUIRE(math::square(std::abs(voltage_gain_actual)) == Catch::Approx(power_gain_expected));
     REQUIRE(std::arg(voltage_gain_actual) == Catch::Approx(-0.5 * pi));
 }
@@ -53,10 +53,10 @@ TEST_CASE("Power Gain of auto With Y-Translation", "[Gain]")
 TEST_CASE("Power Gain of auto With Z-Translation", "[Gain]")
 {
     auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
-    Reference ref1{.id="ref1"};
-    Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
-    Reference ref2{.id="ref2",  .pos={0, 0, 1000}};
-    Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
+    reference::Reference ref1{.id="ref1"};
+    antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
+    reference::Reference ref2{.id="ref2",  .pos={0, 0, 1000}};
+    antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
     antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -65,7 +65,7 @@ TEST_CASE("Power Gain of auto With Z-Translation", "[Gain]")
     REQUIRE(power_gain_actual == Catch::Approx(power_gain_expected));
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 
-    complex_t const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
+    Complex const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
     REQUIRE(math::square(std::abs(voltage_gain_actual)) == Catch::Approx(power_gain_expected));
     REQUIRE(std::arg(voltage_gain_actual) == Catch::Approx(0.0));
 }
@@ -73,10 +73,10 @@ TEST_CASE("Power Gain of auto With Z-Translation", "[Gain]")
 TEST_CASE("Power Gain of auto With X-Rotation", "[Gain]")
 {
     auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
-    Reference ref1{.id="ref1"};
-    Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
-    Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot={pi / 6.0, 0.0, 0.0}};
-    Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
+    reference::Reference ref1{.id="ref1"};
+    antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
+    reference::Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot={pi / 6.0, 0.0, 0.0}};
+    antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
     antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -85,7 +85,7 @@ TEST_CASE("Power Gain of auto With X-Rotation", "[Gain]")
     REQUIRE(power_gain_actual == Catch::Approx(power_gain_expected));
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 
-    complex_t const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
+    Complex const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
     REQUIRE(math::square(std::abs(voltage_gain_actual)) == Catch::Approx(power_gain_expected));
     REQUIRE(std::arg(voltage_gain_actual) == Catch::Approx(-0.5 * pi));
 }
@@ -93,10 +93,10 @@ TEST_CASE("Power Gain of auto With X-Rotation", "[Gain]")
 TEST_CASE("Power Gain of auto With Y-Rotation", "[Gain]")
 {
     auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
-    Reference ref1{.id="ref1"};
-    Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
-    Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot={0.0, pi / 6.0, 0.0}};
-    Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
+    reference::Reference ref1{.id="ref1"};
+    antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
+    reference::Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot={0.0, pi / 6.0, 0.0}};
+    antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
     antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -105,7 +105,7 @@ TEST_CASE("Power Gain of auto With Y-Rotation", "[Gain]")
     REQUIRE(power_gain_actual == Catch::Approx(power_gain_expected));
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 
-    complex_t const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
+    Complex const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
     REQUIRE(math::square(std::abs(voltage_gain_actual)) == Catch::Approx(power_gain_expected));
     REQUIRE(std::arg(voltage_gain_actual) == Catch::Approx(-0.5 * pi));
 }
@@ -113,10 +113,10 @@ TEST_CASE("Power Gain of auto With Y-Rotation", "[Gain]")
 TEST_CASE("Power Gain of auto With Z-Rotation", "[Gain]")
 {
     auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
-    Reference ref1{.id="ref1"};
-    Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
-    Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot={0.0, 0.0, pi / 6.0}};
-    Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
+    reference::Reference ref1{.id="ref1"};
+    antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
+    reference::Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot={0.0, 0.0, pi / 6.0}};
+    antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
     antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -125,7 +125,7 @@ TEST_CASE("Power Gain of auto With Z-Rotation", "[Gain]")
     REQUIRE(power_gain_actual == Catch::Approx(power_gain_expected));
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 
-    complex_t const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
+    Complex const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
     REQUIRE(math::square(std::abs(voltage_gain_actual)) == Catch::Approx(power_gain_expected));
     REQUIRE(std::arg(voltage_gain_actual) == Catch::Approx(-0.5 * pi));
 }
@@ -133,10 +133,10 @@ TEST_CASE("Power Gain of auto With Z-Rotation", "[Gain]")
 TEST_CASE("Power Gain of auto Complicated 1", "[Gain]")
 {
     auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
-    Reference ref1{.id="ref1"};
-    Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
-    Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot=math::quaternion_from_directions({0,0,1}, {1,1,1})};
-    Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
+    reference::Reference ref1{.id="ref1"};
+    antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
+    reference::Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot=math::quaternion_from_directions({0,0,1}, {1,1,1})};
+    antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
     antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -145,7 +145,7 @@ TEST_CASE("Power Gain of auto Complicated 1", "[Gain]")
     REQUIRE(power_gain_actual == Catch::Approx(power_gain_expected));
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 
-    complex_t const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
+    Complex const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
     REQUIRE(math::square(std::abs(voltage_gain_actual)) == Catch::Approx(power_gain_expected));
     REQUIRE(std::arg(voltage_gain_actual) == Catch::Approx(-0.5 * pi));
 }
@@ -153,10 +153,10 @@ TEST_CASE("Power Gain of auto Complicated 1", "[Gain]")
 TEST_CASE("Power Gain of auto Complicated 2", "[Gain]")
 {
     auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
-    Reference ref1{.id="ref1"};
-    Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
-    Reference ref2{.id="ref2",  .pos={0, 1000, 500}, .rot=math::quaternion_from_directions({0,0,1}, {1,1,1})};
-    Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
+    reference::Reference ref1{.id="ref1"};
+    antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
+    reference::Reference ref2{.id="ref2",  .pos={0, 1000, 500}, .rot=math::quaternion_from_directions({0,0,1}, {1,1,1})};
+    antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
     antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -165,7 +165,7 @@ TEST_CASE("Power Gain of auto Complicated 2", "[Gain]")
     REQUIRE(power_gain_actual == Catch::Approx(power_gain_expected));
     REQUIRE(math::db_from_power_ratio((power_gain_actual)) == Catch::Approx(math::db_from_power_ratio((power_gain_expected))));
 
-    complex_t const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
+    Complex const voltage_gain_actual = antenna::calc_voltage_gain(antenna1, antenna2, num_params);
     REQUIRE(math::square(std::abs(voltage_gain_actual)) == Catch::Approx(power_gain_expected));
     REQUIRE(std::arg(voltage_gain_actual) == Catch::Approx(2.57681284089676144));
 }

@@ -58,7 +58,7 @@ namespace factory
         return c;
     }
 
-    double get_double(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove, bool default_ok)
+    double get_double(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, Var> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return 0.0; }
         assert_key(js, key);
@@ -77,7 +77,7 @@ namespace factory
         throw SimulationError("Invalid type '{}' of entry '{}'", js.at(key).type_name(), key);
     }
 
-    std::uint32_t get_uint(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove, bool default_ok)
+    std::uint32_t get_uint(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, Var> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return 0.0; }
         assert_key(js, key);
@@ -97,21 +97,21 @@ namespace factory
         throw SimulationError("Invalid type '{}' of entry '{}'", js.at(key).type_name(), key);
     }
 
-    pos_t get_pos(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove, bool default_ok)
+    Pos get_pos(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, Var> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return {}; }
         assert_key(js, key);
         if (js.at(key).is_array()) { return get_ndarray(js, key); }
-        auto const val = pos_t(get_double(js.at(key), "x", variables), get_double(js.at(key), "y", variables), get_double(js.at(key), "z", variables));
+        auto const val = Pos(get_double(js.at(key), "x", variables), get_double(js.at(key), "y", variables), get_double(js.at(key), "z", variables));
         if (remove) { js.erase(key); }
         return val;
     }
 
-    nc::rotations::Quaternion get_quaternion(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, var_t> const& variables, bool remove, bool default_ok)
+    nc::rotations::Quaternion get_quaternion(nlohmann::ordered_json& js, std::string_view key, std::map<std::string, Var> const& variables, bool remove, bool default_ok)
     {
         if (default_ok && !js.contains(key)) { return {}; }
         assert_key(js, key);
-        if (js.at(key).is_array()) { return (pos_t(get_ndarray(js, key)) * nc::constants::pi).toNdArray(); } // intermediate step via pos_t to ensure correct array shape
+        if (js.at(key).is_array()) { return (Pos(get_ndarray(js, key)) * nc::constants::pi).toNdArray(); } // intermediate step via pos_t to ensure correct array shape
         auto const val = nc::rotations::Quaternion(get_double(js.at(key), "roll", variables) * nc::constants::pi, get_double(js.at(key), "pitch", variables) * nc::constants::pi,
                                                    get_double(js.at(key), "yaw", variables) * nc::constants::pi);
         if (remove) { js.erase(key); }

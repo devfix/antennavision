@@ -38,7 +38,7 @@ UlaCodebook::UlaCodebook(std::filesystem::path const& p)
     }
 }
 
-std::vector<complex_t> UlaCodebook::get_steering_vector(double wavelength, double angle, double focus_distance)
+std::vector<Complex> UlaCodebook::get_steering_vector(double wavelength, double angle, double focus_distance)
 {
     auto wavelength_idx = math::find_closest_index(wavelengths, wavelength);
     if (!wavelength_idx) { throw SimulationError("Codebook contains no wavelength"); }

@@ -18,14 +18,14 @@ namespace geometry
         template <typename T, typename Variant>
         concept is_variant_alternative = requires(T val) { Variant{val}; };
 
-        void assert_orthogonality(pos_t const& normal, pos_t const& e1, pos_t const& e2, std::string_view object)
+        void assert_orthogonality(Pos const& normal, Pos const& e1, Pos const& e2, std::string_view object)
         {
             if (std::abs(normal.dot(e1)) > NUMERICAL_MARGIN) { throw SimulationError("Invalid {} definition: normal and e1 must be orthogonal", object); }
             if (std::abs(normal.dot(e2)) > NUMERICAL_MARGIN) { throw SimulationError("Invalid {} definition: normal and e2 must be orthogonal", object); }
             if (std::abs(e1.dot(e2)) > NUMERICAL_MARGIN) { throw SimulationError("Invalid {} definition: e1 and e2 must be orthogonal", object); }
         }
 
-        std::tuple<pos_t, pos_t, pos_t> normalize_base(pos_t const& e1, pos_t const& e2, pos_t const& normal, std::string_view object)
+        std::tuple<Pos, Pos, Pos> normalize_base(Pos const& e1, Pos const& e2, Pos const& normal, std::string_view object)
         {
             auto const new_normal = normal.normalize();
             auto const new_e1 = e1.normalize();
@@ -59,7 +59,7 @@ namespace geometry
         return SphericalRectangle{id_, center_, new_normal, new_e1, new_e2, radius_, polar_span_, azimuth_span_};
     }
 
-    pos_t SphericalRectangle::pos_at(double t1, double t2) const
+    Pos SphericalRectangle::pos_at(double t1, double t2) const
     {
         // Map to azimuthal angle offset: phi in [-azimuth/2, azimuth/2]
         double const azimuth = (t1 - 0.5) * azimuth_span_;
@@ -102,8 +102,8 @@ namespace geometry
         reconstruct_at(l,
             Line{
                 js.at("id").template get<std::string>(),
-                js.at("pos_begin").template get<pos_t>(),
-                js.at("pos_end").template get<pos_t>() //
+                js.at("pos_begin").template get<Pos>(),
+                js.at("pos_end").template get<Pos>() //
             });
     }
 
@@ -137,9 +137,9 @@ namespace geometry
             {{"e2", json::value_t::array}});
         reconstruct_at(c,
             CircleArc{js.at("id").template get<std::string>(),
-                js.at("center").template get<pos_t>(),
-                js.at("normal").template get<pos_t>(),
-                js.at("e1").template get<pos_t>(),
+                js.at("center").template get<Pos>(),
+                js.at("normal").template get<Pos>(),
+                js.at("e1").template get<Pos>(),
                 POS_ZERO,
                 js.at("radius").template get<double>(),
                 js.at("angle_span").template get<double>()}
@@ -176,9 +176,9 @@ namespace geometry
             {{"e2", json::value_t::array}});
         reconstruct_at(r,
             Rectangle{js.at("id").template get<std::string>(),
-                js.at("center").template get<pos_t>(),
-                js.at("normal").template get<pos_t>(),
-                js.at("e1").template get<pos_t>(),
+                js.at("center").template get<Pos>(),
+                js.at("normal").template get<Pos>(),
+                js.at("e1").template get<Pos>(),
                 POS_ZERO,
                 js.at("width").template get<double>(),
                 js.at("height").template get<double>()}
@@ -217,9 +217,9 @@ namespace geometry
             {{"e2", json::value_t::array}});
         reconstruct_at(sr,
             SphericalRectangle(js.at("id").template get<std::string>(),
-                js.at("center").template get<pos_t>(),
-                js.at("normal").template get<pos_t>(),
-                js.at("e1").template get<pos_t>(),
+                js.at("center").template get<Pos>(),
+                js.at("normal").template get<Pos>(),
+                js.at("e1").template get<Pos>(),
                 POS_ZERO,
                 js.at("radius").template get<double>(),
                 js.at("polar_span").template get<double>(),

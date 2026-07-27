@@ -6,7 +6,7 @@
 #include "eval/scalarfield.hpp"
 #include "components/antenna.hpp"
 
-struct VoltageField : ScalarField<VoltageField, complex_t>
+struct VoltageField : ScalarField<VoltageField, Complex>
 {
     /**
       * Creates new scalar field that is the voltage field if the tx is fixed in space and the rx is moved around
@@ -15,16 +15,16 @@ struct VoltageField : ScalarField<VoltageField, complex_t>
       * @param num_params numerical parameters
       * @return voltage field between tx and rx
       */
-    [[nodiscard]] VoltageField(Antenna const& tx, Antenna& rx, setup::NumParams const& num_params) :
+    [[nodiscard]] VoltageField(antenna::Antenna const& tx, antenna::Antenna& rx, setup::NumParams const& num_params) :
         ScalarField(num_params), tx(tx), rx(rx)
     {}
 
-    [[nodiscard]] complex_t field_impl(pos_t const& pos, double wavelength) const
+    [[nodiscard]] Complex field_impl(Pos const& pos, double wavelength) const
     {
         antenna::get_origin(rx)->pos = pos;
         return antenna::calc_voltage_gain(tx, rx, num_params);
     }
 
-    Antenna const& tx;
-    Antenna& rx;
+    antenna::Antenna const& tx;
+    antenna::Antenna& rx;
 };

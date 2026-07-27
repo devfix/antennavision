@@ -20,7 +20,8 @@ struct RadiatorArray
 
     std::string id;
     std::string origin_id;
+    std::vector<reference::Reference> references;
     std::vector<Radiator> elements;
-    std::vector<complex_t> coefficients;
-    Reference* origin{};
+    std::vector<Complex> coefficients;
+    reference::Reference* origin{};
 };

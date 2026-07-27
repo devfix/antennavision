@@ -60,10 +60,10 @@ TEST_CASE("Line Properties and JSON Serialization", "[geometry][line][json]")
 
     SECTION("Deserialization throws on missing or invalid structure")
     {
-        // Missing 'pos2'
+        // Missing 'pos_end'
         nlohmann::json const js_missing = {
             {"id", "line_invalid"},
-            {"pos1", {0.0, 0.0, 0.0}}
+            {"pos_begin", {0.0, 0.0, 0.0}}
         };
 
         REQUIRE_THROWS(js_missing.get<geometry::Line>());

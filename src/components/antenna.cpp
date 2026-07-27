@@ -9,9 +9,13 @@
 
 namespace antenna
 {
+    using reference::Reference;
+    using std::ranges::to;
+    using std::views::transform;
+
     namespace
     {
-        complex_t calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, setup::NumParams const& num_params)
+        Complex calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, setup::NumParams const& num_params)
         {
             if (tx.origin == nullptr) { throw SimulationError("TX Radiator '{}' has unresolved origin '{}'", tx.id, tx.origin_id); }
             if (rx.origin == nullptr) { throw SimulationError("RX Radiator '{}' has unresolved origin '{}'", rx.id, rx.origin_id); }
@@ -43,33 +47,39 @@ namespace antenna
             return -j * g / std::sqrt(mean_squared_elv_tx * mean_squared_elv_rx) * propagation;
         }
 
-        void resolve_origin_impl(Radiator& rad, std::span<Reference*> references)
+        void resolve_origin_impl(Radiator& rad, std::span<Reference*> refs)
         {
-            auto const it = std::ranges::find(references, rad.origin_id, [](Reference* ref) -> std::string const& { return ref->id; });
-            if (it == references.end()) { throw SimulationError("Radiator '{}' has non-existing origin '{}'", rad.id, rad.origin_id); }
+            auto const it = std::ranges::find(refs, rad.origin_id, [](Reference* ref) -> std::string const& { return ref->id; });
+            if (it == refs.end()) { throw SimulationError("Radiator '{}' has non-existing origin '{}'", rad.id, rad.origin_id); }
             rad.origin = *it;
         }
 
-        void resolve_origin_impl(Antenna& ant, std::span<Reference*> references)
+        void resolve_origin_impl(Antenna& ant, std::span<Reference*> refs)
         {
             std::string const& origin_id = get_origin_id(ant);
-            auto const it = std::ranges::find(references, origin_id, [](Reference* ref) -> std::string const& { return ref->id; });
-            if (it == references.end()) { throw SimulationError("Antenna '{}' has non-existing origin '{}'", get_id(ant), origin_id); }
+            auto const it = std::ranges::find(refs, origin_id, [](Reference* ref) -> std::string const& { return ref->id; });
+            if (it == refs.end()) { throw SimulationError("Antenna '{}' has non-existing origin '{}'", get_id(ant), origin_id); }
             get_origin(ant) = *it;
 
             std::visit(
-                [&references](auto& a)
+                [&refs](auto& a)
                 {
                     if constexpr (antenna::is_array<decltype(a)>)
                     {
-                        for (Radiator& rad : a.elements) { resolve_origin_impl(rad, references); }
-                    }
+                        // create pointer vector of passed references and the references of the AntennaArray
+                        std::vector refs_merged(refs.begin(), refs.end());
+                        refs_merged.reserve(refs_merged.size() + a.references.size());
+                        std::ranges::transform(a.references, std::back_insert_iterator(refs_merged), [](Reference& ref) { return std::addressof(ref); });
+
+                        reference::resolve_origins(refs_merged); // resolve all references origins
+                        resolve_origins(a.elements, a.references); // resolve element origins within the AntennaArray
+                    };
                 },
                 ant);
         }
     } // namespace
 
-    complex_t calc_voltage_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params)
+    Complex calc_voltage_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params)
     {
         Radiator const& radiator_rx = cast<Radiator>(rx);
         return std::visit(
@@ -79,7 +89,7 @@ namespace antenna
                 if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(ant_tx, radiator_rx, num_params); }
                 else if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
                 {
-                    complex_t gain = 0;
+                    Complex gain = 0;
                     for (std::size_t k = 0; k < ant_tx.elements.size(); k++)
                         gain += ant_tx.coefficients[k] * calc_voltage_gain_direct(ant_tx.elements[k], radiator_rx, num_params);
                     return gain;
@@ -110,37 +120,40 @@ namespace antenna
 
     void resolve_origins(std::span<Antenna> antennas, std::span<Reference> references)
     {
-        std::vector<Reference*> ref_vec =
-            references | std::views::transform([](Reference& ref) { return std::addressof(ref); }) | std::ranges::to<std::vector>();
+        std::vector<Reference*> ref_vec = references | transform([](Reference& ref) { return std::addressof(ref); }) | to<std::vector>();
         for (Antenna& ant : antennas) { resolve_origin_impl(ant, ref_vec); }
     }
 
     void resolve_origins(std::span<Radiator> radiators, std::span<Reference> references)
     {
-        std::vector<Reference*> ref_vec =
-            references | std::views::transform([](Reference& ref) { return std::addressof(ref); }) | std::ranges::to<std::vector>();
+        std::vector<Reference*> ref_vec = references | transform([](Reference& ref) { return std::addressof(ref); }) | to<std::vector>();
         for (Radiator& rad : radiators) { resolve_origin_impl(rad, ref_vec); }
     }
 
     void resolve_origins(std::initializer_list<std::reference_wrapper<Antenna>> antennas, std::initializer_list<std::reference_wrapper<Reference>> references)
     {
-        std::vector<Reference*> ref_vec =
-            references | std::views::transform([](Reference& ref) { return std::addressof(ref); }) | std::ranges::to<std::vector>();
+        std::vector<Reference*> ref_vec = references | transform([](Reference& ref) { return std::addressof(ref); }) | to<std::vector>();
         for (auto const& ant : antennas) { resolve_origin_impl(ant, ref_vec); }
     }
 
     void resolve_origins(std::initializer_list<std::reference_wrapper<Radiator>> radiators, std::initializer_list<std::reference_wrapper<Reference>> references)
     {
-        std::vector<Reference*> ref_vec =
-            references | std::views::transform([](Reference& ref) { return std::addressof(ref); }) | std::ranges::to<std::vector>();
+        std::vector<Reference*> ref_vec = references | transform([](Reference& ref) { return std::addressof(ref); }) | to<std::vector>();
         for (auto const& rad : radiators) { resolve_origin_impl(rad, ref_vec); }
     }
 
-    Antenna& get(std::span<Antenna> antennas, std::string const& id)
+    Antenna const& get_const(std::span<Antenna const> antennas, std::string const& id)
     {
         auto const it = std::ranges::find(antennas, id, [](auto& ant) { return std::visit([](auto& a) { return a.id; }, ant); });
         if (it == antennas.end()) { throw SimulationError("Could not find antenna with id '{}'", id); }
         return *it;
+    }
+
+    Antenna& get(std::span<Antenna> antennas, std::string const& id)
+    {
+        // std::as_const converts std::span<Antenna> -> std::span<Antenna const>
+        // const_cast safe here because the original span contains non-const elements
+        return const_cast<Antenna&>(get_const(antennas, id));
     }
 
 } // namespace antenna

@@ -56,8 +56,8 @@ namespace builtin
 
     BUILTIN_FUNCTION(t01_upa_beam_shape, Setup& setup_task)
     {
-        auto const setup = Setup::from_json(js);
-        setup->export_to_three(".");
+        Setup const setup(js);
+        setup.export_to_three(".");
 
     }
 } // namespace builtin

@@ -21,7 +21,7 @@ TEST_CASE("serialize to JSON", "[types][complex_t]")
 {
     double constexpr real = 1.23;
     double constexpr imag = 4.56;
-    complex_t constexpr c(real, imag);
+    Complex constexpr c(real, imag);
 
     SECTION("Serializing using nlohmann::json") {
         json js = c;
@@ -110,9 +110,9 @@ TEST_CASE("std::vector<double> (de)serialization", "[types][vector]") {
 }
 
 TEST_CASE("std::vector<std::complex<double>> nested (de)serialization", "[types][vector]") {
-    std::vector<complex_t> complex_vec{
-        complex_t{1.0, -1.0},
-        complex_t{0.0, 2.5}
+    std::vector<Complex> complex_vec{
+        Complex{1.0, -1.0},
+        Complex{0.0, 2.5}
     };
 
     SECTION("Composed serialization") {
@@ -139,7 +139,7 @@ TEST_CASE("std::vector<std::complex<double>> nested (de)serialization", "[types]
             ]
         )");
 
-        auto parsed = js.get<std::vector<complex_t>>();
+        auto parsed = js.get<std::vector<Complex>>();
         
         REQUIRE(parsed.size() == 2);
         REQUIRE(parsed[0].real() == 5.0);
@@ -157,7 +157,7 @@ TEST_CASE("std::vector<std::complex<double>> nested (de)serialization", "[types]
             ]
         )");
         // The nested std::complex deserializer should throw a validation exception
-        REQUIRE_THROWS_AS(bad_nested.get<std::vector<complex_t>>(), json::type_error);
+        REQUIRE_THROWS_AS(bad_nested.get<std::vector<Complex>>(), json::type_error);
     }
 }
 
@@ -371,13 +371,13 @@ TEST_CASE("nc::rotations::Quaternion Deserialization", "[types][quaternion]") {
 
 TEST_CASE("nc::NdArray<complex_t> Serialization", "[types][ndarray][serialize]") {
     // Create a 2x3 NdArray of complex numbers
-    nc::NdArray<complex_t> arr(2, 3);
-    arr(0, 0) = complex_t{1.0, 2.0};
-    arr(0, 1) = complex_t{3.0, 4.0};
-    arr(0, 2) = complex_t{5.0, 6.0};
-    arr(1, 0) = complex_t{7.0, 8.0};
-    arr(1, 1) = complex_t{9.0, 10.0};
-    arr(1, 2) = complex_t{11.0, 12.0};
+    nc::NdArray<Complex> arr(2, 3);
+    arr(0, 0) = Complex{1.0, 2.0};
+    arr(0, 1) = Complex{3.0, 4.0};
+    arr(0, 2) = Complex{5.0, 6.0};
+    arr(1, 0) = Complex{7.0, 8.0};
+    arr(1, 1) = Complex{9.0, 10.0};
+    arr(1, 2) = Complex{11.0, 12.0};
 
     SECTION("Serializing to standard nlohmann::json") {
         json js = arr;
@@ -404,7 +404,7 @@ TEST_CASE("nc::NdArray<complex_t> Serialization", "[types][ndarray][serialize]")
     }
 
     SECTION("Serializing an empty NdArray") {
-        nc::NdArray<complex_t> empty_arr;
+        nc::NdArray<Complex> empty_arr;
         json js = empty_arr;
 
         REQUIRE(js.is_array());
@@ -421,7 +421,7 @@ TEST_CASE("nc::NdArray<complex_t> Deserialization", "[types][ndarray][deserializ
             ]
         )");
 
-        auto arr = js.get<nc::NdArray<complex_t>>();
+        auto arr = js.get<nc::NdArray<Complex>>();
         auto shape = arr.shape();
 
         REQUIRE(shape.rows == 2);
@@ -435,7 +435,7 @@ TEST_CASE("nc::NdArray<complex_t> Deserialization", "[types][ndarray][deserializ
 
     SECTION("Deserializing an empty 2D JSON array") {
         json js = json::array();
-        auto arr = js.get<nc::NdArray<complex_t>>();
+        auto arr = js.get<nc::NdArray<Complex>>();
 
         REQUIRE(arr.isempty());
         REQUIRE(arr.shape().rows == 0);
@@ -445,7 +445,7 @@ TEST_CASE("nc::NdArray<complex_t> Deserialization", "[types][ndarray][deserializ
     SECTION("Deserializing invalid JSON structures triggers errors") {
         // Test 1: Flat array instead of a 2D grid structure
         json flat_array = json::array({1.0, 2.0, 3.0});
-        REQUIRE_THROWS_AS(flat_array.get<nc::NdArray<complex_t>>(), json::type_error);
+        REQUIRE_THROWS_AS(flat_array.get<nc::NdArray<Complex>>(), json::type_error);
 
         // Test 2: Inconsistent row columns (Row 1 has 2 elements, Row 2 has 3 elements)
         json ragged_array = json::parse(R"(
@@ -454,11 +454,11 @@ TEST_CASE("nc::NdArray<complex_t> Deserialization", "[types][ndarray][deserializ
                 [[5.0, 6.0], [7.0, 8.0], [9.0, 10.0]]
             ]
         )");
-        REQUIRE_THROWS_AS(ragged_array.get<nc::NdArray<complex_t>>(), json::type_error);
+        REQUIRE_THROWS_AS(ragged_array.get<nc::NdArray<Complex>>(), json::type_error);
 
         // Test 3: Totally wrong type (JSON object instead of array)
         json object_format = json::object({{"data", {1.0, 2.0}}});
-        REQUIRE_THROWS_AS(object_format.get<nc::NdArray<complex_t>>(), json::type_error);
+        REQUIRE_THROWS_AS(object_format.get<nc::NdArray<Complex>>(), json::type_error);
 
         // Test 4: Nested elements are not valid complex number arrays
         json bad_elements = json::parse(R"(
@@ -467,6 +467,6 @@ TEST_CASE("nc::NdArray<complex_t> Deserialization", "[types][ndarray][deserializ
             ]
         )");
         // Since [1.0, 2.0, 3.0] fails std::complex's 2-element array rule, it should throw
-        REQUIRE_THROWS_AS(bad_elements.get<nc::NdArray<complex_t>>(), json::type_error);
+        REQUIRE_THROWS_AS(bad_elements.get<nc::NdArray<Complex>>(), json::type_error);
     }
 }

@@ -10,7 +10,7 @@
 #include "NumCpp/Functions/linspace.hpp"
 #include "simulationerror.hpp"
 
-void eval::output::directivity_over_polar(Antenna const& antenna, RealArray const& azimuth_angles, setup::NumParams const& num_params)
+void eval::output::directivity_over_polar(antenna::Antenna const& antenna, RealArray const& azimuth_angles, setup::NumParams const& num_params)
 {
     auto& radiator = antenna::cast<Radiator>(antenna);
 

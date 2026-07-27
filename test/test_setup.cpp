@@ -35,15 +35,15 @@ TEST_CASE("setup without rotation", "[Setup]")
   ]
 }
 )");
-    auto const su = Setup::from_json(js);
-    auto const& ref1 = su->get_reference("ref1");
-    auto const& ref2 = su->get_reference("ref2");
-    auto const& ref3 = su->get_reference("ref3");
+    Setup su = Setup(js);
+    auto const& ref1 = su.get_reference("ref1");
+    auto const& ref2 = su.get_reference("ref2");
+    auto const& ref3 = su.get_reference("ref3");
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(pos_t{1, 2, 3}), pos_t(2, 3, 4));
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(pos_t{-1, -1, -1}), POS_ZERO);
+    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{1, 2, 3}), Pos(2, 3, 4));
+    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{-1, -1, -1}), POS_ZERO);
 }
 
 TEST_CASE("setup with rotation", "[Setup]")
@@ -75,15 +75,15 @@ TEST_CASE("setup with rotation", "[Setup]")
   ]
 }
 )");
-    auto const su = Setup::from_json(js);
-    auto const &ref1 = su->get_reference("ref1");
-    auto const &ref2 = su->get_reference("ref2");
-    auto const &ref3 = su->get_reference("ref3");
+    Setup su(js);
+    auto const &ref1 = su.get_reference("ref1");
+    auto const &ref2 = su.get_reference("ref2");
+    auto const &ref3 = su.get_reference("ref3");
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(pos_t{1, 2, 3}), pos_t(2, 3, 4));
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(pos_t{-1, -1, -1}), POS_ZERO);
+    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{1, 2, 3}), Pos(2, 3, 4));
+    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{-1, -1, -1}), POS_ZERO);
 }
 
 TEST_CASE("setup context only variables", "[Setup]")
@@ -104,14 +104,14 @@ TEST_CASE("setup context only variables", "[Setup]")
   }
 }
 )JSON");
-    auto const su = Setup::from_json(js);
-    REQUIRE(su->get_double("x") == Catch::Approx(2.0));
-    REQUIRE(su->get_double("y") == Catch::Approx(6.0));
-    REQUIRE(su->get_double("z") == Catch::Approx(8.0));
-    REQUIRE(su->get_double("phi") == Catch::Approx(2 * pi));
-    REQUIRE(su->get_double("a") == Catch::Approx(1.0));
-    REQUIRE(su->get_double("b") == Catch::Approx(3.0));
-    REQUIRE(su->get_double("c") == Catch::Approx(-1.0));
+    Setup const su(js);
+    REQUIRE(su.get_double("x") == Catch::Approx(2.0));
+    REQUIRE(su.get_double("y") == Catch::Approx(6.0));
+    REQUIRE(su.get_double("z") == Catch::Approx(8.0));
+    REQUIRE(su.get_double("phi") == Catch::Approx(2 * pi));
+    REQUIRE(su.get_double("a") == Catch::Approx(1.0));
+    REQUIRE(su.get_double("b") == Catch::Approx(3.0));
+    REQUIRE(su.get_double("c") == Catch::Approx(-1.0));
 }
 
 TEST_CASE("setup context with references", "[Setup]")
@@ -139,11 +139,11 @@ TEST_CASE("setup context with references", "[Setup]")
   ]
 }
 )JSON");
-    auto const su = Setup::from_json(js);
-    REQUIRE(su->get_reference("ref1").pos.x == Catch::Approx(1.0));
-    REQUIRE(su->get_reference("ref1").pos.y == Catch::Approx(2.0));
-    REQUIRE(su->get_reference("ref1").pos.z == Catch::Approx(3.0));
-    REQUIRE(su->get_reference("ref1").rot.yaw() == Catch::Approx(0.1 * pi));
-    REQUIRE(su->get_reference("ref1").rot.pitch() == Catch::Approx(0.2 * pi));
-    REQUIRE(su->get_reference("ref1").rot.roll() == Catch::Approx(0.3 * pi));
+    Setup su(js);
+    REQUIRE(su.get_reference("ref1").pos.x == Catch::Approx(1.0));
+    REQUIRE(su.get_reference("ref1").pos.y == Catch::Approx(2.0));
+    REQUIRE(su.get_reference("ref1").pos.z == Catch::Approx(3.0));
+    REQUIRE(su.get_reference("ref1").rot.yaw() == Catch::Approx(0.1 * pi));
+    REQUIRE(su.get_reference("ref1").rot.pitch() == Catch::Approx(0.2 * pi));
+    REQUIRE(su.get_reference("ref1").rot.roll() == Catch::Approx(0.3 * pi));
 }

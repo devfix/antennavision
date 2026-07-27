@@ -43,7 +43,7 @@
 struct Radiator
 {
     using elv_spherical_t =
-        std::function<vec_t(double polar, double azimuth, double wavelength)>; /// effective length vector in spherical coordinates from spherical position
+        std::function<Vec(double polar, double azimuth, double wavelength)>; /// effective length vector in spherical coordinates from spherical position
     using ms_elv_t = std::function<double(double wavelength)>; /// mean-squared effective length
     static double constexpr HERTZIAN_DIPOLE_LENGTH = 1e-6;
 
@@ -63,13 +63,13 @@ struct Radiator
         [[nodiscard]] static ms_elv_t::result_type ms_elv(double wavelength, double dipole_length);
     };
 
-    [[nodiscard]] static vec_t get_elv_spherical_standing_wave(double dipole_length, double wavelength, double polar);
+    [[nodiscard]] static Vec get_elv_spherical_standing_wave(double dipole_length, double wavelength, double polar);
     [[nodiscard]] static double calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, setup::NumParams const& num_params);
 
-    [[nodiscard]] vec_t get_elv_spherical_from_cartesian(pos_t const& pos_local, double wavelength) const;
+    [[nodiscard]] Vec get_elv_spherical_from_cartesian(Pos const& pos_local, double wavelength) const;
 
     [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, setup::NumParams const& num_params) const;
-    [[nodiscard]] double calc_directivity_from_cartesian(pos_t const& pos_local, setup::NumParams const& num_params) const;
+    [[nodiscard]] double calc_directivity_from_cartesian(Pos const& pos_local, setup::NumParams const& num_params) const;
 
     std::string id; /// identifier name
     std::string origin_id; /// name of the origin reference
@@ -77,5 +77,5 @@ struct Radiator
     ms_elv_t mean_squared_elv{}; /// callback for mean-squared effective length. Optional, can be nullptr
 
     // last argument since optional for brace-initializer list
-    Reference* origin{};
+    reference::Reference* origin{};
 };

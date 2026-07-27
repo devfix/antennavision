@@ -6,25 +6,14 @@
 
 #include <map>
 #include <variant>
-#include "../setup/geometry.hpp"
+#include "types/setup.hpp"
+#include "setup/geometry.hpp"
 #include "components/antenna.hpp"
 #include "components/radiator.hpp"
 
 namespace factory
 {
-    using task_t = std::function<void()>;
-    struct Context
-    {
-        ojson &desc;
-        std::map<std::string, var_t> variables;
-        setup::NumParams num_params;
-        std::vector<Reference> references;
-        std::vector<Antenna> antennas;
-        std::vector<geometry::Geometry> geometries;
-        std::list<std::pair<std::string, task_t>> tasks;
-    };
-
-    [[nodiscard]] Reference make_reference(ojson& desc, Context const& context);
-    [[nodiscard]] Antenna make_antenna(ojson& desc, Context& context);
-    [[nodiscard]] geometry::Geometry make_geometry(ojson& desc, Context& context);
+    [[nodiscard]] reference::Reference make_reference(ojson& desc, VarMap const& variables);
+    [[nodiscard]] antenna::Antenna make_antenna(ojson& desc, VarMap const& variables);
+    [[nodiscard]] geometry::Geometry make_geometry(ojson& desc, VarMap const& variables);
 } // namespace factory

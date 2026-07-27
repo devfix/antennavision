@@ -109,9 +109,15 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/nlohmann/json.git
         GIT_TAG        v3.12.0
         GIT_SHALLOW    TRUE
-        SYSTEM# <--- This treats all exported headers as system include paths, supress all deprecation warnings
 )
 FetchContent_MakeAvailable(json)
+
+# Apply SYSTEM to the REAL target name (without ::)
+if(TARGET nlohmann_json)
+    set_target_properties(nlohmann_json PROPERTIES
+            INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+endif()
 #########
 
 

@@ -67,25 +67,25 @@ TEST_CASE("ScalarField", "[ScalarField]")
   ]
 }
 )JSON");
-    auto const setup = Setup::from_json(js);
-    auto& wavelength = setup->num_params().system_wavelength;
-    auto const distance = setup->get_double("distance");
-    auto const& tx = setup->get_antenna("ula1");
-    auto& rx = setup->get_antenna("receiver");
+    Setup setup (js);
+    auto& wavelength = setup.num_params().system_wavelength;
+    auto const distance = setup.get_double("distance");
+    auto const& tx = setup.get_antenna("ula1");
+    auto& rx = setup.get_antenna("receiver");
 
-    auto voltage_field = VoltageField(tx ,rx, setup->num_params());
+    auto voltage_field = VoltageField(tx ,rx, setup.num_params());
     {
-        auto line = geometry::Line("", pos_t(0, distance, -0.5 * distance), pos_t(0, distance, 0.5 * distance));
+        auto line = geometry::Line("", Pos(0, distance, -0.5 * distance), Pos(0, distance, 0.5 * distance));
         auto result = voltage_field.argmax_curve_abs(line, wavelength);
-        REQUIRE((result.pos - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
+        REQUIRE((result.pos - Pos(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
     }
     {
-        auto arc = geometry::CircleArc("", POS_ZERO, pos_t(1.0, 0.0, 0.0), pos_t(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
+        auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
         auto result = voltage_field.argmax_curve_abs(arc, wavelength);
-        REQUIRE((result.pos - pos_t(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
+        REQUIRE((result.pos - Pos(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
     }
     {
-        auto arc = geometry::CircleArc("", POS_ZERO, pos_t(1.0, 0.0, 0.0), pos_t(0.0, 1.0, 0.0), POS_ZERO, distance, 0.5 * pi).normalized();
+        auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, 1.0, 0.0), POS_ZERO, distance, 0.5 * pi).normalized();
         auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(arc, wavelength, sqrt2_2);
         REQUIRE(beamwidth == Catch::Approx(0.11053292584412225));
     }

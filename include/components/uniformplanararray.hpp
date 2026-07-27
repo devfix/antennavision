@@ -14,7 +14,7 @@ struct UniformPlanarArray : RadiatorArray<UniformPlanarArray>
 {
     constexpr Radiator& operator()(std::size_t x, std::size_t y) { return elements.at(y * size_x + x); }
 
-    Reference& get_reference(std::size_t x, std::size_t y) { auto const ptr = (*this)(x, y).origin;
+    reference::Reference& get_reference(std::size_t x, std::size_t y) { auto const ptr = (*this)(x, y).origin;
         if (!ptr) { throw SimulationError("Element {}:{} UniformPlanarArray '{}' has unconfigured origin", x, y, id); }
         return *ptr;
     }

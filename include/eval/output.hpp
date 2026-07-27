@@ -13,7 +13,7 @@
 
 namespace eval::output
 {
-    void directivity_over_polar(Antenna const& antenna, RealArray const& azimuth_angles, setup::NumParams const& num_params);
+    void directivity_over_polar(antenna::Antenna const& antenna, RealArray const& azimuth_angles, setup::NumParams const& num_params);
 
     void voltagefield_over_geometry(VoltageField const& scalar_field, geometry::Geometry const& geometry);
 

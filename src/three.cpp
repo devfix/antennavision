@@ -43,7 +43,7 @@ namespace three
         ofs << "];\n";
     }
 
-    json make_line(std::vector<pos_t> const& points, double const width, Color const color)
+    json make_line(std::vector<Pos> const& points, double const width, Color const color)
     {
         json js;
         std::vector<double> points_flat;
@@ -61,12 +61,12 @@ namespace three
         return js;
     }
 
-    json make_line(pos_t pos_a, pos_t pos_b, double const width, Color const color)
+    json make_line(Pos pos_a, Pos pos_b, double const width, Color const color)
     {
         return make_line({pos_a, pos_b}, width, color);
     }
 
-    json make_sphere(pos_t const& pos, double const radius, Color const color, std::uint16_t const segments_width, std::uint16_t const segments_height)
+    json make_sphere(Pos const& pos, double const radius, Color const color, std::uint16_t const segments_width, std::uint16_t const segments_height)
     {
         json js;
         js["type"] = "sphere";
@@ -80,7 +80,7 @@ namespace three
         return js;
     }
 
-    json make_cylinder(pos_t const& pos_start, pos_t const& pos_end, double const radius_start, double const radius_end, Color const color, std::uint16_t segments_radial)
+    json make_cylinder(Pos const& pos_start, Pos const& pos_end, double const radius_start, double const radius_end, Color const color, std::uint16_t segments_radial)
     {
         json js;
         js["type"] = "cylinder";
@@ -93,13 +93,13 @@ namespace three
         js["pos"] = pos_center.toNdArray().toStlVector();
 
         // default orientation of a cylinder in THREE is (0,1,0)
-        auto const quat = math::quaternion_from_directions(pos_t(0.0, 1.0, 0.0), direction);
+        auto const quat = math::quaternion_from_directions(Pos(0.0, 1.0, 0.0), direction);
         js["quat"] = {quat.i(), quat.j(), quat.k(), quat.s()};
         js["radial_segments"] = segments_radial;
         return js;
     }
 
-    json make_cone(pos_t const& pos_start, pos_t const& pos_end, double const radius, Color const color, std::uint16_t segments_radial)
+    json make_cone(Pos const& pos_start, Pos const& pos_end, double const radius, Color const color, std::uint16_t segments_radial)
     {
         json js;
         js["type"] = "cone";
@@ -111,13 +111,13 @@ namespace three
         js["pos"] = pos_center.toNdArray().toStlVector();
 
         // default orientation of a cone in THREE is (0,1,0)
-        auto const quat = math::quaternion_from_directions(pos_t(0.0, 1.0, 0.0), direction);
+        auto const quat = math::quaternion_from_directions(Pos(0.0, 1.0, 0.0), direction);
         js["quat"] = {quat.i(), quat.j(), quat.k(), quat.s()};
         js["radial_segments"] = segments_radial;
         return js;
     }
 
-    json make_plane(pos_t const& pos, pos_t const& dir_target, double const width, double const height, double const angle, Color const color)
+    json make_plane(Pos const& pos, Pos const& dir_target, double const width, double const height, double const angle, Color const color)
     {
         json js;
         js["type"] = "plane";
@@ -127,18 +127,18 @@ namespace three
         js["pos"] = pos.toNdArray().toStlVector();
 
         // default orientation of a plane in THREE is (0,0,1)
-        auto const quat = Quaternion(dir_target, angle) * math::quaternion_from_directions(pos_t(0.0, 0.0, 1.0), dir_target);
+        auto const quat = Quaternion(dir_target, angle) * math::quaternion_from_directions(Pos(0.0, 0.0, 1.0), dir_target);
         js["quat"] = {quat.i(), quat.j(), quat.k(), quat.s()};
         return js;
     }
 
-    std::vector<json> create_arrow(pos_t const& pos_start, pos_t const& pos_end, double const len_head, double const radius_line, double const radius_head, Color const color)
+    std::vector<json> create_arrow(Pos const& pos_start, Pos const& pos_end, double const len_head, double const radius_line, double const radius_head, Color const color)
     {
         auto const pos_contact = pos_end + (pos_start - pos_end).normalize() * len_head;
         return {make_cylinder(pos_start, pos_contact, radius_line, radius_line, color), make_cone(pos_contact, pos_end, radius_head, color)};
     }
 
-    std::vector<json> create_coordinate_arrows(pos_t const& pos_center, pos_t const& dir_x, pos_t const& dir_y, pos_t const& dir_z, double const len_arrow)
+    std::vector<json> create_coordinate_arrows(Pos const& pos_center, Pos const& dir_x, Pos const& dir_y, Pos const& dir_z, double const len_arrow)
     {
         // auto objects_x = create_arrow(pos_center, pos_center + len_arrow * dir_x.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, Color::red);
         // auto const objects_y = create_arrow(pos_center, pos_center + len_arrow * dir_y.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, Color::green);

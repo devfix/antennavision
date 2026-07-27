@@ -14,7 +14,7 @@ struct UniformLinearArray : RadiatorArray<UniformLinearArray>
 {
     constexpr Radiator& operator()(std::size_t idx) { return elements.at(idx); }
 
-    Reference& get_reference(std::size_t idx)
+    reference::Reference& get_reference(std::size_t idx)
     {
         auto const ptr = elements.at(idx).origin;
         if (!ptr) { throw SimulationError("Element {} UniformLinearArray '{}' has unconfigured origin", idx, id); }
