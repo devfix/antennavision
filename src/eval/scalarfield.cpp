@@ -3,6 +3,7 @@
 //
 
 #include "eval/scalarfield.hpp"
+#include <print>
 #include "eval/voltagefield.hpp"
 
 namespace
@@ -15,9 +16,24 @@ namespace
 template <typename Derived, typename ScalarT>
 nc::NdArray<ScalarT> ScalarField<Derived, ScalarT>::eval(Vec3Array const& positions, double wavelength) const
 {
+    using std::chrono::steady_clock;
+    using std::chrono::duration_cast;
 
     nc::NdArray<ScalarT> values(positions.shape());
-    std::ranges::transform(positions, values.begin(), [this, &wavelength](Pos const& pos) { return field(pos, wavelength); });
+    auto const size = positions.size();
+    auto it = positions.begin();
+    auto ot = values.begin();
+    for (std::size_t k = 0; it != positions.end(); ++it, ++ot, ++k)
+    {
+        if (k % 32 == 0)
+        {
+            double p = static_cast<double>(k) / static_cast<double>(size);
+            std::print("\033[2K\rScalarField::eval @ λ={:.04f}m : {: 5.1f}%", wavelength, p * 100.0);
+        }
+        *ot = field(*it, wavelength);
+    }
+    std::println("\033[2K\rScalarField::eval @ λ={:.04f}m : done", wavelength);
+    // std::ranges::transform(positions, values.begin(), [this, &wavelength](Pos const& pos) { return field(pos, wavelength); });
     return values;
 }
 
@@ -133,6 +149,6 @@ std::pair<Pos, double> ScalarField<Derived, ScalarT>::calc_beamwidth(geometry::C
 }
 
 // -----------------------------------------------------------------------------
-// EXPLICIT INSTANTIATION
+// EXPLICIT INSTANTIATIONS
 // -----------------------------------------------------------------------------
 template struct ScalarField<VoltageField, Complex>;

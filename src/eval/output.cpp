@@ -56,12 +56,12 @@ namespace eval::output
 
         ojson js;
         js["name"] = name;
-        auto const [positions, data] = scalar_field.eval_geometry_sweep(geo, sweep);
-        js["data"] = positions.toStlVector();
-        js["data"] = data;
         js["geo"] = geo;
         js["sweep"] = sweep;
         js["num_params"] = scalar_field.num_params;
+        auto const [positions, data] = scalar_field.eval_geometry_sweep(geo, sweep);
+        js["positions"] = positions;
+        js["data"] = data;
 
         std::ofstream ofs(std::format("{}.result.json", name));
         ofs << js.dump(2) << '\n';

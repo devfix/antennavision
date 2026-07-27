@@ -247,6 +247,11 @@ namespace nlohmann {
         }
     }
 
+
+    // -----------------------------------------------------------------------------
+    // EXPLICIT INSTANTIATIONS
+    // -----------------------------------------------------------------------------
+
     // Explicit Instantiations for nc::NdArray<double>
     template struct adl_serializer<nc::NdArray<double>>;
     template void adl_serializer<nc::NdArray<double>>::to_json(json&, const nc::NdArray<double>&);

@@ -332,12 +332,6 @@ namespace factory
     {
         try
         {
-            if (!desc.contains("type")) throw SimulationError("Missing sweep type");
-            if (desc.at("type").type() != nlohmann::json::value_t::string)
-                throw SimulationError("Sweep attribute type must be string, but is {}", desc.at("type").type_name());
-            auto const type = desc.at("type").get<std::string>();
-            desc.erase("type");
-
             try_resolve_double_expressions(desc, variables, "values");
             try_resolve_double_expressions(desc, variables, "begin");
             try_resolve_double_expressions(desc, variables, "end");

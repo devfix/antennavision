@@ -193,7 +193,10 @@ namespace sweep
         return *it;
     }
 
-    // Sweep Instantiations
+
+    // -----------------------------------------------------------------------------
+    // EXPLICIT INSTANTIATIONS
+    // -----------------------------------------------------------------------------
     template void to_json(nlohmann::json&, Sweep const&);
     template void to_json(nlohmann::ordered_json&, Sweep const&);
     template void from_json(nlohmann::json const&, Sweep&);

@@ -294,7 +294,10 @@ namespace geometry
             geo);
     }
 
-    // Geometry Instantiations
+
+    // -----------------------------------------------------------------------------
+    // EXPLICIT INSTANTIATIONS
+    // -----------------------------------------------------------------------------
     template void geometry::to_json(nlohmann::json&, Geometry const&);
     template void geometry::to_json(nlohmann::ordered_json&, Geometry const&);
     template void geometry::from_json(nlohmann::json const&, Geometry&);

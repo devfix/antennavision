@@ -12,7 +12,7 @@ namespace setup
     template <AnyJson JsonType>
     void to_json(JsonType& js, NumParams const& num_params)
     {
-        js = JsonType{{"wavelength", num_params.system_wavelength},
+        js = JsonType{{"system_wavelength", num_params.system_wavelength},
             {"n_polar", num_params.n_polar},
             {"n_azimuth", num_params.n_azimuth},
             {"n_linear1", num_params.n_linear1},
