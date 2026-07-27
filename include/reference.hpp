@@ -64,9 +64,9 @@ namespace reference
      */
     void resolve_origins(std::initializer_list<std::reference_wrapper<Reference>> refs);
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void to_json(JsonType& j, Reference const& ref);
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void from_json(JsonType const& j, Reference& ref);
 } // namespace reference

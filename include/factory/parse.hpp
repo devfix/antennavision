@@ -24,7 +24,7 @@ namespace factory
     double parse_double(std::string const& expr, std::map<std::string, Var> const& variables);
     std::int64_t parse_int(std::string const& expr, std::map<std::string, Var> const& variables);
 
-    template <typename TargetType, any_json_t AnyJson>
+    template <typename TargetType, AnyJson AnyJson>
     void try_resolve_expressions(AnyJson& js, std::map<std::string, Var> const& variables, std::string_view key = "")
     {
         if (js.is_object() && !key.empty() && js.contains(key))
@@ -56,13 +56,13 @@ namespace factory
         }
     }
 
-    template <any_json_t AnyJson>
+    template <AnyJson AnyJson>
     void try_resolve_double_expressions(AnyJson& js, std::map<std::string, Var> const& variables, std::string_view key = "")
     {
         try_resolve_expressions<double>(js, variables, key);
     }
 
-    template <any_json_t AnyJson>
+    template <AnyJson AnyJson>
     void try_resolve_int_expressions(AnyJson& js, std::map<std::string, Var> const& variables, std::string_view key = "")
     {
         try_resolve_expressions<std::int64_t>(js, variables, key);

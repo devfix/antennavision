@@ -35,12 +35,6 @@ namespace sweep
         std::vector<double> values_;
     };
 
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, ListSweep const& sweep);
-
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, ListSweep& sweep);
-
     struct LinearSweep
     {
         [[nodiscard]] LinearSweep() = default;
@@ -65,13 +59,6 @@ namespace sweep
         double value_begin_{};
         double value_end_{};
     };
-
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, LinearSweep const& sweep);
-
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, LinearSweep& sweep);
-
 
     struct LogSweep
     {
@@ -101,19 +88,13 @@ namespace sweep
         double base_{};
     };
 
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, LogSweep const& sweep);
-
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, LogSweep& sweep);
-
     using Sweep = std::variant<ListSweep, LinearSweep, LogSweep>;
 
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, Sweep const& sweep)
-    {
-        std::visit([&js](auto const& s) { js = s; }, sweep);
-    }
+    template <AnyJson JsonType>
+    void to_json(JsonType& js, Sweep const& sweep);
+
+    template <AnyJson JsonType>
+    void from_json(JsonType const& js, Sweep& sweep);
 
     [[nodiscard]] std::string const& get_id(Sweep const& sweep);
     [[nodiscard]] std::size_t get_size(Sweep const& sweep);

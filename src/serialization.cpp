@@ -43,7 +43,7 @@ namespace serialization
         }
     } // namespace
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void assert_structure(JsonType const& js, std::string_view structure_name, std::vector<JsonField> const& mandatory, std::vector<JsonField> const& optional)
     {
         if (!js.is_object()) { throw SimulationError("Failed to load {} from JSON, expected JSON object, got {}", structure_name, js.type_name()); }
@@ -84,12 +84,12 @@ namespace nlohmann {
     // std::complex Serializer
     // ------------------------------------------------------------------------------------
     template<typename T>
-    template<any_json_t JsonType>
+    template<AnyJson JsonType>
     void adl_serializer<std::complex<T>>::to_json(JsonType& js, const std::complex<T>& value) {
         js = JsonType{ value.real(), value.imag() };
     }
     template<typename T>
-    template<any_json_t JsonType>
+    template<AnyJson JsonType>
     void adl_serializer<std::complex<T>>::from_json(const JsonType& j, std::complex<T>& value) {
         if (j.is_array() && j.size() == 2) {
             value.real(j.at(0).template get<T>());
@@ -108,11 +108,11 @@ namespace nlohmann {
     // ------------------------------------------------------------------------------------
     // nc::Vec2 Serializer
     // ------------------------------------------------------------------------------------
-    template<any_json_t JsonType>
+    template<AnyJson JsonType>
     void adl_serializer<nc::Vec2>::to_json(JsonType& js, const nc::Vec2& value) {
         js = JsonType{ value.x, value.y };
     }
-    template<any_json_t JsonType>
+    template<AnyJson JsonType>
     void adl_serializer<nc::Vec2>::from_json(const JsonType& s, nc::Vec2& value) {
         if (s.is_array() && s.size() == 2) {
             s[0].get_to(value.x);
@@ -131,11 +131,11 @@ namespace nlohmann {
     // ------------------------------------------------------------------------------------
     // nc::Vec3 Serializer
     // ------------------------------------------------------------------------------------
-    template<any_json_t JsonType>
+    template<AnyJson JsonType>
     void adl_serializer<nc::Vec3>::to_json(JsonType& js, const nc::Vec3& value) {
         js = JsonType{ value.x, value.y, value.z };
     }
-    template<any_json_t JsonType>
+    template<AnyJson JsonType>
     void adl_serializer<nc::Vec3>::from_json(const JsonType& js, nc::Vec3& value) {
         if (js.is_array() && js.size() == 3) {
             js[0].get_to(value.x);
@@ -155,13 +155,13 @@ namespace nlohmann {
     // ------------------------------------------------------------------------------------
     // nc::rotations::Quaternion Serializer
     // ------------------------------------------------------------------------------------
-    template<any_json_t JsonType>
+    template<AnyJson JsonType>
     void adl_serializer<Quaternion>::to_json(JsonType& js, const Quaternion& value) {
         // Always serialize as a 4-element array [s, i, j, k]
         js = JsonType{ value.s(), value.i(), value.j(), value.k() };
     }
 
-    template<any_json_t JsonType>
+    template<AnyJson JsonType>
     void adl_serializer<Quaternion>::from_json(const JsonType& js, Quaternion& value)
     {
         if (js.is_array() && js.size() == 4) {
@@ -198,7 +198,7 @@ namespace nlohmann {
     // nc::NdArray<T> Serializer
     // ------------------------------------------------------------------------------------
     template<typename T>
-    template<any_json_t JsonType>
+    template<AnyJson JsonType>
     void adl_serializer<nc::NdArray<T>>::to_json(JsonType& js, const nc::NdArray<T>& value) {
         auto shape = value.shape();
         js = JsonType::array();
@@ -215,7 +215,7 @@ namespace nlohmann {
     }
 
     template<typename T>
-    template<any_json_t JsonType>
+    template<AnyJson JsonType>
     void adl_serializer<nc::NdArray<T>>::from_json(const JsonType& j, nc::NdArray<T>& value) {
         if (!j.is_array()) {
             throw JsonType::type_error::create(302, "Expected a 2D JSON array for nc::NdArray", &j);

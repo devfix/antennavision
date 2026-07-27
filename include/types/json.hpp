@@ -5,11 +5,10 @@
 #pragma once
 
 #include <NumCpp/Rotations/Quaternion.hpp>
-#include <NumCpp/Vector/Vec3.hpp>
 #include <nlohmann/json_fwd.hpp> // Lightweight forward-declarations for nlohmann::json
 
 
 using ojson = nlohmann::ordered_json;
 using json = nlohmann::json;
 template <typename T>
-concept any_json_t = std::same_as<std::decay_t<T>, json> || std::same_as<std::decay_t<T>, ojson>;
+concept AnyJson = std::same_as<std::decay_t<T>, json> || std::same_as<std::decay_t<T>, ojson>;

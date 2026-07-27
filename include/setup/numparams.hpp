@@ -24,9 +24,9 @@ namespace setup
 
     NumParams constexpr DEFAULT_NUM_PARAMS = {.n_polar = 101, .n_azimuth = 201, .n_linear1 = 101, .n_linear2 = 101, .xtol_rel = 1e-8, .ftol_rel = 1e-8};
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void to_json(JsonType& js, NumParams const& num_params);
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void from_json(JsonType const& js, NumParams& num_params);
 }

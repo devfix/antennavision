@@ -10,104 +10,132 @@
 
 namespace sweep
 {
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, ListSweep const& sweep)
+    namespace
     {
-        js = JsonType{
-            {"id", sweep.id()},
-            {"values", sweep.values()}, //
-        };
+        template <AnyJson JsonType>
+        void load_list_sweep(JsonType const& js, Sweep& sweep)
+        {
+            serialization::assert_structure(js,
+                "sweep::ListSweep",
+                {
+                    {"type", json::value_t::string},
+                    {"id", json::value_t::string},
+                    {"values", json::value_t::array}, //
+                },
+                {});
+            reconstruct_at(sweep,
+                ListSweep( //
+                    js.at("id").template get<std::string>(),
+                    js.at("values").template get<std::vector<double>>() //
+                    ));
+        }
+
+        template <AnyJson JsonType>
+        void load_linear_sweep(JsonType const& js, Sweep& sweep)
+        {
+            serialization::assert_structure(js,
+                "sweep::LinearSweep",
+                {
+                    {"type", json::value_t::string},
+                    {"id", json::value_t::string},
+                    {"begin", json::value_t::number_float},
+                    {"end", json::value_t::number_float},
+                    {"size", json::value_t::number_integer}, //
+                },
+                {
+                    {"values", json::value_t::array} //
+                });
+            reconstruct_at(sweep,
+                LinearSweep( //
+                    js.at("id").template get<std::string>(),
+                    js.at("begin").template get<double>(),
+                    js.at("end").template get<double>(),
+                    js.at("size").template get<std::size_t>() //
+                    ));
+        }
+
+        template <AnyJson JsonType>
+        void load_log_sweep(JsonType const& js, Sweep& sweep)
+        {
+            serialization::assert_structure(js,
+                "sweep::LogSweep",
+                {
+                    {"type", json::value_t::string},
+                    {"id", json::value_t::string},
+                    {"begin", json::value_t::number_float},
+                    {"end", json::value_t::number_float},
+                    {"size", json::value_t::number_integer}, //
+                },
+                {
+                    {"base", json::value_t::number_float},
+                    {"values", json::value_t::array}, //
+                });
+            double base = js.contains("base") ? js.at("base").template get<double>() : 10.0;
+            reconstruct_at(sweep,
+                LogSweep( //
+                    js.at("id").template get<std::string>(),
+                    js.at("begin").template get<double>(),
+                    js.at("end").template get<double>(),
+                    js.at("size").template get<std::size_t>(),
+                    base //
+                    ));
+        }
+    } // namespace
+
+    template <AnyJson JsonType>
+    void to_json(JsonType& js, Sweep const& sweep)
+    {
+        if (auto* list_sweep = std::get_if<ListSweep>(&sweep); list_sweep)
+        {
+            js = JsonType{
+                {"type", "ListSweep"},
+                {"id", list_sweep->id()},
+                {"values", list_sweep->values()}, //
+            };
+        }
+        else if (auto* linear_sweep = std::get_if<LinearSweep>(&sweep); linear_sweep)
+        {
+            js = JsonType{
+                {"type", "LinearSweep"},
+                {"id", linear_sweep->id()},
+                {"begin", linear_sweep->begin_val()},
+                {"end", linear_sweep->end_val()},
+                {"size", linear_sweep->size()},
+                {"values", linear_sweep->values()}, //
+            };
+        }
+        else if (auto* log_sweep = std::get_if<LogSweep>(&sweep); log_sweep)
+        {
+            js = JsonType{
+                {"type", "LogSweep"},
+                {"id", log_sweep->id()},
+                {"begin", log_sweep->begin_val()},
+                {"end", log_sweep->end_val()},
+                {"size", log_sweep->size()},
+                {"base", log_sweep->base()},
+                {"values", log_sweep->values()}, //
+            };
+        }
+        else
+            throw SimulationError("Unknown sweep object");
     }
 
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, ListSweep& sweep)
+    template <AnyJson JsonType>
+    void from_json(JsonType const& js, Sweep& sweep)
     {
-        serialization::assert_structure(js,
-            "sweep::ListSweep",
-            {
-                {"id", json::value_t::string},
-                {"values", json::value_t::array}, //
-            },
-            {});
-        reconstruct_at(sweep,
-            ListSweep( //
-                js.at("id").template get<std::string>(),
-                js.at("values").template get<std::vector<double>>() //
-                ));
-    }
+        if (!js.contains("type")) throw SimulationError("Missing sweep type");
+        if (js.at("type").type() != nlohmann::json::value_t::string)
+            throw SimulationError("Sweep attribute type must be string, but is {}", js.at("type").type_name());
+        auto const type = js.at("type").template get<std::string>();
 
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, LinearSweep const& sweep)
-    {
-        js = JsonType{
-            {"id", sweep.id()},
-            {"begin", sweep.begin_val()},
-            {"end", sweep.end_val()},
-            {"size", sweep.size()},
-            {"values", sweep.values()}, //
-        };
-    }
-
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, LinearSweep& sweep)
-    {
-        serialization::assert_structure(js,
-            "sweep::LinearSweep",
-            {
-                {"id", json::value_t::string},
-                {"begin", json::value_t::number_float},
-                {"end", json::value_t::number_float},
-                {"size", json::value_t::number_integer}, //
-            },
-            {
-                {"values", json::value_t::array} //
-            });
-        reconstruct_at(sweep,
-            LinearSweep( //
-                js.at("id").template get<std::string>(),
-                js.at("begin").template get<double>(),
-                js.at("end").template get<double>(),
-                js.at("size").template get<std::size_t>() //
-                ));
-    }
-
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, LogSweep const& sweep)
-    {
-        js = JsonType{
-            {"id", sweep.id()},
-            {"begin", sweep.begin_val()},
-            {"end", sweep.end_val()},
-            {"size", sweep.size()},
-            {"base", sweep.base()},
-            {"values", sweep.values()}, //
-        };
-    }
-
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, LogSweep& sweep)
-    {
-        serialization::assert_structure(js,
-            "sweep::LogSweep",
-            {
-                {"id", json::value_t::string},
-                {"begin", json::value_t::number_float},
-                {"end", json::value_t::number_float},
-                {"size", json::value_t::number_integer}, //
-            },
-            {
-                {"base", json::value_t::number_float},
-                {"values", json::value_t::array}, //
-            });
-        double base = js.contains("base") ? js.at("base").template get<double>() : 10.0;
-        reconstruct_at(sweep,
-            LogSweep( //
-                js.at("id").template get<std::string>(),
-                js.at("begin").template get<double>(),
-                js.at("end").template get<double>(),
-                js.at("size").template get<std::size_t>(),
-                base //
-                ));
+        if (type == "ListSweep")
+            load_list_sweep(js, sweep);
+        else if (type == "LinearSweep")
+            load_linear_sweep(js, sweep);
+        else if (type == "LogSweep")
+            load_log_sweep(js, sweep);
+        else
+            throw SimulationError("Unknown sweep type '{}'", type);
     }
 
     std::vector<double> LinearSweep::values() const noexcept
@@ -165,21 +193,9 @@ namespace sweep
         return *it;
     }
 
-    // ListSweep Instantiations
-    template void to_json(nlohmann::json&, ListSweep const&);
-    template void to_json(nlohmann::ordered_json&, ListSweep const&);
-    template void from_json(nlohmann::json const&, ListSweep&);
-    template void from_json(nlohmann::ordered_json const&, ListSweep&);
-
-    // LinearSweep Instantiations
-    template void to_json(nlohmann::json&, LinearSweep const&);
-    template void to_json(nlohmann::ordered_json&, LinearSweep const&);
-    template void from_json(nlohmann::json const&, LinearSweep&);
-    template void from_json(nlohmann::ordered_json const&, LinearSweep&);
-
-    // LogSweep Instantiations
-    template void to_json(nlohmann::json&, LogSweep const&);
-    template void to_json(nlohmann::ordered_json&, LogSweep const&);
-    template void from_json(nlohmann::json const&, LogSweep&);
-    template void from_json(nlohmann::ordered_json const&, LogSweep&);
+    // Sweep Instantiations
+    template void to_json(nlohmann::json&, Sweep const&);
+    template void to_json(nlohmann::ordered_json&, Sweep const&);
+    template void from_json(nlohmann::json const&, Sweep&);
+    template void from_json(nlohmann::ordered_json const&, Sweep&);
 } // namespace sweep

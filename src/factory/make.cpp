@@ -338,28 +338,11 @@ namespace factory
             auto const type = desc.at("type").get<std::string>();
             desc.erase("type");
 
-            sweep::Sweep sweep;
-            if (type == "ListSweep")
-            {
-                try_resolve_double_expressions(desc, variables, "values");
-                sweep = desc.get<sweep::ListSweep>();
-            }
-            else if (type == "LinearSweep")
-            {
-                try_resolve_double_expressions(desc, variables, "begin");
-                try_resolve_double_expressions(desc, variables, "end");
-                sweep = desc.get<sweep::LinearSweep>();
-            }
-            else if (type == "LogSweep")
-            {
-                try_resolve_double_expressions(desc, variables, "begin");
-                try_resolve_double_expressions(desc, variables, "end");
-                try_resolve_double_expressions(desc, variables, "base");
-                sweep = desc.get<sweep::LogSweep>();
-            }
-            else
-                throw SimulationError("Unknown sweep type '{}'", type);
-
+            try_resolve_double_expressions(desc, variables, "values");
+            try_resolve_double_expressions(desc, variables, "begin");
+            try_resolve_double_expressions(desc, variables, "end");
+            try_resolve_double_expressions(desc, variables, "base");
+            auto sweep = desc.get<sweep::Sweep>();
             assert_valid_id(sweep::get_id(sweep));
             return sweep;
         }

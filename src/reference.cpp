@@ -95,7 +95,7 @@ namespace reference
         resolve_origins(ref_vec);
     }
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void to_json(JsonType& js, Reference const& ref)
     {
         js = JsonType{
@@ -106,7 +106,7 @@ namespace reference
         };
     }
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void from_json(JsonType const& js, Reference& ref)
     {
         serialization::assert_structure(js,

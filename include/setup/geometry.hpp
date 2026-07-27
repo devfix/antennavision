@@ -202,10 +202,10 @@ namespace geometry
 
     using Geometry = std::variant<Line, CircleArc, Rectangle, SphericalRectangle>;
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void to_json(JsonType& js, Geometry const& geo);
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void from_json(JsonType const& js, Geometry& geo);
 
     [[nodiscard]] constexpr std::string const& get_id(Geometry const& geo) noexcept
@@ -215,7 +215,7 @@ namespace geometry
 
     using Curve = std::variant<Line, CircleArc>;
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void to_json(JsonType& js, Curve const& curve)
     {
         std::visit([&js](auto const& c) { js = c; }, curve);
@@ -223,7 +223,7 @@ namespace geometry
 
     using Surface = std::variant<Rectangle, SphericalRectangle>;
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void to_json(JsonType& js, Surface const& surf)
     {
         std::visit([&js](auto const& s) { js = s; }, surf);

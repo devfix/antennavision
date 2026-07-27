@@ -40,7 +40,7 @@ TEST_CASE("ListSweep Properties and JSON Serialization", "[sweep][list][json]")
         CHECK(js.at("id") == sweep.id());
         CHECK(js.at("values") == sweep.values());
 
-        auto const deserialized = js.get<sweep::ListSweep>();
+        auto const deserialized = std::get<sweep::ListSweep>(js.get<sweep::Sweep>());
         CHECK(deserialized.id() == sweep.id());
         CHECK(deserialized.size() == sweep.size());
         CHECK_THAT(deserialized.begin_val(), WithinAbs(10.0, 1e-9));
@@ -50,11 +50,12 @@ TEST_CASE("ListSweep Properties and JSON Serialization", "[sweep][list][json]")
     SECTION("Deserialization throws on missing required structure")
     {
         nlohmann::json const js_invalid = {
+            {"type", "ListSweep"},
             {"id", "list_invalid"}
             // Missing "values" array
         };
 
-        REQUIRE_THROWS(js_invalid.get<sweep::ListSweep>());
+        REQUIRE_THROWS(js_invalid.get<sweep::Sweep>());
     }
 }
 
@@ -88,7 +89,7 @@ TEST_CASE("LinearSweep Properties and JSON Serialization", "[sweep][linear][json
         CHECK_THAT(js.at("end").get<double>(), WithinAbs(5.0, 1e-9));
         CHECK(js.at("size") == 3);
 
-        auto const deserialized = js.get<sweep::LinearSweep>();
+        auto const deserialized = std::get<sweep::LinearSweep>(js.get<sweep::Sweep>());
         CHECK(deserialized.id() == sweep.id());
         CHECK(deserialized.size() == sweep.size());
         CHECK_THAT(deserialized.begin_val(), WithinAbs(1.0, 1e-9));
@@ -98,6 +99,7 @@ TEST_CASE("LinearSweep Properties and JSON Serialization", "[sweep][linear][json
     SECTION("Deserialization ignores dummy values array and recomputes from bounds")
     {
         nlohmann::json const js = {
+            {"type", "LinearSweep"},
             {"id", "lin_03"},
             {"begin", 0.0},
             {"end", 100.0},
@@ -105,7 +107,7 @@ TEST_CASE("LinearSweep Properties and JSON Serialization", "[sweep][linear][json
             {"values", {999.0, 999.0, 999.0}} // Should be ignored by from_json
         };
 
-        auto const sweep = js.get<sweep::LinearSweep>();
+        auto const sweep = std::get<sweep::LinearSweep>(js.get<sweep::Sweep>());
         auto const vals = sweep.values();
 
         CHECK_THAT(vals[0], WithinAbs(0.0, 1e-9));
@@ -138,6 +140,7 @@ TEST_CASE("LogSweep Properties and JSON Serialization", "[sweep][log][json]")
     SECTION("Deserialization defaults base to 10.0 when omitted from JSON")
     {
         nlohmann::json const js = {
+            {"type", "LogSweep"},
             {"id", "log_02"},
             {"begin", 1.0},
             {"end", 100.0},
@@ -145,7 +148,7 @@ TEST_CASE("LogSweep Properties and JSON Serialization", "[sweep][log][json]")
             // "base" field explicitly omitted
         };
 
-        auto const sweep = js.get<sweep::LogSweep>();
+        auto const sweep = std::get<sweep::LogSweep>(js.get<sweep::Sweep>());
         CHECK_THAT(sweep.base(), WithinAbs(10.0, 1e-9));
     }
 
@@ -156,7 +159,7 @@ TEST_CASE("LogSweep Properties and JSON Serialization", "[sweep][log][json]")
         nlohmann::json const js = sweep;
         CHECK_THAT(js.at("base").get<double>(), WithinAbs(2.0, 1e-9));
 
-        auto const deserialized = js.get<sweep::LogSweep>();
+        auto const deserialized = std::get<sweep::LogSweep>(js.get<sweep::Sweep>());
         CHECK_THAT(deserialized.base(), WithinAbs(2.0, 1e-9));
         CHECK_THAT(deserialized.begin_val(), WithinAbs(2.0, 1e-9));
         CHECK_THAT(deserialized.end_val(), WithinAbs(16.0, 1e-9));

@@ -9,7 +9,7 @@
 
 namespace setup
 {
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void to_json(JsonType& js, NumParams const& num_params)
     {
         js = JsonType{{"wavelength", num_params.system_wavelength},
@@ -21,7 +21,7 @@ namespace setup
             {"ftol_rel", num_params.ftol_rel}};
     }
 
-    template <any_json_t JsonType>
+    template <AnyJson JsonType>
     void from_json(JsonType const& js, NumParams& num_params)
     {
         serialization::assert_structure(js,
