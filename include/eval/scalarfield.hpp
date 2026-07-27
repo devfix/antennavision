@@ -63,7 +63,7 @@ struct ScalarField
      * @param sweep sweep of wave propagation wavelengths
      * @return vector of arrays with field values for each position
      */
-    [[nodiscard]] std::vector<nc::NdArray<ScalarT>> eval_sweep(Vec3Array const& positions, setup::sweep::Sweep const& sweep) const;
+    [[nodiscard]] std::vector<nc::NdArray<ScalarT>> eval_sweep(Vec3Array const& positions, sweep::Sweep const& sweep) const;
 
     /**
      * Evaluates the field over a geometry. The number of points for the dimensions is determined form num_params.
@@ -78,7 +78,7 @@ struct ScalarField
      * @param sweep sweep of wave propagation wavelengths
      * @return [array of positions in space, vector of arrays with field values for each position]
      */
-    [[nodiscard]] EvalSweepResult eval_geometry_sweep(geometry::Geometry const& geo, setup::sweep::Sweep const& sweep) const;
+    [[nodiscard]] EvalSweepResult eval_geometry_sweep(geometry::Geometry const& geo, sweep::Sweep const& sweep) const;
 
     [[nodiscard]] ArgMaxResult argmax_curve_abs(geometry::Curve const& curve, double wavelength) const;
 
@@ -92,3 +92,9 @@ protected:
     // Prevent direct deletion through base pointer without virtual destructor
     ~ScalarField() = default;
 };
+
+template <typename Derived>
+using RealScalarField = ScalarField<Derived, double>;
+
+template <typename Derived>
+using ComplexScalarField = ScalarField<Derived, Complex>;

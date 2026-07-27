@@ -6,7 +6,7 @@
 #include "eval/scalarfield.hpp"
 #include "components/antenna.hpp"
 
-struct VoltageField : ScalarField<VoltageField, Complex>
+struct VoltageField : ComplexScalarField<VoltageField>
 {
     /**
       * Creates new scalar field that is the voltage field if the tx is fixed in space and the rx is moved around

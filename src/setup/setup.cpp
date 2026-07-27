@@ -48,6 +48,7 @@ Setup::Setup(ojson const& js_in)
     extract_references(js);
     extract_antennas(js);
     extract_geometries(js);
+    extract_sweeps(js);
     extract_tasks(js);
 
     // check that the json contains no invalid (unknown) fields
@@ -267,6 +268,13 @@ void Setup::extract_geometries(ojson& js)
     js.erase("geometries");
 }
 
+void Setup::extract_sweeps(ojson& js)
+{
+    if (!js.contains("sweeps")) { return; }
+    for (auto& sweeps = js.at("sweeps"); auto& desc : sweeps) { sweeps_.push_back(factory::make_sweep(desc, variables_)); }
+    js.erase("sweeps");
+}
+
 void Setup::extract_tasks(ojson& desc)
 {
     if (!desc.contains("tasks")) { return; }
@@ -294,10 +302,11 @@ void Setup::extract_tasks(ojson& desc)
         {
             antenna::Antenna const& tx = antenna::get(antennas_, factory::get_string(task_desc, "tx"));
             antenna::Antenna& rx = antenna::get(antennas_, factory::get_string(task_desc, "rx"));
-            auto geo = geometry::get(geometries_, factory::get_string(task_desc, "geometry"));
+            auto geo = geometry::get(geometries_, factory::get_string(task_desc, "geo"));
+            auto sweep = sweep::get(sweeps_, factory::get_string(task_desc, "sweep"));
             VoltageField voltage_field(tx, rx, num_params_);
             task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
-            tasks_[task_name] = [voltage_field, geo] { eval::output::voltagefield_over_geometry(voltage_field, geo); };
+            tasks_[task_name] = [voltage_field, geo, sweep] { eval::output::voltagefield_over_geometry(voltage_field, geo, sweep); };
         }
         // else if (type == "plot_gain_over_sphere")
         // {

@@ -11,13 +11,14 @@
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/parse.hpp"
-#include "serialization.hpp"
 
-using namespace ansi_color;
+using ansi_color::fg4;
+using ansi_color::reset;
 
 namespace factory
 {
     using reference::Reference;
+
     namespace
     {
         bool assert_valid_id(std::string_view id)
@@ -305,61 +306,66 @@ namespace factory
     {
         try
         {
-            if (!desc.contains("type")) throw SimulationError("Missing geometry type");
-            if (desc.at("type").type() != nlohmann::json::value_t::string)
-                throw SimulationError("Geometry attribute type must be string, but is {}", desc.at("type").type_name());
-            auto const type = desc.at("type").get<std::string>();
-            desc.erase("type");
-
-            // std::println("{}Creating geometry [id: '{}', type: '{}']{}", fg4::bright_black, id, type, reset);
-
-            geometry::Geometry geo;
-            if (type == "Line")
-            {
-                try_resolve_double_expressions(desc, variables, "pos_begin");
-                try_resolve_double_expressions(desc, variables, "pos_end");
-                geo = desc.get<geometry::Line>();
-            }
-            else if (type == "CircleArc")
-            {
-                try_resolve_double_expressions(desc, variables, "center");
-                try_resolve_double_expressions(desc, variables, "normal");
-                try_resolve_double_expressions(desc, variables, "e1");
-                try_resolve_double_expressions(desc, variables, "e2");
-                try_resolve_double_expressions(desc, variables, "radius");
-                try_resolve_double_expressions(desc, variables, "angle_span");
-                geo = desc.get<geometry::CircleArc>();
-            }
-            else if (type == "Rectangle")
-            {
-                try_resolve_double_expressions(desc, variables, "center");
-                try_resolve_double_expressions(desc, variables, "normal");
-                try_resolve_double_expressions(desc, variables, "e1");
-                try_resolve_double_expressions(desc, variables, "e2");
-                try_resolve_double_expressions(desc, variables, "width");
-                try_resolve_double_expressions(desc, variables, "height");
-                geo = desc.get<geometry::Rectangle>();
-            }
-            else if (type == "SphericalRectangle")
-            {
-                try_resolve_double_expressions(desc, variables, "center");
-                try_resolve_double_expressions(desc, variables, "normal");
-                try_resolve_double_expressions(desc, variables, "e1");
-                try_resolve_double_expressions(desc, variables, "e2");
-                try_resolve_double_expressions(desc, variables, "radius");
-                try_resolve_double_expressions(desc, variables, "polar_span");
-                try_resolve_double_expressions(desc, variables, "azimuth_span");
-                geo = desc.get<geometry::SphericalRectangle>();
-            }
-            else
-                throw SimulationError("Unknown geometry type '{}'", type);
-
+            try_resolve_double_expressions(desc, variables, "pos_begin");
+            try_resolve_double_expressions(desc, variables, "pos_end");
+            try_resolve_double_expressions(desc, variables, "center");
+            try_resolve_double_expressions(desc, variables, "normal");
+            try_resolve_double_expressions(desc, variables, "e1");
+            try_resolve_double_expressions(desc, variables, "e2");
+            try_resolve_double_expressions(desc, variables, "radius");
+            try_resolve_double_expressions(desc, variables, "angle_span");
+            try_resolve_double_expressions(desc, variables, "width");
+            try_resolve_double_expressions(desc, variables, "height");
+            try_resolve_double_expressions(desc, variables, "polar_span");
+            try_resolve_double_expressions(desc, variables, "azimuth_span");
+            auto geo = desc.get<geometry::Geometry>();
             assert_valid_id(geometry::get_id(geo));
             return geo;
         }
         catch (...)
         {
             std::throw_with_nested(SimulationError("Failed to parse geometry:\n{}", desc.dump(2)));
+        }
+    }
+
+    sweep::Sweep make_sweep(ojson& desc, VarMap const& variables)
+    {
+        try
+        {
+            if (!desc.contains("type")) throw SimulationError("Missing sweep type");
+            if (desc.at("type").type() != nlohmann::json::value_t::string)
+                throw SimulationError("Sweep attribute type must be string, but is {}", desc.at("type").type_name());
+            auto const type = desc.at("type").get<std::string>();
+            desc.erase("type");
+
+            sweep::Sweep sweep;
+            if (type == "ListSweep")
+            {
+                try_resolve_double_expressions(desc, variables, "values");
+                sweep = desc.get<sweep::ListSweep>();
+            }
+            else if (type == "LinearSweep")
+            {
+                try_resolve_double_expressions(desc, variables, "begin");
+                try_resolve_double_expressions(desc, variables, "end");
+                sweep = desc.get<sweep::LinearSweep>();
+            }
+            else if (type == "LogSweep")
+            {
+                try_resolve_double_expressions(desc, variables, "begin");
+                try_resolve_double_expressions(desc, variables, "end");
+                try_resolve_double_expressions(desc, variables, "base");
+                sweep = desc.get<sweep::LogSweep>();
+            }
+            else
+                throw SimulationError("Unknown sweep type '{}'", type);
+
+            assert_valid_id(sweep::get_id(sweep));
+            return sweep;
+        }
+        catch (...)
+        {
+            std::throw_with_nested(SimulationError("Failed to parse sweep:\n{}", desc.dump(2)));
         }
     }
 } // namespace factory

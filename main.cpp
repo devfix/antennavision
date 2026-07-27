@@ -34,14 +34,19 @@ void print_exception_chain(const std::exception& e, int level = 0)
 
 int run(int argc, char* argv[])
 {
+    using std::filesystem::path;
+    using std::filesystem::recursive_directory_iterator;
+    using ansi_color::fg4;
+    using ansi_color::reset;
+
     ansi_color::enable_windows_ansi();
 
-    std::println("{}{}{} v.{}{}\n", ansi_color::fg4::cyan, BANNER, APPLICATION_NAME, APPLICATION_VERSION, ansi_color::reset);
+    std::println("{}{}{} v.{}{}\n", fg4::cyan, BANNER, APPLICATION_NAME, APPLICATION_VERSION, reset);
 
     if (DEBUG_MODE)
     {
         std::println(
-            "{}Warning: Compiled in debug mode. This will severely increase the computation time!{}\n", ansi_color::fg4::bright_yellow, ansi_color::reset);
+            "{}Warning: Compiled in debug mode. This will severely increase the computation time!{}\n", fg4::bright_yellow, reset);
     }
 
     if (argc == 1)
@@ -50,41 +55,41 @@ int run(int argc, char* argv[])
         return 0;
     }
 
-    std::filesystem::path const path_setups_dir(std::filesystem::weakly_canonical(std::filesystem::path(argv[1])));
+    path const path_setups_dir(std::filesystem::weakly_canonical(path(argv[1])));
     std::filesystem::create_directories(path_setups_dir);
     std::filesystem::current_path(path_setups_dir);
     std::println("Working directory: {}", std::filesystem::current_path().string());
 
-    std::vector<std::pair<std::filesystem::path, std::unique_ptr<Setup>>> setups;
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(path_setups_dir))
+    std::vector<std::pair<path, Setup>> setups;
+    for (const auto& entry : recursive_directory_iterator(path_setups_dir))
     {
         if (entry.path().filename() == "setup.json")
         {
             std::filesystem::current_path(entry.path().parent_path());
-            setups.emplace_back(entry.path(), nullptr);
+            setups.emplace_back(entry.path(), entry.path());
         }
     }
-    std::println("Loading {} setups", setups.size());
-    for (auto& [path, setup] : setups) { setup = Setup::from_file(path); }
 
     for (auto& [path, setup] : setups)
     {
         std::filesystem::current_path(path.parent_path());
+        setup.export_to_three(".");
+        setup.run_tasks([&setup](std::string_view const key) { builtin::FunctionRegistry::instance().call(std::string(key), setup); });
 
-        std::filesystem::path const path_timestamp = "timestamp";
-        if (setup->isUpToDate(path_timestamp))
-        {
-            std::println(
-                "{}Setup '{}' is unchanged since {}, skipping{}", ansi_color::fg4::cyan, setup->name, timeutil::format(setup->timestamp), ansi_color::reset);
-        }
-        else
-        {
-            std::println("{}Setup '{}' is new or updated, running{}", ansi_color::fg4::cyan, setup->name, ansi_color::reset);
-            setup->export_to_three(".");
-            setup->run_tasks([&setup](std::string_view const key) { builtin::FunctionRegistry::instance().call(std::string(key), *setup); });
-            timeutil::store_to_file(path_timestamp, setup->timestamp);
-            std::println("{}All tasks completed.{}", ansi_color::fg4::cyan, ansi_color::reset);
-        }
+        // std::filesystem::path const path_timestamp = "timestamp";
+        // if (setup.isUpToDate(path_timestamp))
+        // {
+        //     std::println(
+        //         "{}Setup '{}' is unchanged since {}, skipping{}", fg4::cyan, setup.name, timeutil::format(setup.timestamp), reset);
+        // }
+        // else
+        // {
+        //     std::println("{}Setup '{}' is new or updated, running{}", fg4::cyan, setup.name, reset);
+        //     setup.export_to_three(".");
+        //     setup.run_tasks([&setup](std::string_view const key) { builtin::FunctionRegistry::instance().call(std::string(key), *setup); });
+        //     timeutil::store_to_file(path_timestamp, setup.timestamp);
+        //     std::println("{}All tasks completed.{}", fg4::cyan, reset);
+        // }
     }
 
     return EXIT_SUCCESS;

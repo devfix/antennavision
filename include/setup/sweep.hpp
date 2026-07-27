@@ -11,7 +11,7 @@
 #include <vector>
 #include "types/json.hpp"
 
-namespace setup::sweep
+namespace sweep
 {
     struct ListSweep
     {
@@ -109,9 +109,17 @@ namespace setup::sweep
 
     using Sweep = std::variant<ListSweep, LinearSweep, LogSweep>;
 
+    template <any_json_t JsonType>
+    void to_json(JsonType& js, Sweep const& sweep)
+    {
+        std::visit([&js](auto const& s) { js = s; }, sweep);
+    }
+
     [[nodiscard]] std::string const& get_id(Sweep const& sweep);
     [[nodiscard]] std::size_t get_size(Sweep const& sweep);
     [[nodiscard]] std::vector<double> get_values(Sweep const& sweep);
     [[nodiscard]] double get_begin_val(Sweep const& sweep);
     [[nodiscard]] double get_end_val(Sweep const& sweep);
-} // namespace setup::sweep
+
+    Sweep& get(std::span<Sweep> sweeps, std::string const& id);
+} // namespace sweep

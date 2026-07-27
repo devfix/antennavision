@@ -22,11 +22,11 @@ nc::NdArray<ScalarT> ScalarField<Derived, ScalarT>::eval(Vec3Array const& positi
 }
 
 template <typename Derived, typename ScalarT>
-[[nodiscard]] std::vector<nc::NdArray<ScalarT>> ScalarField<Derived, ScalarT>::eval_sweep(Vec3Array const& positions, setup::sweep::Sweep const& sweep) const
+[[nodiscard]] std::vector<nc::NdArray<ScalarT>> ScalarField<Derived, ScalarT>::eval_sweep(Vec3Array const& positions, sweep::Sweep const& sweep) const
 {
     std::vector<nc::NdArray<ScalarT>> data;
-    data.reserve(setup::sweep::get_size(sweep));
-    std::ranges::transform(setup::sweep::get_values(sweep),
+    data.reserve(sweep::get_size(sweep));
+    std::ranges::transform(sweep::get_values(sweep),
         std::back_insert_iterator(data),
         [this, &positions](double wavelength) { return eval(positions, wavelength); });
     return data;
@@ -41,7 +41,7 @@ ScalarField<Derived, ScalarT>::EvalResult ScalarField<Derived, ScalarT>::eval_ge
 
 template <typename Derived, typename ScalarT>
 ScalarField<Derived, ScalarT>::EvalSweepResult ScalarField<Derived, ScalarT>::eval_geometry_sweep(geometry::Geometry const& geo,
-    setup::sweep::Sweep const& sweep) const
+    sweep::Sweep const& sweep) const
 {
     Vec3Array const positions = geometry::get_positions(geo, num_params.n_linear1, num_params.n_linear2);
     return {positions, eval_sweep(positions, sweep)};

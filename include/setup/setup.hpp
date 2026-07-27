@@ -62,6 +62,7 @@ private:
     void extract_references(ojson& js);
     void extract_antennas(ojson& js);
     void extract_geometries(ojson& js);
+    void extract_sweeps(ojson& js);
     void extract_tasks(ojson& desc);
 
     timeutil::timestamp_t timestamp_{};
@@ -71,6 +72,7 @@ private:
     std::vector<reference::Reference> references_;
     std::vector<antenna::Antenna> antennas_;
     std::vector<geometry::Geometry> geometries_;
+    std::vector<sweep::Sweep> sweeps_;
 
     TaskMap tasks_;
 };

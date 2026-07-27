@@ -34,12 +34,6 @@ namespace geometry
         Pos pos_end_; /// second position of the line (end)
     };
 
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, Line const& l);
-
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, Line& l);
-
     //             ^ e2 axis (90°)
     //             |
     //         . . | . .
@@ -105,12 +99,6 @@ namespace geometry
         double angle_span_{}; /// angle span of the arc
     };
 
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, CircleArc const& c);
-
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, CircleArc& c);
-
     //         <---- width ---->
     //         +---------------+   ^
     //         |               |   |
@@ -165,12 +153,6 @@ namespace geometry
         double height_{}; /// rectangle height, view from above if normal is pointing up
     };
 
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, Rectangle const& r);
-
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, Rectangle& r);
-
     struct SphericalRectangle
     {
         [[nodiscard]] SphericalRectangle() = default;
@@ -218,19 +200,33 @@ namespace geometry
         double azimuth_span_{}; /// total span of azimuthal angle
     };
 
-    template <any_json_t JsonType>
-    void to_json(JsonType& js, SphericalRectangle const& sr);
-
-    template <any_json_t JsonType>
-    void from_json(JsonType const& js, SphericalRectangle& sr);
-
-    using Curve = std::variant<Line, CircleArc>;
-    using Surface = std::variant<Rectangle, SphericalRectangle>;
     using Geometry = std::variant<Line, CircleArc, Rectangle, SphericalRectangle>;
+
+    template <any_json_t JsonType>
+    void to_json(JsonType& js, Geometry const& geo);
+
+    template <any_json_t JsonType>
+    void from_json(JsonType const& js, Geometry& geo);
 
     [[nodiscard]] constexpr std::string const& get_id(Geometry const& geo) noexcept
     {
-        return std::visit([](auto const& gt) -> std::string const& { return gt.id(); }, geo);
+        return std::visit([](auto const& g) -> std::string const& { return g.id(); }, geo);
+    }
+
+    using Curve = std::variant<Line, CircleArc>;
+
+    template <any_json_t JsonType>
+    void to_json(JsonType& js, Curve const& curve)
+    {
+        std::visit([&js](auto const& c) { js = c; }, curve);
+    }
+
+    using Surface = std::variant<Rectangle, SphericalRectangle>;
+
+    template <any_json_t JsonType>
+    void to_json(JsonType& js, Surface const& surf)
+    {
+        std::visit([&js](auto const& s) { js = s; }, surf);
     }
 
     [[nodiscard]] Geometry& get(std::span<Geometry> geometries, std::string const& id);

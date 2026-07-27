@@ -8,7 +8,7 @@
 
 #include "memory.hpp"
 
-namespace setup::sweep
+namespace sweep
 {
     template <any_json_t JsonType>
     void to_json(JsonType& js, ListSweep const& sweep)
@@ -158,6 +158,13 @@ namespace setup::sweep
         return std::visit([](auto const& s) -> double { return s.end_val(); }, sweep);
     }
 
+    Sweep& get(std::span<Sweep> sweeps, std::string const& id)
+    {
+        auto const it = std::ranges::find(sweeps, id, [](auto& sweep) { return std::visit([](auto& s) { return s.id(); }, sweep); });
+        if (it == sweeps.end()) { throw SimulationError("Could not find sweep with id '{}'", id); }
+        return *it;
+    }
+
     // ListSweep Instantiations
     template void to_json(nlohmann::json&, ListSweep const&);
     template void to_json(nlohmann::ordered_json&, ListSweep const&);
@@ -175,4 +182,4 @@ namespace setup::sweep
     template void to_json(nlohmann::ordered_json&, LogSweep const&);
     template void from_json(nlohmann::json const&, LogSweep&);
     template void from_json(nlohmann::ordered_json const&, LogSweep&);
-} // namespace setup::sweep
+} // namespace sweep

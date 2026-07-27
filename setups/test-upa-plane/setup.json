@@ -8,23 +8,28 @@
     "distance": "1000*wavelength",
     "dipole_length": "0.5*wavelength"
   },
+  "num_params": {
+    "system_wavelength": 0.1,
+    "n_polar": 101,
+    "n_azimuth": 101
+  },
   "references": [
     {
       "id": "ref_tx",
       "origin": "",
-      "pos": {"x": 0, "y": 0, "z": 0},
+      "pos": [0, 0, 0],
       "rot": {"yaw": 0, "pitch": 0, "roll": 0}
     },
     {
       "id": "ref_rx",
       "origin": "",
-      "pos": {"x": 0, "y": 0, "z": "distance"},
+      "pos": [0, 0, "distance"],
       "rot": {"yaw": 0.5, "pitch": 0.5, "roll": 0}
     },
     {
       "id": "ref_rect",
       "origin": "",
-      "pos": {"x": 0, "y": 0, "z": "distance"}
+      "pos": [0, 0, "distance"]
     }
   ],
   "antennas": [
@@ -56,21 +61,32 @@
       "dipole_length": "dipole_length"
     }
   ],
+  "geometries": [
+    {
+      "id": "geo",
+      "type": "SphericalRectangle",
+      "center": [0, 0, 0],
+      "normal": [0, 0, 1],
+      "e1": [1, 0, 0],
+      "radius": "distance",
+      "polar_span": 1.0,
+      "azimuth_span": 1.0
+    }
+  ],
+  "sweeps": [
+    {
+      "id": "sweep",
+      "type": "ListSweep",
+      "values": [0.09, 0.1, 0.11]
+    }
+  ],
   "tasks": [
     {
-      "type": "plot_gain_over_sphere",
+      "type": "compute_voltage_field",
       "tx": "tx",
       "rx": "rx",
-      "ref_center": "",
-      "ref_rect": "ref_rect",
-      "wavelength": "wavelength",
-      "polar": 1.0,
-      "azimuth": 1.0,
-      "n_points_polar": 101,
-      "n_points_azimuth": 101,
-      "dir_north": {
-        "x": 0, "y": 1, "z": 0
-      }
+      "geo": "geo",
+      "sweep": "sweep"
     }
   ]
 }

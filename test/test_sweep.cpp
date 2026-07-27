@@ -16,7 +16,7 @@ TEST_CASE("ListSweep Properties and JSON Serialization", "[sweep][list][json]")
     SECTION("Constructor sorts input values and correctly reports boundaries")
     {
         std::vector<double> const unsorted_vals = {5.0, 1.0, 3.0, 2.0, 4.0};
-        setup::sweep::ListSweep const sweep{"list_01", unsorted_vals};
+        sweep::ListSweep const sweep{"list_01", unsorted_vals};
 
         CHECK(sweep.id() == "list_01");
         CHECK(sweep.size() == 5);
@@ -34,13 +34,13 @@ TEST_CASE("ListSweep Properties and JSON Serialization", "[sweep][list][json]")
     SECTION("Round-trip JSON serialization preserves id and values")
     {
         std::vector<double> const input_vals = {10.0, 20.0, 30.0};
-        setup::sweep::ListSweep const sweep{"list_02", input_vals};
+        sweep::ListSweep const sweep{"list_02", input_vals};
 
         nlohmann::json const js = sweep;
         CHECK(js.at("id") == sweep.id());
         CHECK(js.at("values") == sweep.values());
 
-        auto const deserialized = js.get<setup::sweep::ListSweep>();
+        auto const deserialized = js.get<sweep::ListSweep>();
         CHECK(deserialized.id() == sweep.id());
         CHECK(deserialized.size() == sweep.size());
         CHECK_THAT(deserialized.begin_val(), WithinAbs(10.0, 1e-9));
@@ -54,7 +54,7 @@ TEST_CASE("ListSweep Properties and JSON Serialization", "[sweep][list][json]")
             // Missing "values" array
         };
 
-        REQUIRE_THROWS(js_invalid.get<setup::sweep::ListSweep>());
+        REQUIRE_THROWS(js_invalid.get<sweep::ListSweep>());
     }
 }
 
@@ -62,7 +62,7 @@ TEST_CASE("LinearSweep Properties and JSON Serialization", "[sweep][linear][json
 {
     SECTION("Linear interpolation generates evenly spaced values")
     {
-        setup::sweep::LinearSweep const sweep{"lin_01", 0.0, 10.0, 5};
+        sweep::LinearSweep const sweep{"lin_01", 0.0, 10.0, 5};
 
         CHECK(sweep.id() == "lin_01");
         CHECK(sweep.size() == 5);
@@ -80,7 +80,7 @@ TEST_CASE("LinearSweep Properties and JSON Serialization", "[sweep][linear][json
 
     SECTION("Round-trip JSON serialization preserves properties")
     {
-        setup::sweep::LinearSweep const sweep{"lin_02", 1.0, 5.0, 3};
+        sweep::LinearSweep const sweep{"lin_02", 1.0, 5.0, 3};
 
         nlohmann::json const js = sweep;
         CHECK(js.at("id") == sweep.id());
@@ -88,7 +88,7 @@ TEST_CASE("LinearSweep Properties and JSON Serialization", "[sweep][linear][json
         CHECK_THAT(js.at("end").get<double>(), WithinAbs(5.0, 1e-9));
         CHECK(js.at("size") == 3);
 
-        auto const deserialized = js.get<setup::sweep::LinearSweep>();
+        auto const deserialized = js.get<sweep::LinearSweep>();
         CHECK(deserialized.id() == sweep.id());
         CHECK(deserialized.size() == sweep.size());
         CHECK_THAT(deserialized.begin_val(), WithinAbs(1.0, 1e-9));
@@ -105,7 +105,7 @@ TEST_CASE("LinearSweep Properties and JSON Serialization", "[sweep][linear][json
             {"values", {999.0, 999.0, 999.0}} // Should be ignored by from_json
         };
 
-        auto const sweep = js.get<setup::sweep::LinearSweep>();
+        auto const sweep = js.get<sweep::LinearSweep>();
         auto const vals = sweep.values();
 
         CHECK_THAT(vals[0], WithinAbs(0.0, 1e-9));
@@ -118,7 +118,7 @@ TEST_CASE("LogSweep Properties and JSON Serialization", "[sweep][log][json]")
 {
     SECTION("Logarithmic interpolation generates expected curve")
     {
-        setup::sweep::LogSweep const sweep{"log_01", 1.0, 10.0, 3, 10.0};
+        sweep::LogSweep const sweep{"log_01", 1.0, 10.0, 3, 10.0};
 
         CHECK(sweep.id() == "log_01");
         CHECK(sweep.size() == 3);
@@ -145,18 +145,18 @@ TEST_CASE("LogSweep Properties and JSON Serialization", "[sweep][log][json]")
             // "base" field explicitly omitted
         };
 
-        auto const sweep = js.get<setup::sweep::LogSweep>();
+        auto const sweep = js.get<sweep::LogSweep>();
         CHECK_THAT(sweep.base(), WithinAbs(10.0, 1e-9));
     }
 
     SECTION("Round-trip JSON serialization preserves custom base")
     {
-        setup::sweep::LogSweep const sweep{"log_03", 2.0, 16.0, 4, 2.0};
+        sweep::LogSweep const sweep{"log_03", 2.0, 16.0, 4, 2.0};
 
         nlohmann::json const js = sweep;
         CHECK_THAT(js.at("base").get<double>(), WithinAbs(2.0, 1e-9));
 
-        auto const deserialized = js.get<setup::sweep::LogSweep>();
+        auto const deserialized = js.get<sweep::LogSweep>();
         CHECK_THAT(deserialized.base(), WithinAbs(2.0, 1e-9));
         CHECK_THAT(deserialized.begin_val(), WithinAbs(2.0, 1e-9));
         CHECK_THAT(deserialized.end_val(), WithinAbs(16.0, 1e-9));
@@ -167,14 +167,14 @@ TEST_CASE("Sweep Variant Helpers", "[sweep][variant]")
 {
     SECTION("Helper functions dispatch correctly to underlying LinearSweep variant")
     {
-        setup::sweep::Sweep const sweep = setup::sweep::LinearSweep{"variant_lin", 0.0, 20.0, 3};
+        sweep::Sweep const sweep = sweep::LinearSweep{"variant_lin", 0.0, 20.0, 3};
 
-        CHECK(setup::sweep::get_id(sweep) == "variant_lin");
-        CHECK(setup::sweep::get_size(sweep) == 3);
-        CHECK_THAT(setup::sweep::get_begin_val(sweep), WithinAbs(0.0, 1e-9));
-        CHECK_THAT(setup::sweep::get_end_val(sweep), WithinAbs(20.0, 1e-9));
+        CHECK(sweep::get_id(sweep) == "variant_lin");
+        CHECK(sweep::get_size(sweep) == 3);
+        CHECK_THAT(sweep::get_begin_val(sweep), WithinAbs(0.0, 1e-9));
+        CHECK_THAT(sweep::get_end_val(sweep), WithinAbs(20.0, 1e-9));
 
-        auto const vals = setup::sweep::get_values(sweep);
+        auto const vals = sweep::get_values(sweep);
         REQUIRE(vals.size() == 3);
         CHECK_THAT(vals[1], WithinAbs(10.0, 1e-9));
     }
@@ -182,11 +182,11 @@ TEST_CASE("Sweep Variant Helpers", "[sweep][variant]")
     SECTION("Helper functions dispatch correctly to underlying ListSweep variant")
     {
         std::vector<double> const input_vals = {100.0, 50.0};
-        setup::sweep::Sweep const sweep = setup::sweep::ListSweep{"variant_list", input_vals};
+        sweep::Sweep const sweep = sweep::ListSweep{"variant_list", input_vals};
 
-        CHECK(setup::sweep::get_id(sweep) == "variant_list");
-        CHECK(setup::sweep::get_size(sweep) == 2);
-        CHECK_THAT(setup::sweep::get_begin_val(sweep), WithinAbs(50.0, 1e-9)); // Sorted
-        CHECK_THAT(setup::sweep::get_end_val(sweep), WithinAbs(100.0, 1e-9));
+        CHECK(sweep::get_id(sweep) == "variant_list");
+        CHECK(sweep::get_size(sweep) == 2);
+        CHECK_THAT(sweep::get_begin_val(sweep), WithinAbs(50.0, 1e-9)); // Sorted
+        CHECK_THAT(sweep::get_end_val(sweep), WithinAbs(100.0, 1e-9));
     }
 }
