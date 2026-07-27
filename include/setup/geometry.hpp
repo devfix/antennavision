@@ -34,18 +34,18 @@ namespace geometry
         Pos pos_end_; /// second position of the line (end)
     };
 
-    //             ^ e2 axis (90°)
+    //             ↑ e2 axis (angle=90°)
     //             |
     //         . . | . .
     //       .     |     .             ⊙ normal (up in the circle's plane)
     //     .       |       .
     //    .        |        .
-    //   .         |         .
-    //   .         |         .
-    // --.---------C---------.---------> e1 axis (0°, start_direction)
-    //   .       (Center)    .
-    //    .        |        .
-    //     .       |       .
+    //   .         |        X
+    //   .         |         X
+    // --.---------C---------X---------→ e1 axis (angle=0°)
+    //   .       (Center)    X
+    //    .        |        X 🡤
+    //     .       |       .   the arc
     //       .     |     .
     //         . . | . .
     //             |
@@ -99,17 +99,16 @@ namespace geometry
         double angle_span_{}; /// angle span of the arc
     };
 
-    //         <---- width ---->
-    //         +---------------+   ^
-    //         |               |   |
-    //         |               |   |      ⊙ normal (up in the rectangle's plane)
-    //         |               |   |
-    //         |       *       | height
-    //         ^     center    |   |
-    //         I               |   |
-    //  vec e2 I               |   |
-    //         O==> -----------+   v
-    //        vec e1
+    //  <------ width ------>
+    //  +-------------------+   ^
+    //  |                   |   |
+    //  |  vec e2 ↑         |   |      ⊙ normal (up in the rectangle's plane)
+    //  |         |         |   |
+    //  |  center *--→      | height
+    //  |            vec e1 |   |
+    //  |                   |   |
+    //  |                   |   |
+    //  +-------------------+   v
     struct Rectangle
     {
         [[nodiscard]] Rectangle() = default;
@@ -141,7 +140,7 @@ namespace geometry
 
         [[nodiscard]] Rectangle normalized() const;
 
-        [[nodiscard]] Pos constexpr pos_at(double t1, double t2) const { return center_ + (t1 - 0.5) * e1_ * width_ + (t2 - 0.5) + e2_ * height_; }
+        [[nodiscard]] Pos constexpr pos_at(double t1, double t2) const { return center_ + (t1 - 0.5) * e1_ * width_ + (t2 - 0.5) * e2_ * height_; }
 
     private:
         std::string id_; /// id of the geometry

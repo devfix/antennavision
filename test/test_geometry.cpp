@@ -77,6 +77,40 @@ TEST_CASE("Line Properties and JSON Serialization", "[geometry][line][json]")
 
 TEST_CASE("CircleArc JSON Serialization and Deserialization", "[geometry][json]")
 {
+    SECTION("Member functions compute correct length and positions")
+    {
+        geometry::CircleArc const arc{
+            "arc_01",
+            {0.0, 0.0, 0.0},
+            {0.0, 0.0, 1.0},
+            {1.0, 0.0, 0.0},
+            {0.0, 1.0, 0.0},
+            2.0,
+            pi
+        };
+
+        CHECK(arc.id() == "arc_01");
+        CHECK_THAT(arc.length(), WithinAbs(2.0 * pi, 1e-9));
+
+        // t = 0.0 maps to angle = -pi / 2 -> center - radius * e2 = (0, -2, 0)
+        auto const start_pos = arc.pos_at(0.0);
+        CHECK_THAT(start_pos.x, WithinAbs(0.0, 1e-9));
+        CHECK_THAT(start_pos.y, WithinAbs(-2.0, 1e-9));
+        CHECK_THAT(start_pos.z, WithinAbs(0.0, 1e-9));
+
+        // t = 0.5 maps to angle = 0 -> center + radius * e1 = (2, 0, 0)
+        auto const mid_pos = arc.pos_at(0.5);
+        CHECK_THAT(mid_pos.x, WithinAbs(2.0, 1e-9));
+        CHECK_THAT(mid_pos.y, WithinAbs(0.0, 1e-9));
+        CHECK_THAT(mid_pos.z, WithinAbs(0.0, 1e-9));
+
+        // t = 1.0 maps to angle = pi / 2 -> center + radius * e2 = (0, 2, 0)
+        auto const end_pos = arc.pos_at(1.0);
+        CHECK_THAT(end_pos.x, WithinAbs(0.0, 1e-9));
+        CHECK_THAT(end_pos.y, WithinAbs(2.0, 1e-9));
+        CHECK_THAT(end_pos.z, WithinAbs(0.0, 1e-9));
+    }
+
     SECTION("Serialization outputs expected fields")
     {
         geometry::CircleArc const arc{"arc_01", {1.0, 2.0, 3.0}, {0.0, 0.0, 1.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, 5.0, 3.14159};
@@ -136,6 +170,41 @@ TEST_CASE("CircleArc JSON Serialization and Deserialization", "[geometry][json]"
 
 TEST_CASE("Rectangle JSON Serialization and Deserialization", "[geometry][json]")
 {
+    SECTION("Member functions compute correct length and positions")
+    {
+        geometry::Rectangle const rect{
+            "rect_01",
+            {0.0, 0.0, 0.0},
+            {0.0, 0.0, 1.0},
+            {1.0, 0.0, 0.0},
+            {0.0, 1.0, 0.0},
+            10.0,
+            20.0
+        };
+
+        CHECK(rect.id() == "rect_01");
+        CHECK_THAT(rect.width(), WithinAbs(10.0, 1e-9));
+        CHECK_THAT(rect.height(), WithinAbs(20.0, 1e-9));
+
+        // t1 = 0.5, t2 = 0.5 -> center of the rectangle = (0, 0, 0)
+        auto const center_pos = rect.pos_at(0.5, 0.5);
+        CHECK_THAT(center_pos.x, WithinAbs(0.0, 1e-9));
+        CHECK_THAT(center_pos.y, WithinAbs(0.0, 1e-9));
+        CHECK_THAT(center_pos.z, WithinAbs(0.0, 1e-9));
+
+        // t1 = 0.0, t2 = 0.0 -> bottom-left corner = (-5, -10, 0)
+        auto const bottom_left = rect.pos_at(0.0, 0.0);
+        CHECK_THAT(bottom_left.x, WithinAbs(-5.0, 1e-9));
+        CHECK_THAT(bottom_left.y, WithinAbs(-10.0, 1e-9));
+        CHECK_THAT(bottom_left.z, WithinAbs(0.0, 1e-9));
+
+        // t1 = 1.0, t2 = 1.0 -> top-right corner = (5, 10, 0)
+        auto const top_right = rect.pos_at(1.0, 1.0);
+        CHECK_THAT(top_right.x, WithinAbs(5.0, 1e-9));
+        CHECK_THAT(top_right.y, WithinAbs(10.0, 1e-9));
+        CHECK_THAT(top_right.z, WithinAbs(0.0, 1e-9));
+    }
+
     SECTION("Round-trip serialization preserves values")
     {
         geometry::Rectangle const rect{"rect_01", {0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}, {1.0, 0.0, 0.0}, 10.0, 20.0};
@@ -174,6 +243,44 @@ TEST_CASE("Rectangle JSON Serialization and Deserialization", "[geometry][json]"
 
 TEST_CASE("SphericalRectangle JSON Serialization and Deserialization", "[geometry][json]")
 {
+    SECTION("Member functions compute correct length and positions")
+    {
+        double const pi = std::numbers::pi;
+        geometry::SphericalRectangle const sr{
+            "sr_01",
+            {0.0, 0.0, 0.0},
+            {0.0, 0.0, 1.0},
+            {1.0, 0.0, 0.0},
+            {0.0, 1.0, 0.0},
+            5.0,
+            pi,
+            pi
+        };
+
+        CHECK(sr.id() == "sr_01");
+        CHECK_THAT(sr.radius(), WithinAbs(5.0, 1e-9));
+        CHECK_THAT(sr.polar_span(), WithinAbs(pi, 1e-9));
+        CHECK_THAT(sr.azimuth_span(), WithinAbs(pi, 1e-9));
+
+        // t1 = 0.5, t2 = 0.5 -> center patch surface: center + radius * normal = (0, 0, 5)
+        auto const center_pos = sr.pos_at(0.5, 0.5);
+        CHECK_THAT(center_pos.x, WithinAbs(0.0, 1e-9));
+        CHECK_THAT(center_pos.y, WithinAbs(0.0, 1e-9));
+        CHECK_THAT(center_pos.z, WithinAbs(5.0, 1e-9));
+
+        // t1 = 1.0, t2 = 0.5 -> azimuth = pi/2, polar = 0 -> center + radius * e1 = (5, 0, 0)
+        auto const e1_pos = sr.pos_at(1.0, 0.5);
+        CHECK_THAT(e1_pos.x, WithinAbs(5.0, 1e-9));
+        CHECK_THAT(e1_pos.y, WithinAbs(0.0, 1e-9));
+        CHECK_THAT(e1_pos.z, WithinAbs(0.0, 1e-9));
+
+        // t1 = 0.5, t2 = 1.0 -> azimuth = 0, polar = pi/2 -> center + radius * e2 = (0, 5, 0)
+        auto const e2_pos = sr.pos_at(0.5, 1.0);
+        CHECK_THAT(e2_pos.x, WithinAbs(0.0, 1e-9));
+        CHECK_THAT(e2_pos.y, WithinAbs(5.0, 1e-9));
+        CHECK_THAT(e2_pos.z, WithinAbs(0.0, 1e-9));
+    }
+
     SECTION("Deserialization reconstructs e2 and normalizes vectors")
     {
         // Un-normalized vectors

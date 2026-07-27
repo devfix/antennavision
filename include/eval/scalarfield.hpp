@@ -86,7 +86,7 @@ struct ScalarField
 
     [[nodiscard]] std::pair<Pos, double> calc_beamwidth(geometry::CircleArc const& arc, double wavelength, double ratio) const;
 
-    setup::NumParams const& num_params;
+    setup::NumParams num_params;
 
 protected:
     // Prevent direct deletion through base pointer without virtual destructor

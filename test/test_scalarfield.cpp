@@ -8,9 +8,7 @@
 #include "../include/setup/setup.hpp"
 #include "eval/voltagefield.hpp"
 
-TEST_CASE("ScalarField", "[ScalarField]")
-{
-    ojson const js = ojson::parse(R"JSON(
+ojson const SETUP_JSON = ojson::parse(R"JSON(
 {
   "metadata": {
     "setup_name": "test-ula"
@@ -67,7 +65,45 @@ TEST_CASE("ScalarField", "[ScalarField]")
   ]
 }
 )JSON");
-    Setup setup (js);
+
+TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][ArgMax]")
+{
+    SECTION("Correct Maximum on geometry::Line")
+    {
+        Setup setup (SETUP_JSON);
+        auto& wavelength = setup.num_params().system_wavelength;
+        auto const distance = setup.get_double("distance");
+        auto const& tx = setup.get_antenna("ula1");
+        auto& rx = setup.get_antenna("receiver");
+
+        auto voltage_field = VoltageField(tx ,rx, setup.num_params());
+        {
+            auto line = geometry::Line("", Pos(0, distance, -0.5 * distance), Pos(0, distance, 0.5 * distance));
+            auto result = voltage_field.argmax_curve_abs(line, wavelength);
+            REQUIRE((result.pos - Pos(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
+        }
+    }
+
+    SECTION("Correct Maximum on geometry::CircleArc")
+    {
+        Setup setup (SETUP_JSON);
+        auto& wavelength = setup.num_params().system_wavelength;
+        auto const distance = setup.get_double("distance");
+        auto const& tx = setup.get_antenna("ula1");
+        auto& rx = setup.get_antenna("receiver");
+
+        auto voltage_field = VoltageField(tx ,rx, setup.num_params());
+        {
+            auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
+            auto result = voltage_field.argmax_curve_abs(arc, wavelength);
+            REQUIRE((result.pos - Pos(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
+        }
+    }
+}
+
+TEST_CASE("beamwidth", "[ScalarField][VoltageField][beamwidth]")
+{
+    Setup setup (SETUP_JSON);
     auto& wavelength = setup.num_params().system_wavelength;
     auto const distance = setup.get_double("distance");
     auto const& tx = setup.get_antenna("ula1");
@@ -75,18 +111,9 @@ TEST_CASE("ScalarField", "[ScalarField]")
 
     auto voltage_field = VoltageField(tx ,rx, setup.num_params());
     {
-        auto line = geometry::Line("", Pos(0, distance, -0.5 * distance), Pos(0, distance, 0.5 * distance));
-        auto result = voltage_field.argmax_curve_abs(line, wavelength);
-        REQUIRE((result.pos - Pos(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
-    }
-    {
-        auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
-        auto result = voltage_field.argmax_curve_abs(arc, wavelength);
-        REQUIRE((result.pos - Pos(0.0, distance, 0.0)).norm() == Catch::Approx(0.0).margin(1e-6));
-    }
-    {
         auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, 1.0, 0.0), POS_ZERO, distance, 0.5 * pi).normalized();
         auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(arc, wavelength, sqrt2_2);
         REQUIRE(beamwidth == Catch::Approx(0.11053292584412225));
     }
 }
+
