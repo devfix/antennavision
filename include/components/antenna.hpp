@@ -78,8 +78,8 @@ namespace antenna
             magic_enum::enum_name(static_cast<AntennaType>(get_variant_index<T, Antenna>())));
     }
 
-    [[nodiscard]] Complex calc_voltage_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params);
-    [[nodiscard]] double calc_power_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params);
+    [[nodiscard]] Complex calc_voltage_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params, double wavelength);
+    [[nodiscard]] double calc_power_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params, double wavelength);
 
     /**
      * Creates new scalar field that is the power field if the tx is fixed in space and the rx is moved around

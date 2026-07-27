@@ -72,8 +72,8 @@ ScalarField<Derived, ScalarT>::ArgMaxResult ScalarField<Derived, ScalarT>::argma
         1.0,
         num_params //
     };
-    auto opt_result = math::f_min(params);
-    return {opt_result.t_min, geometry::curve::get_pos_at(curve, opt_result.t_min), -opt_result.f_min};
+    auto opt_result = math::scan_f_min(params);
+    return {opt_result.opt.t_min, geometry::curve::get_pos_at(curve, opt_result.opt.t_min), -opt_result.opt.f_min};
 }
 
 template <typename Derived, typename ScalarT>

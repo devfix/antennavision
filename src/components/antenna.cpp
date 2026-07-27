@@ -15,13 +15,12 @@ namespace antenna
 
     namespace
     {
-        Complex calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, setup::NumParams const& num_params)
+        Complex calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, setup::NumParams const& num_params, double wavelength)
         {
             if (tx.origin == nullptr) { throw SimulationError("TX Radiator '{}' has unresolved origin '{}'", tx.id, tx.origin_id); }
             if (rx.origin == nullptr) { throw SimulationError("RX Radiator '{}' has unresolved origin '{}'", rx.id, rx.origin_id); }
             num_params.check();
 
-            auto const& wavelength = num_params.system_wavelength;
             double const r = (tx.origin->global_from_local_pos(POS_ZERO) - rx.origin->global_from_local_pos(POS_ZERO)).norm();
             if (r < wavelength / 10)
             {
@@ -79,19 +78,19 @@ namespace antenna
         }
     } // namespace
 
-    Complex calc_voltage_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params)
+    Complex calc_voltage_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params, double wavelength)
     {
         Radiator const& radiator_rx = cast<Radiator>(rx);
         return std::visit(
             [&](auto const& ant_tx)
             {
                 using Type = std::decay_t<decltype(ant_tx)>;
-                if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(ant_tx, radiator_rx, num_params); }
+                if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(ant_tx, radiator_rx, num_params, wavelength); }
                 else if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
                 {
                     Complex gain = 0;
                     for (std::size_t k = 0; k < ant_tx.elements.size(); k++)
-                        gain += ant_tx.coefficients[k] * calc_voltage_gain_direct(ant_tx.elements[k], radiator_rx, num_params);
+                        gain += ant_tx.coefficients[k] * calc_voltage_gain_direct(ant_tx.elements[k], radiator_rx, num_params, wavelength);
                     return gain;
                 }
                 else
@@ -102,8 +101,8 @@ namespace antenna
             tx);
     }
 
-    double calc_power_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params)
-    { return math::square(std::abs(calc_voltage_gain(tx, rx, num_params))); }
+    double calc_power_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params, double wavelength)
+    { return math::square(std::abs(calc_voltage_gain(tx, rx, num_params, wavelength))); }
 
     // ScalarField<double> get_power_field(Antenna const& tx, Antenna& rx, setup::NumParams const& num_params)
     // {

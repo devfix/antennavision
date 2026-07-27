@@ -22,7 +22,7 @@ struct VoltageField : ComplexScalarField<VoltageField>
     [[nodiscard]] Complex field_impl(Pos const& pos, double wavelength) const
     {
         antenna::get_origin(rx)->pos = pos;
-        return antenna::calc_voltage_gain(tx, rx, num_params);
+        return antenna::calc_voltage_gain(tx, rx, num_params, wavelength);
     }
 
     antenna::Antenna const& tx;

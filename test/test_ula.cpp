@@ -137,7 +137,7 @@ TEST_CASE("ULA gain", "[TestULA]")
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         ref_start.pos = ref_start_initial.pos + pos_delta * f;
-        gains.at(k) = antenna::calc_voltage_gain(tx, rx, setup.num_params());
+        gains.at(k) = antenna::calc_voltage_gain(tx, rx, setup.num_params(), setup.num_params().system_wavelength);
         distances.at(k) = *distance_ptr;
     }
     ref_start.pos = ref_start_initial.pos;
