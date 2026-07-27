@@ -116,32 +116,120 @@ TEST_CASE("LinearSweep Properties and JSON Serialization", "[sweep][linear][json
     }
 }
 
-TEST_CASE("LogSweep Properties and JSON Serialization", "[sweep][log][json]")
+TEST_CASE("ExpSweep Properties and JSON Serialization", "[sweep][exp][json]")
 {
-    SECTION("Logarithmic interpolation generates expected curve")
+    SECTION("Exponential interpolation generates expected curve for base=e")
     {
-        sweep::LogSweep const sweep{"log_01", 1.0, 10.0, 3, 10.0};
+        sweep::ExpSweep const sweep{"exp_01", 1.0, std::numbers::e, 5, std::numbers::e};
 
-        CHECK(sweep.id() == "log_01");
-        CHECK(sweep.size() == 3);
+        CHECK(sweep.id() == "exp_01");
+        CHECK(sweep.size() == 5);
+        CHECK_THAT(sweep.base(), WithinAbs(std::numbers::e, 1e-9));
+        CHECK_THAT(sweep.begin_val(), WithinAbs(1.0, 1e-9));
+        CHECK_THAT(sweep.end_val(), WithinAbs(std::numbers::e, 1e-9));
+
+        auto const vals = sweep.values();
+        REQUIRE(vals.size() == 5);
+        CHECK_THAT(vals[0], WithinAbs(1.0, 1e-9));
+        CHECK_THAT(vals[1], WithinAbs(1.28402541668774139, 1e-9));
+        CHECK_THAT(vals[2], WithinAbs(1.64872127070012819, 1e-9));
+        CHECK_THAT(vals[3], WithinAbs(2.11700001661267478, 1e-9));
+        CHECK_THAT(vals[4], WithinAbs(std::numbers::e, 1e-9));
+    }
+
+    SECTION("Exponential interpolation generates expected curve for base=10")
+    {
+        sweep::ExpSweep const sweep{"exp_01", 1.0, 10.0, 5, 10.0};
+
+        CHECK(sweep.id() == "exp_01");
+        CHECK(sweep.size() == 5);
         CHECK_THAT(sweep.base(), WithinAbs(10.0, 1e-9));
         CHECK_THAT(sweep.begin_val(), WithinAbs(1.0, 1e-9));
         CHECK_THAT(sweep.end_val(), WithinAbs(10.0, 1e-9));
 
         auto const vals = sweep.values();
-        REQUIRE(vals.size() == 3);
+        REQUIRE(vals.size() == 5);
         CHECK_THAT(vals[0], WithinAbs(1.0, 1e-9));
-        CHECK_THAT(vals[2], WithinAbs(10.0, 1e-9));
-        // Middle value u = (10^(0.5) - 1) / (10 - 1) = (3.16227766 - 1) / 9 = ~0.240253
-        // val = 1.0 + 0.240253 * 9.0 = 3.16227766...
-        CHECK_THAT(vals[1], WithinAbs(std::sqrt(10.0), 1e-6));
+        CHECK_THAT(vals[1], WithinAbs(1.77827941003892276, 1e-9));
+        CHECK_THAT(vals[2], WithinAbs(3.16227766016837952, 1e-9));
+        CHECK_THAT(vals[3], WithinAbs(5.62341325190349117, 1e-9));
+        CHECK_THAT(vals[4], WithinAbs(10.0, 1e-9));
+    }
+
+    SECTION("Deserialization defaults base to 10.0 when omitted from JSON")
+    {
+        nlohmann::json const js = {
+            {"type", "ExpSweep"},
+            {"id", "exp_02"},
+            {"begin", 1.0},
+            {"end", 100.0},
+            {"size", 5}
+            // "base" field explicitly omitted
+        };
+
+        auto const sweep = std::get<sweep::ExpSweep>(js.get<sweep::Sweep>());
+        CHECK_THAT(sweep.base(), WithinAbs(10.0, 1e-9));
+    }
+
+    SECTION("Round-trip JSON serialization preserves custom base")
+    {
+        sweep::ExpSweep const sweep{"exp_03", 2.0, 16.0, 4, 2.0};
+
+        nlohmann::json const js = sweep;
+        CHECK_THAT(js.at("base").get<double>(), WithinAbs(2.0, 1e-9));
+
+        auto const deserialized = std::get<sweep::ExpSweep>(js.get<sweep::Sweep>());
+        CHECK_THAT(deserialized.base(), WithinAbs(2.0, 1e-9));
+        CHECK_THAT(deserialized.begin_val(), WithinAbs(2.0, 1e-9));
+        CHECK_THAT(deserialized.end_val(), WithinAbs(16.0, 1e-9));
+    }
+}
+
+TEST_CASE("LogSweep Properties and JSON Serialization", "[sweep][log][json]")
+{
+    SECTION("Logarithmic interpolation generates expected curve for base=e")
+    {
+        sweep::LogSweep const sweep{"log_01", 1.0, std::numbers::e, 5, std::numbers::e};
+
+        CHECK(sweep.id() == "log_01");
+        CHECK(sweep.size() == 5);
+        CHECK_THAT(sweep.base(), WithinAbs(std::numbers::e, 1e-9));
+        CHECK_THAT(sweep.begin_val(), WithinAbs(1.0, 1e-9));
+        CHECK_THAT(sweep.end_val(), WithinAbs(std::numbers::e, 1e-9));
+
+        auto const vals = sweep.values();
+        REQUIRE(vals.size() == 5);
+        CHECK_THAT(vals[0], WithinAbs(1.0, 1e-9));
+        CHECK_THAT(vals[1], WithinAbs(1.61406928368531943, 1e-9));
+        CHECK_THAT(vals[2], WithinAbs(2.06553148887024829, 1e-9));
+        CHECK_THAT(vals[3], WithinAbs(2.42271834846610368, 1e-9));
+        CHECK_THAT(vals[4], WithinAbs(std::numbers::e, 1e-9));
+    }
+
+    SECTION("Logarithmic interpolation generates expected curve for base=10")
+    {
+        sweep::LogSweep const sweep{"log_01", 1.0, 10.0, 5, 10.0};
+
+        CHECK(sweep.id() == "log_01");
+        CHECK(sweep.size() == 5);
+        CHECK_THAT(sweep.base(), WithinAbs(10.0, 1e-9));
+        CHECK_THAT(sweep.begin_val(), WithinAbs(1.0, 1e-9));
+        CHECK_THAT(sweep.end_val(), WithinAbs(10.0, 1e-9));
+
+        auto const vals = sweep.values();
+        REQUIRE(vals.size() == 5);
+        CHECK_THAT(vals[0], WithinAbs(1.0, 1e-9));
+        CHECK_THAT(vals[1], WithinAbs(5.60695024880986903, 1e-9));
+        CHECK_THAT(vals[2], WithinAbs(7.66326420544819431, 1e-9));
+        CHECK_THAT(vals[3], WithinAbs(9.00371532255679163, 1e-9));
+        CHECK_THAT(vals[4], WithinAbs(10.0, 1e-9));
     }
 
     SECTION("Deserialization defaults base to 10.0 when omitted from JSON")
     {
         nlohmann::json const js = {
             {"type", "LogSweep"},
-            {"id", "log_02"},
+            {"id", "exp_02"},
             {"begin", 1.0},
             {"end", 100.0},
             {"size", 5}
@@ -154,7 +242,7 @@ TEST_CASE("LogSweep Properties and JSON Serialization", "[sweep][log][json]")
 
     SECTION("Round-trip JSON serialization preserves custom base")
     {
-        sweep::LogSweep const sweep{"log_03", 2.0, 16.0, 4, 2.0};
+        sweep::LogSweep const sweep{"exp_03", 2.0, 16.0, 4, 2.0};
 
         nlohmann::json const js = sweep;
         CHECK_THAT(js.at("base").get<double>(), WithinAbs(2.0, 1e-9));

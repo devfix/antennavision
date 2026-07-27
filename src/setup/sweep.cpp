@@ -55,6 +55,33 @@ namespace sweep
         }
 
         template <AnyJson JsonType>
+        void load_exp_sweep(JsonType const& js, Sweep& sweep)
+        {
+            serialization::assert_structure(js,
+                "sweep::ExpSweep",
+                {
+                    {"type", json::value_t::string},
+                    {"id", json::value_t::string},
+                    {"begin", json::value_t::number_float},
+                    {"end", json::value_t::number_float},
+                    {"size", json::value_t::number_integer}, //
+                },
+                {
+                    {"base", json::value_t::number_float},
+                    {"values", json::value_t::array}, //
+                });
+            double base = js.contains("base") ? js.at("base").template get<double>() : 10.0;
+            reconstruct_at(sweep,
+                ExpSweep( //
+                    js.at("id").template get<std::string>(),
+                    js.at("begin").template get<double>(),
+                    js.at("end").template get<double>(),
+                    js.at("size").template get<std::size_t>(),
+                    base //
+                    ));
+        }
+
+        template <AnyJson JsonType>
         void load_log_sweep(JsonType const& js, Sweep& sweep)
         {
             serialization::assert_structure(js,
@@ -104,6 +131,18 @@ namespace sweep
                 {"values", linear_sweep->values()}, //
             };
         }
+        else if (auto* exp_sweep = std::get_if<ExpSweep>(&sweep); exp_sweep)
+        {
+            js = JsonType{
+                {"type", "ExpSweep"},
+                {"id", exp_sweep->id()},
+                {"begin", exp_sweep->begin_val()},
+                {"end", exp_sweep->end_val()},
+                {"size", exp_sweep->size()},
+                {"base", exp_sweep->base()},
+                {"values", exp_sweep->values()}, //
+            };
+        }
         else if (auto* log_sweep = std::get_if<LogSweep>(&sweep); log_sweep)
         {
             js = JsonType{
@@ -132,6 +171,8 @@ namespace sweep
             load_list_sweep(js, sweep);
         else if (type == "LinearSweep")
             load_linear_sweep(js, sweep);
+        else if (type == "ExpSweep")
+            load_exp_sweep(js, sweep);
         else if (type == "LogSweep")
             load_log_sweep(js, sweep);
         else
@@ -149,13 +190,25 @@ namespace sweep
         return values;
     }
 
-    std::vector<double> LogSweep::values() const noexcept
+    std::vector<double> ExpSweep::values() const noexcept
     {
         std::vector<double> values(size_);
         for (std::size_t k = 0; k < size_; ++k)
         {
             double const t = static_cast<double>(k) / static_cast<double>(size_ - 1); // t in [0,1]
             double const u = (std::pow(base_, t) - 1) / (base_ - 1); // u in [0,1]
+            values[k] = value_begin_ + u * (value_end_ - value_begin_);
+        }
+        return values;
+    }
+
+    std::vector<double> LogSweep::values() const noexcept
+    {
+        std::vector<double> values(size_);
+        for (std::size_t k = 0; k < size_; ++k)
+        {
+            double const t = static_cast<double>(k) / static_cast<double>(size_ - 1); // t in [0,1]
+            double const u = std::log((base_ - 1) * t + 1) / std::log(base_); // u in [0,1]
             values[k] = value_begin_ + u * (value_end_ - value_begin_);
         }
         return values;
@@ -192,7 +245,6 @@ namespace sweep
         if (it == sweeps.end()) { throw SimulationError("Could not find sweep with id '{}'", id); }
         return *it;
     }
-
 
     // -----------------------------------------------------------------------------
     // EXPLICIT INSTANTIATIONS

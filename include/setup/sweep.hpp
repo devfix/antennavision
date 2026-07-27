@@ -60,6 +60,34 @@ namespace sweep
         double value_end_{};
     };
 
+    struct ExpSweep
+    {
+        [[nodiscard]] ExpSweep() = default;
+
+        [[nodiscard]] explicit ExpSweep(std::string id, double value_begin, double value_end, std::size_t size, double base = 10.0) :
+            id_(std::move(id)), value_begin_(value_begin), value_end_(value_end), size_(size), base_(base)
+        {}
+
+        [[nodiscard]] std::string const& id() const noexcept { return id_; }
+
+        [[nodiscard]] std::size_t size() const noexcept { return size_; }
+
+        [[nodiscard]] std::vector<double> values() const noexcept;
+
+        [[nodiscard]] double begin_val() const noexcept { return value_begin_; }
+
+        [[nodiscard]] double end_val() const noexcept { return value_end_; }
+
+        [[nodiscard]] double base() const noexcept { return base_; }
+
+    private:
+        std::string id_;
+        std::size_t size_{};
+        double value_begin_{};
+        double value_end_{};
+        double base_{};
+    };
+
     struct LogSweep
     {
         [[nodiscard]] LogSweep() = default;
@@ -88,7 +116,7 @@ namespace sweep
         double base_{};
     };
 
-    using Sweep = std::variant<ListSweep, LinearSweep, LogSweep>;
+    using Sweep = std::variant<ListSweep, LinearSweep, ExpSweep, LogSweep>;
 
     template <AnyJson JsonType>
     void to_json(JsonType& js, Sweep const& sweep);
