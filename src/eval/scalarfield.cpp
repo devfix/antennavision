@@ -16,13 +16,14 @@ namespace
 template <typename Derived, typename ScalarT>
 nc::NdArray<ScalarT> ScalarField<Derived, ScalarT>::eval(Vec3Array const& positions, double wavelength) const
 {
-    using std::chrono::steady_clock;
     using std::chrono::duration_cast;
+    using std::chrono::steady_clock;
 
     nc::NdArray<ScalarT> values(positions.shape());
     auto const size = positions.size();
     auto it = positions.begin();
     auto ot = values.begin();
+    auto ctx = make_context();
     for (std::size_t k = 0; it != positions.end(); ++it, ++ot, ++k)
     {
         if (k % 32 == 0)
@@ -30,7 +31,7 @@ nc::NdArray<ScalarT> ScalarField<Derived, ScalarT>::eval(Vec3Array const& positi
             double p = static_cast<double>(k) / static_cast<double>(size);
             std::print("\033[2K\rScalarField::eval @ λ={:.04f}m : {: 5.1f}%", wavelength, p * 100.0);
         }
-        *ot = field(*it, wavelength);
+        *ot = ctx(*it, wavelength);
     }
     std::println("\033[2K\rScalarField::eval @ λ={:.04f}m : done", wavelength);
     // std::ranges::transform(positions, values.begin(), [this, &wavelength](Pos const& pos) { return field(pos, wavelength); });
@@ -66,8 +67,9 @@ ScalarField<Derived, ScalarT>::EvalSweepResult ScalarField<Derived, ScalarT>::ev
 template <typename Derived, typename ScalarT>
 ScalarField<Derived, ScalarT>::ArgMaxResult ScalarField<Derived, ScalarT>::argmax_curve_abs(geometry::Curve const& curve, double wavelength) const
 {
+    auto ctx = make_context();
     math::OptParams const params{
-        [this, &curve, &wavelength](double const t) -> double { return -std::abs(field(geometry::curve::get_pos_at(curve, t), wavelength)); },
+        [&curve, &wavelength, &ctx](double const t) -> double { return -std::abs(ctx(geometry::curve::get_pos_at(curve, t), wavelength)); },
         0.0,
         1.0,
         num_params //
@@ -86,8 +88,9 @@ ScalarField<Derived, ScalarT>::find_curve_peak_and_cutoffs(geometry::Curve const
     // The data in opt_peak, opt_left, and opt_right is therefor inverted as well!
 
     // step 1: find the maximum
+    auto ctx = make_context();
     math::OptParams const params_max{
-        [this, &curve, &wavelength](double const t) -> double { return -std::abs(field(geometry::curve::get_pos_at(curve, t), wavelength)); },
+        [&curve, &wavelength, &ctx](double const t) -> double { return -std::abs(ctx(geometry::curve::get_pos_at(curve, t), wavelength)); },
         0.0,
         1.0,
         num_params //
@@ -112,8 +115,8 @@ ScalarField<Derived, ScalarT>::find_curve_peak_and_cutoffs(geometry::Curve const
 
     // step 4: find left cutoff
     math::OptParams const params_left{
-        [this, &curve, &wavelength, thres](double const t) -> double
-        { return std::abs(std::abs(field(geometry::curve::get_pos_at(curve, t), wavelength)) - thres); },
+        [&curve, &wavelength, thres, &ctx](double const t) -> double
+        { return std::abs(std::abs(ctx(geometry::curve::get_pos_at(curve, t), wavelength)) - thres); },
         dbl(k_lower) / dbl(opt_peak.scan_t.size() - 1),
         opt_peak.opt.t_min,
         num_params //
@@ -122,8 +125,8 @@ ScalarField<Derived, ScalarT>::find_curve_peak_and_cutoffs(geometry::Curve const
 
     // step 5: find right cutoff
     math::OptParams const params_right{
-        [this, &curve, &wavelength, thres](double const t) -> double
-        { return std::abs(std::abs(field(geometry::curve::get_pos_at(curve, t), wavelength)) - thres); },
+        [&curve, &wavelength, thres, &ctx](double const t) -> double
+        { return std::abs(std::abs(ctx(geometry::curve::get_pos_at(curve, t), wavelength)) - thres); },
         opt_peak.opt.t_min,
         dbl(k_upper) / dbl(opt_peak.scan_t.size() - 1),
         num_params //
