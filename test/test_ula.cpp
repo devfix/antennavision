@@ -48,7 +48,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
   ]
 }
 )JSON");
-    Setup setup(js);
+    setup::Setup setup(js);
     auto const& wavelength = setup.num_params().system_wavelength;
     auto& ula = antenna::cast<UniformLinearArray>(setup.get_antenna("ula1"));
 
@@ -118,7 +118,7 @@ TEST_CASE("ULA gain", "[TestULA]")
   ]
 }
 )JSON");
-    Setup setup(js);
+    setup::Setup setup(js);
     auto const& tx = setup.get_antenna("ula1");
     auto const& rx = setup.get_antenna("receiver");
     reference::Reference& ref_start = setup.get_reference("ref_rx_start");
@@ -213,7 +213,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
   ]
 }
 )JSON");
-    Setup setup(js);
+    setup::Setup setup(js);
     auto const& tx = setup.get_antenna("ula1");
     auto& rx = setup.get_antenna("receiver");
     reference::Reference const& ref_stop = setup.get_reference("ref_rx_stop");

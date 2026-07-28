@@ -18,7 +18,7 @@ namespace builtin
 {
     struct FunctionRegistry
     {
-        using FuncType = std::function<void(Setup& setup)>;
+        using FuncType = std::function<void(setup::Setup& setup)>;
 
         static FunctionRegistry& instance()
         {
@@ -28,7 +28,7 @@ namespace builtin
 
         void register_func(std::string const& name, FuncType func) { registry[name] = func; }
 
-        void call(std::string const& name, Setup& setup)
+        void call(std::string const& name, setup::Setup& setup)
         {
             if (auto it = registry.find(name); it != registry.end()) { it->second(setup); }
             else

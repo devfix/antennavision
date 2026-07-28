@@ -110,7 +110,7 @@ TEST_CASE("HalfWaveDipole via setup", "[Radiator]")
   ]
 }
 )JSON");
-    Setup setup(js);
+    setup::Setup setup(js);
     auto & antenna = setup.get_antenna("DUT");
     auto* radiator = std::get_if<Radiator>(&antenna);
     assert(radiator);
@@ -152,7 +152,7 @@ TEST_CASE("FullWaveDipole via setup", "[Radiator]")
   ]
 }
 )JSON");
-    Setup setup(js);
+    setup::Setup setup(js);
     auto & antenna = setup.get_antenna("DUT");
     auto* radiator = std::get_if<Radiator>(&antenna);
     assert(radiator);
@@ -199,7 +199,7 @@ TEST_CASE("3/2-WaveDipole via setup", "[Radiator]")
   ]
 }
 )JSON");
-    Setup setup(js);
+    setup::Setup setup(js);
     auto & antenna = setup.get_antenna("DUT");
     auto* radiator = std::get_if<Radiator>(&antenna);
     assert(radiator);

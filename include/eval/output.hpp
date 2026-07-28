@@ -9,14 +9,18 @@
 
 namespace eval::output
 {
-    void directivity_over_polar(antenna::Antenna const& antenna, RealArray const& azimuth_angles, setup::NumParams const& num_params);
+    void directivity_over_polar( //
+        std::filesystem::path const& path_json,
+        antenna::Antenna const& antenna,
+        sweep::Sweep const& sweep_azimuth,
+        setup::NumParams const& num_params //
+    );
 
-    template<typename T>
-    void voltagefield_over_geometry(ComplexScalarField<T> const& scalar_field, geometry::Geometry const& geo, sweep::Sweep const& sweep);
-
-    //
-    // void gain_over_phase(RealArray const& phases, std::vector<std::tuple<std::reference_wrapper<const RealArray>, std::string>> const& gains,
-    // std::string_view name,
-    //                      std::string_view title);
-
+    template <typename T>
+    void voltagefield_over_geometry( //
+        std::filesystem::path const& path_json,
+        ComplexScalarField<T> const& scalar_field,
+        geometry::Geometry const& geo,
+        sweep::Sweep const& sweep //
+    );
 } // namespace eval::output

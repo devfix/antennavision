@@ -54,9 +54,9 @@ namespace builtin
 )JSON");
     }
 
-    BUILTIN_FUNCTION(t01_upa_beam_shape, Setup& setup_task)
+    BUILTIN_FUNCTION(t01_upa_beam_shape, setup::Setup& setup_task)
     {
-        Setup const setup(js);
+        setup::Setup const setup(js);
         setup.export_to_three(".");
 
     }

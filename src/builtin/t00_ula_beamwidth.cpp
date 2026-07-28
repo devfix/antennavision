@@ -10,6 +10,8 @@
 
 namespace builtin
 {
+    using setup::Setup;
+
     namespace
     {
         ojson const js_template = ojson::parse(R"JSON(
