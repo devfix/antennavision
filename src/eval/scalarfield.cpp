@@ -3,7 +3,9 @@
 //
 
 #include "eval/scalarfield.hpp"
+#include <future>
 #include <print>
+#include <thread>
 #include "eval/rxvoltagefield.hpp"
 
 namespace
@@ -11,30 +13,50 @@ namespace
     template <typename T>
     [[nodiscard]] constexpr double dbl(T val) noexcept
     { return static_cast<double>(val); }
+
 } // namespace
 
 template <typename Derived, typename ScalarT>
 nc::NdArray<ScalarT> ScalarField<Derived, ScalarT>::eval(Vec3Array const& positions, double wavelength) const
 {
-    using std::chrono::duration_cast;
-    using std::chrono::steady_clock;
-
+    std::println("\033[2K\rScalarField::eval @ λ={:.04f}m", wavelength);
     nc::NdArray<ScalarT> values(positions.shape());
-    auto const size = positions.size();
-    auto it = positions.begin();
-    auto ot = values.begin();
-    auto ctx = make_context();
-    for (std::size_t k = 0; it != positions.end(); ++it, ++ot, ++k)
+
+#ifdef ANTENNAVISION_SINGLE_THREADED
+    auto const ctx = make_context();
+    std::ranges::transform(positions, values.begin(), [&ctx, &wavelength](Pos const& pos) { return ctx(pos, wavelength); });
+    return values;
+#else
+    std::size_t const total_size = positions.size();
+
+    // Determine thread count and calculate chunk sizes
+    std::size_t const num_threads = std::thread::hardware_concurrency();
+    std::size_t const chunk_size = (total_size + num_threads - 1) / num_threads;
+
+    std::vector<std::future<void>> futures;
+    futures.reserve(num_threads);
+
+    // Launch 1 task per chunk
+    for (std::size_t t = 0; t < num_threads; ++t)
     {
-        if (k % 32 == 0)
-        {
-            double p = static_cast<double>(k) / static_cast<double>(size);
-            std::print("\033[2K\rScalarField::eval @ λ={:.04f}m : {: 5.1f}%", wavelength, p * 100.0);
-        }
-        *ot = ctx(*it, wavelength);
+        std::size_t const start_idx = t * chunk_size;
+        if (start_idx >= total_size) break;
+        std::size_t const end_idx = std::min(start_idx + chunk_size, total_size);
+
+        futures.push_back(std::async(std::launch::async,
+            [this, start_idx, end_idx, &positions, &values, wavelength]()
+            {
+                auto const ctx = make_context();
+                auto it = positions.begin() + start_idx;
+                auto ot = values.begin() + start_idx;
+                for (std::size_t k = start_idx; k < end_idx; ++k, ++it, ++ot) *ot = ctx(*it, wavelength);
+            }));
     }
-    std::println("\033[2K\rScalarField::eval @ λ={:.04f}m : done", wavelength);
-    // std::ranges::transform(positions, values.begin(), [this, &wavelength](Pos const& pos) { return field(pos, wavelength); });
+
+    // Wait for all threads to finish computing their chunks
+    for (auto& f : futures) f.get();
+#endif
+
     return values;
 }
 
@@ -67,7 +89,7 @@ ScalarField<Derived, ScalarT>::EvalSweepResult ScalarField<Derived, ScalarT>::ev
 template <typename Derived, typename ScalarT>
 ScalarField<Derived, ScalarT>::ArgMaxResult ScalarField<Derived, ScalarT>::argmax_curve_abs(geometry::Curve const& curve, double wavelength) const
 {
-    auto ctx = make_context();
+    auto const ctx = make_context();
     math::OptParams const params{
         [&curve, &wavelength, &ctx](double const t) -> double { return -std::abs(ctx(geometry::curve::get_pos_at(curve, t), wavelength)); },
         0.0,
@@ -88,7 +110,7 @@ ScalarField<Derived, ScalarT>::find_curve_peak_and_cutoffs(geometry::Curve const
     // The data in opt_peak, opt_left, and opt_right is therefor inverted as well!
 
     // step 1: find the maximum
-    auto ctx = make_context();
+    auto const ctx = make_context();
     math::OptParams const params_max{
         [&curve, &wavelength, &ctx](double const t) -> double { return -std::abs(ctx(geometry::curve::get_pos_at(curve, t), wavelength)); },
         0.0,

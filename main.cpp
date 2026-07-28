@@ -60,7 +60,7 @@ int run(int argc, char* argv[])
     std::filesystem::current_path(path_setups_dir);
     std::println("Working directory: {}", std::filesystem::current_path().string());
 
-    std::vector<std::pair<path, Setup>> setups;
+    std::vector<std::pair<path, setup::Setup>> setups;
     for (const auto& entry : recursive_directory_iterator(path_setups_dir))
     {
         if (entry.path().filename() == "setup.json")
@@ -74,7 +74,7 @@ int run(int argc, char* argv[])
     {
         std::filesystem::current_path(path.parent_path());
         setup.export_to_three(".");
-        setup.run_tasks([&setup](std::string_view const key) { builtin::FunctionRegistry::instance().call(std::string(key), setup); });
+        setup.run_tasks(path.parent_path());
 
         // std::filesystem::path const path_timestamp = "timestamp";
         // if (setup.isUpToDate(path_timestamp))

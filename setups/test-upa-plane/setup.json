@@ -10,8 +10,8 @@
   },
   "num_params": {
     "system_wavelength": 0.1,
-    "n_polar": 101,
-    "n_azimuth": 101
+    "n_linear1": 201,
+    "n_linear2": 201
   },
   "references": [
     {
@@ -82,11 +82,11 @@
   ],
   "tasks": [
     {
-      "type": "compute_voltage_field",
+      "type": "RxVoltageField@Wavelength",
       "tx": "tx",
       "rx": "rx",
       "geo": "geo",
-      "sweep": "sweep"
+      "sweep_wavelength": "sweep"
     }
   ]
 }
