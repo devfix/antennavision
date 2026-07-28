@@ -278,14 +278,14 @@ namespace geometry
                 }
                 else
                 {
-                    Vec3Array positions(n_linear2, n_linear1);
-                    for (ComplexArray::index_type k2 = 0; k2 < n_linear2; k2++)
+                    Vec3Array positions(n_linear1, n_linear2);
+                    for (std::int32_t k2 = 0; k2 < n_linear2; k2++)
                     {
                         double const t2 = static_cast<double>(k2) / static_cast<double>(n_linear2 - 1);
-                        for (RealArray::index_type k1 = 0; k1 < n_linear1; k1++)
+                        for (std::int32_t k1 = 0; k1 < n_linear1; k1++)
                         {
                             double const t1 = static_cast<double>(k1) / static_cast<double>(n_linear1 - 1);
-                            positions(k2, k1) = geometry::surface::get_pos_at(shape, t1, t2);
+                            positions(k1, k2) = geometry::surface::get_pos_at(shape, t1, t2);
                         }
                     }
                     return positions;
