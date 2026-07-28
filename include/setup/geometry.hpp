@@ -140,6 +140,8 @@ namespace geometry
 
         [[nodiscard]] Rectangle normalized() const;
 
+        [[nodiscard]] double area() const { return width_ * height_; }
+
         [[nodiscard]] Pos constexpr pos_at(double t1, double t2) const { return center_ + (t1 - 0.5) * e1_ * width_ + (t2 - 0.5) * e2_ * height_; }
 
     private:
@@ -185,6 +187,8 @@ namespace geometry
         [[nodiscard]] double azimuth_span() const { return azimuth_span_; }
 
         [[nodiscard]] SphericalRectangle normalized() const;
+
+        [[nodiscard]] double area() const;
 
         [[nodiscard]] Pos pos_at(double t1, double t2) const;
 
@@ -265,6 +269,11 @@ namespace geometry
         [[nodiscard]] constexpr Pos const& get_e2(Surface const& surf) noexcept
         {
             return std::visit([](auto const& gt) -> Pos const& { return gt.e2(); }, surf);
+        }
+
+        [[nodiscard]] constexpr double get_area(Surface const& surf) noexcept
+        {
+            return std::visit([](auto const& s) -> double { return s.area(); }, surf);
         }
 
         [[nodiscard]] constexpr Pos get_pos_at(Surface const& surf, double t1, double t2) noexcept

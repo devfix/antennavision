@@ -178,6 +178,11 @@ namespace geometry
         return center_ + radius_ * local_normal;
     }
 
+    double SphericalRectangle::area() const
+    {
+        return 2.0 * math::square(radius_) * azimuth_span_ * std::sin(polar_span_ / 2.0);
+    }
+
     template <AnyJson JsonType>
     void to_json(JsonType& js, Geometry const& geo)
     {

@@ -115,11 +115,22 @@ void Setup::export_to_three(std::filesystem::path const& directory, std::string_
     for (auto const& geo : geometries_)
     {
         std::visit(
-            [&container](auto const& g)
+            [&container, &system_wavelength](auto const& g)
             {
                 if constexpr (std::constructible_from<geometry::Curve, decltype(g)>)
                 {
                     auto curve = geometry::Curve(g);
+
+                    if constexpr (std::is_same_v<geometry::CircleArc, std::decay_t<decltype(g)>>)
+                    {
+                        container.add(three::create_coordinate_arrows( //
+                        g.center(),
+                        g.e1(),
+                        g.e2(),
+                        g.normal(),
+                        0.25 * g.length() //
+                        ));
+                    }
                     std::vector<Pos> points(N_POINTS_THREE_GEOMETRIES);
                     for (std::size_t k = 0; k < N_POINTS_THREE_GEOMETRIES; k++)
                     {
@@ -131,6 +142,13 @@ void Setup::export_to_three(std::filesystem::path const& directory, std::string_
                 else if constexpr (std::constructible_from<geometry::Surface, decltype(g)>)
                 {
                     auto surface = geometry::Surface(g);
+                    container.add(three::create_coordinate_arrows( //
+                        geometry::surface::get_center(g),
+                        geometry::surface::get_e1(g),
+                        geometry::surface::get_e2(g),
+                        geometry::surface::get_normal(g),
+                        0.25 * std::sqrt(geometry::surface::get_area(g)) //
+                        ));
                     for (std::size_t k1 = 0; k1 < N_POINTS_THREE_GEOMETRIES; k1++)
                     {
                         double const t1 = static_cast<double>(k1) / static_cast<double>(N_POINTS_THREE_GEOMETRIES - 1);
@@ -375,10 +393,10 @@ void Setup::extract_tasks(ojson& desc)
         //     pos_t const center = ref_center.global_pos();
         //     pos_t const pos_rect = ref_rect.global_pos();
         //     auto sr = geometry::SphericalRectangle::make(center, pos_rect, polar * pi, azimuth * pi, dir_north);
-        //     setup::NumParams num_params{.wavelength = wavelength, .n_polar = N_POINTS_THREE_GEOMETRIES_polar, .n_azimuth = N_POINTS_THREE_GEOMETRIES_azimuth};
-        //     auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
-        //     task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
-        //     tasks.emplace_back(task_name, [voltage_field, sr] { plot::plot_gain_over_spherical_rectangle(voltage_field, sr); });
+        //     setup::NumParams num_params{.wavelength = wavelength, .n_polar = N_POINTS_THREE_GEOMETRIES_polar, .n_azimuth =
+        //     N_POINTS_THREE_GEOMETRIES_azimuth}; auto voltage_field = antenna::get_voltage_field(tx, rx, num_params); task_name = std::format("{}.{}.{}",
+        //     type, tx_id, antenna::get_id(rx)); tasks.emplace_back(task_name, [voltage_field, sr] { plot::plot_gain_over_spherical_rectangle(voltage_field,
+        //     sr); });
         // }
         else
         {
