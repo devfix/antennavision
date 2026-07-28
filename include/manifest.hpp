@@ -10,3 +10,4 @@ static constexpr std::string_view APPLICATION_NAME("AntennaVision");
 static constexpr std::string_view APPLICATION_VERSION("0.1");
 extern std::string_view const BANNER;
 extern std::size_t const N_POINTS_THREE_GEOMETRIES;
+extern std::size_t const N_BATCH_PROGRESS_REPORT;

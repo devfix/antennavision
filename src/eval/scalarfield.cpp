@@ -6,32 +6,48 @@
 #include <future>
 #include <print>
 #include <thread>
+
 #include "eval/rxvoltagefield.hpp"
+#include "manifest.hpp"
 
 namespace
 {
     template <typename T>
     [[nodiscard]] constexpr double dbl(T val) noexcept
     { return static_cast<double>(val); }
-
 } // namespace
 
 template <typename Derived, typename ScalarT>
 nc::NdArray<ScalarT> ScalarField<Derived, ScalarT>::eval(Vec3Array const& positions, double wavelength) const
 {
-    std::println("\033[2K\rScalarField::eval @ λ={:.04f}m", wavelength);
     nc::NdArray<ScalarT> values(positions.shape());
+    std::size_t const total_size = positions.size();
 
 #ifdef ANTENNAVISION_SINGLE_THREADED
     auto const ctx = make_context();
-    std::ranges::transform(positions, values.begin(), [&ctx, &wavelength](Pos const& pos) { return ctx(pos, wavelength); });
-    return values;
-#else
-    std::size_t const total_size = positions.size();
+    auto it = positions.begin();
+    auto ot = values.begin();
 
+    for (std::size_t k = 0; it != positions.end(); ++it, ++ot, ++k)
+    {
+        // Periodic terminal update without atomic/mutex overhead
+        if (k % N_BATCH_PROGRESS_REPORT == 0)
+        {
+            double const p = static_cast<double>(k) / static_cast<double>(total_size);
+            std::print("\033[2K\rScalarField::eval @ λ={:.04f}m : {: 5.1f}%", wavelength, p * 100.0);
+            std::cout << std::flush;
+        }
+        *ot = ctx(*it, wavelength);
+    }
+#else
     // Determine thread count and calculate chunk sizes
     std::size_t const num_threads = std::thread::hardware_concurrency();
     std::size_t const chunk_size = (total_size + num_threads - 1) / num_threads;
+    std::size_t const n_report = N_BATCH_PROGRESS_REPORT * std::max(num_threads / 2, static_cast<std::size_t>(1));
+
+    // --- PROGRESS TRACKING STATE ---
+    std::atomic<std::size_t> processed{0};
+    std::mutex print_mutex;
 
     std::vector<std::future<void>> futures;
     futures.reserve(num_threads);
@@ -44,17 +60,40 @@ nc::NdArray<ScalarT> ScalarField<Derived, ScalarT>::eval(Vec3Array const& positi
         std::size_t const end_idx = std::min(start_idx + chunk_size, total_size);
 
         futures.push_back(std::async(std::launch::async,
-            [this, start_idx, end_idx, &positions, &values, wavelength]()
+            [this, start_idx, end_idx, &positions, &values, wavelength, &processed, &print_mutex, total_size, n_report]
             {
                 auto const ctx = make_context();
-                auto it = positions.begin() + start_idx;
+                auto it = positions.begin() + static_cast<std::ptrdiff_t>(start_idx);
                 auto ot = values.begin() + start_idx;
-                for (std::size_t k = start_idx; k < end_idx; ++k, ++it, ++ot) *ot = ctx(*it, wavelength);
+
+                std::size_t local_counter = 0;
+                for (std::size_t k = start_idx; k < end_idx; ++k, ++it, ++ot)
+                {
+                    *ot = ctx(*it, wavelength);
+
+                    // Batch atomic updates to prevent CPU cache contention
+                    if (++local_counter >= n_report)
+                    {
+                        std::size_t const current_total = processed.fetch_add(local_counter, std::memory_order_relaxed) + local_counter;
+                        local_counter = 0;
+
+                        std::lock_guard lock(print_mutex);
+                        double const p = static_cast<double>(current_total) / static_cast<double>(total_size);
+                        std::print("\033[2K\rScalarField::eval @ λ={:.04f}m : {: 5.1f}%", wavelength, std::min(100.0, p * 100.0));
+                        std::cout << std::flush;
+                    }
+                }
+
+                // Add any remaining remainder from this thread's chunk
+                if (local_counter > 0) { processed.fetch_add(local_counter, std::memory_order_relaxed); }
             }));
     }
 
     // Wait for all threads to finish computing their chunks
     for (auto& f : futures) f.get();
+
+    // Print final 100% completion cleanup
+    std::println("\033[2K\rScalarField::eval @ λ={:.04f}m : done", wavelength);
 #endif
 
     return values;

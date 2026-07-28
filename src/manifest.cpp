@@ -6,6 +6,15 @@
 
 // https://patorjk.com/software/taag/#p=display&f=Big&t=AntennaVision&x=none&v=4&h=4&w=80&we=false
 
+namespace
+{
+#ifndef NDEBUG
+    constexpr bool DEBUG_MODE = true;
+#else
+    constexpr bool DEBUG_MODE = false;
+#endif
+} // namespace
+
 std::string_view const BANNER = R"(
                  _                      __      ___     _
      /\         | |                     \ \    / (_)   (_)
@@ -17,3 +26,4 @@ std::string_view const BANNER = R"(
 )";
 
 std::size_t const N_POINTS_THREE_GEOMETRIES = 32;
+std::size_t const N_BATCH_PROGRESS_REPORT = 64 * (DEBUG_MODE ? 1 : 8);
