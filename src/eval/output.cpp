@@ -70,8 +70,8 @@ namespace eval::output
     // -----------------------------------------------------------------------------
     // EXPLICIT INSTANTIATION
     // -----------------------------------------------------------------------------
-    template void voltagefield_over_geometry<VoltageField>(std::filesystem::path const&,
-        ComplexScalarField<VoltageField> const&,
+    template void voltagefield_over_geometry<RxVoltageField>(std::filesystem::path const&,
+        ComplexScalarField<RxVoltageField> const&,
         geometry::Geometry const&,
         sweep::Sweep const&);
 

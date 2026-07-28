@@ -197,12 +197,12 @@ namespace setup
                     num_params_ //
                 );
             }
-            else if (std::holds_alternative<task::VoltageFieldSweepWavelength>(task))
+            else if (std::holds_alternative<task::RxVoltageFieldSweepWavelength>(task))
             {
-                auto& t = std::get<task::VoltageFieldSweepWavelength>(task);
+                auto& t = std::get<task::RxVoltageFieldSweepWavelength>(task);
                 eval::output::voltagefield_over_geometry( //
                     path_json,
-                    VoltageField(antenna::get(antennas_, t.tx_id), antenna::get(antennas_, t.rx_id), num_params_),
+                    RxVoltageField(antenna::get(antennas_, t.tx_id), antenna::get(antennas_, t.rx_id), num_params_),
                     geometry::get(geometries_, t.geo_id),
                     sweep::get(sweeps_, t.sweep_wavelength_id) //
                 );
@@ -210,9 +210,9 @@ namespace setup
         }
     }
 
-    Reference& Setup::get_reference(std::string_view const id) { return factory::find_reference_by_id(references_, id); }
+    Reference const& Setup::get_reference(std::string_view const id) { return factory::find_reference_by_id(references_, id); }
 
-    antenna::Antenna& Setup::get_antenna(std::string const& id) { return antenna::get(std::span(antennas_), id); }
+    antenna::Antenna const& Setup::get_antenna(std::string const& id) { return antenna::get(std::span(antennas_), id); }
 
     bool Setup::isUpToDate(std::filesystem::path const& path_timestamp) const
     {
@@ -364,13 +364,13 @@ namespace setup
                 auto sweep_azimuth_id = factory::get_string(task_desc, "sweep_azimuth");
                 task = task::DirectivityOverPolarSweepAzimuth{{}, antenna_id, sweep_azimuth_id};
             }
-            else if (type == "VoltageField@Wavelength")
+            else if (type == "RxVoltageField@Wavelength")
             {
                 auto tx_id = factory::get_string(task_desc, "tx");
                 auto rx_id = factory::get_string(task_desc, "rx");
                 auto geo_id = factory::get_string(task_desc, "geo");
                 auto sweep_wavelength_id = factory::get_string(task_desc, "sweep_wavelength");
-                task = task::VoltageFieldSweepWavelength{{}, tx_id, rx_id, geo_id, sweep_wavelength_id};
+                task = task::RxVoltageFieldSweepWavelength{{}, tx_id, rx_id, geo_id, sweep_wavelength_id};
             }
             else
                 throw SimulationError("Unknown task type \"{}\"", type);

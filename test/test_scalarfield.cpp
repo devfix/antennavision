@@ -6,7 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <nlohmann/json.hpp>
-#include "eval/voltagefield.hpp"
+#include "eval/rxvoltagefield.hpp"
 #include "setup/setup.hpp"
 // #include <print>
 
@@ -97,7 +97,7 @@ TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][Ar
         auto const& tx = su.get_antenna("ula1");
         auto& rx = su.get_antenna("receiver");
 
-        auto voltage_field = VoltageField(tx, rx, su.num_params());
+        auto voltage_field = RxVoltageField(tx, rx, su.num_params());
         voltage_field.num_params.n_linear1 = 101;
         {
             auto line = geometry::Line("", Pos(0, distance, -0.5 * distance), Pos(0, distance, 0.5 * distance));
@@ -116,7 +116,7 @@ TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][Ar
         auto const& tx = su.get_antenna("ula1");
         auto& rx = su.get_antenna("receiver");
 
-        auto voltage_field = VoltageField(tx, rx, su.num_params());
+        auto voltage_field = RxVoltageField(tx, rx, su.num_params());
         {
             auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
             auto result = voltage_field.argmax_curve_abs(arc, wavelength);
@@ -135,7 +135,7 @@ TEST_CASE("beamwidth", "[ScalarField][VoltageField][beamwidth]")
     auto const& tx = su.get_antenna("ula1");
     auto& rx = su.get_antenna("receiver");
 
-    auto voltage_field = VoltageField(tx, rx, su.num_params());
+    auto voltage_field = RxVoltageField(tx, rx, su.num_params());
     {
         auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, 1.0, 0.0), POS_ZERO, distance, 0.5 * pi).normalized();
         auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(arc, wavelength, sqrt2_2);
@@ -151,7 +151,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
     auto const& tx = su.get_antenna("ula1");
     auto& rx = su.get_antenna("receiver");
 
-    auto voltage_field = VoltageField(tx, rx, su.num_params());
+    auto voltage_field = RxVoltageField(tx, rx, su.num_params());
     auto& num_params = voltage_field.num_params;
 
     // Configure a simple sweep with 3 test frequencies/wavelengths

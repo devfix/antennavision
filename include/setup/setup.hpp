@@ -14,7 +14,7 @@
 
 namespace setup
 {
-     struct Setup
+    struct Setup
     {
         using VarMap = std::map<std::string, Var>;
 
@@ -75,12 +75,12 @@ namespace setup
         void export_to_three(std::filesystem::path const& directory, std::string_view objects_name = "setup") const;
         void run_tasks(std::filesystem::path const& path_cwd);
 
-        [[nodiscard]] reference::Reference& get_reference(std::string_view id);
-        [[nodiscard]] antenna::Antenna& get_antenna(std::string const& id);
+        [[nodiscard]] reference::Reference const& get_reference(std::string_view id);
+        [[nodiscard]] antenna::Antenna const& get_antenna(std::string const& id);
 
-        [[nodiscard]] std::span<reference::Reference> get_references() { return references_; }
+        [[nodiscard]] std::span<reference::Reference const> get_references() { return references_; }
 
-        [[nodiscard]] std::span<antenna::Antenna> get_antennas() { return antennas_; }
+        [[nodiscard]] std::span<antenna::Antenna const> get_antennas() { return antennas_; }
 
         [[nodiscard]] bool isUpToDate(std::filesystem::path const& path_timestamp) const;
 
@@ -107,4 +107,4 @@ namespace setup
         std::vector<sweep::Sweep> sweeps_;
         std::vector<task::Task> tasks_;
     };
-} // namespace
+} // namespace setup

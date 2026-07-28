@@ -50,7 +50,7 @@ namespace setup::task
         std::string id() const { return std::format("{}.{}.{}", name, antenna_id, sweep_azimuth_id); }
     };
 
-    struct VoltageFieldSweepWavelength : TaskBase<VoltageFieldSweepWavelength>
+    struct RxVoltageFieldSweepWavelength : TaskBase<RxVoltageFieldSweepWavelength>
     {
         std::string tx_id;
         std::string rx_id;
@@ -60,7 +60,7 @@ namespace setup::task
         std::string id() const { return std::format("{}.{}.{}.{}", tx_id, rx_id, geo_id, sweep_wavelength_id); }
     };
 
-    using Task = std::variant<DirectivityOverPolarSweepAzimuth, VoltageFieldSweepWavelength>;
+    using Task = std::variant<DirectivityOverPolarSweepAzimuth, RxVoltageFieldSweepWavelength>;
 
     [[nodiscard]] constexpr std::string_view get_name(Task const& task) noexcept
     {

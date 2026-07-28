@@ -4,7 +4,7 @@
 
 #include "eval/scalarfield.hpp"
 #include <print>
-#include "eval/voltagefield.hpp"
+#include "eval/rxvoltagefield.hpp"
 
 namespace
 {
@@ -151,4 +151,4 @@ std::pair<Pos, double> ScalarField<Derived, ScalarT>::calc_beamwidth(geometry::C
 // -----------------------------------------------------------------------------
 // EXPLICIT INSTANTIATIONS
 // -----------------------------------------------------------------------------
-template struct ScalarField<VoltageField, Complex>;
+template struct ScalarField<RxVoltageField, Complex>;

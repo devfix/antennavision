@@ -9,8 +9,7 @@
 #include "NumCpp/Coordinates/Cartesian.hpp"
 #include "NumCpp/Functions/abs.hpp"
 #include "NumCpp/Functions/angle.hpp"
-#include "components/radiator.hpp"
-#include "eval/voltagefield.hpp"
+#include "eval/rxvoltagefield.hpp"
 #include "math.hpp"
 #include "testutil.hpp"
 
@@ -50,7 +49,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
 )JSON");
     setup::Setup setup(js);
     auto const& wavelength = setup.num_params().system_wavelength;
-    auto& ula = antenna::cast<UniformLinearArray>(setup.get_antenna("ula1"));
+    auto const& ula = antenna::cast<UniformLinearArray>(setup.get_antenna("ula1"));
 
     // check ULA element references
     for (std::size_t i = 0; i < 8; i++)
@@ -121,7 +120,7 @@ TEST_CASE("ULA gain", "[TestULA]")
     setup::Setup setup(js);
     auto const& tx = setup.get_antenna("ula1");
     auto const& rx = setup.get_antenna("receiver");
-    reference::Reference& ref_start = setup.get_reference("ref_rx_start");
+    reference::Reference const& ref_start = setup.get_reference("ref_rx_start");
     reference::Reference const ref_start_initial = ref_start; // we make a copy
     reference::Reference const& ref_stop = setup.get_reference("ref_rx_stop");
 
@@ -132,15 +131,15 @@ TEST_CASE("ULA gain", "[TestULA]")
     std::vector<Complex> gains(n_points, 0.0);
     std::vector<double> distances(n_points, 0.0);
 
-    double* distance_ptr = &ref_start.pos.z;
+    double const* distance_ptr = &ref_start.pos.z;
     for (RealArray::index_type k = 0; k < n_points; k++)
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
-        ref_start.pos = ref_start_initial.pos + pos_delta * f;
+        const_cast<Pos&>(ref_start.pos) = ref_start_initial.pos + pos_delta * f; // TODO user better approach than const_cast
         gains.at(k) = antenna::calc_voltage_gain(tx, rx, setup.num_params(), setup.num_params().system_wavelength);
         distances.at(k) = *distance_ptr;
     }
-    ref_start.pos = ref_start_initial.pos;
+    const_cast<Pos&>(ref_start.pos) = ref_start_initial.pos; // TODO user better approach than const_cast
 
     Complex const gain_votage_abs_max = std::ranges::max(gains, {}, [](Complex const& gain) -> double { return std::abs(gain); });
     REQUIRE(std::abs(gain_votage_abs_max) == Catch::Approx(0.00035809851155573));
@@ -215,9 +214,9 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
 )JSON");
     setup::Setup setup(js);
     auto const& tx = setup.get_antenna("ula1");
-    auto& rx = setup.get_antenna("receiver");
+    auto const& rx = setup.get_antenna("receiver");
     reference::Reference const& ref_stop = setup.get_reference("ref_rx_stop");
-    auto voltage_field = VoltageField(tx, rx, setup.num_params());
+    auto voltage_field = RxVoltageField(tx, rx, setup.num_params());
 
     Pos const pos_start = antenna::get_origin(rx)->global_pos();
     Pos const pos_end = ref_stop.global_pos();

@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "eval/rxvoltagefield.hpp"
 #include "components/antenna.hpp"
-#include "voltagefield.hpp"
 
 namespace eval::output
 {

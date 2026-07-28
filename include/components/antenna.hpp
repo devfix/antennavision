@@ -42,9 +42,14 @@ namespace antenna
         return std::visit([](auto& ant) -> std::string const& { return ant.id; }, antenna);
     }
 
-    [[nodiscard]] constexpr std::string const& get_origin_id(Antenna& antenna)
+    [[nodiscard]] constexpr std::string const& get_origin_id(Antenna const& antenna)
     {
         return std::visit([](auto& ant) -> std::string const& { return ant.origin_id; }, antenna);
+    }
+
+    [[nodiscard]] constexpr reference::Reference* const& get_origin(Antenna const& antenna)
+    {
+        return std::visit([](auto& ant) -> reference::Reference* const& { return ant.origin; }, antenna);
     }
 
     [[nodiscard]] constexpr reference::Reference*& get_origin(Antenna& antenna)
@@ -104,7 +109,8 @@ namespace antenna
      * @param antennas std::initializer_list of antennas that get interconnected
      * @param references std::initializer_list of references that are provided for the antennas and looked through
      */
-    void resolve_origins(std::initializer_list<std::reference_wrapper<Antenna>> antennas, std::initializer_list<std::reference_wrapper<reference::Reference>> references);
+    void resolve_origins(std::initializer_list<std::reference_wrapper<Antenna>> antennas,
+        std::initializer_list<std::reference_wrapper<reference::Reference>> references);
 
     /**
      * Interconnect all radiators to their reference, i.d., resolving the origins ".origin_id" ids to their actual pointer ".origin".
