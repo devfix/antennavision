@@ -9,11 +9,13 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <print>
+
 #include "eval/output.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
 #include "factory/parse.hpp"
+#include "manifest.hpp"
 #include "simulationerror.hpp"
 #include "three.hpp"
 
@@ -34,10 +36,7 @@ namespace
     }
 } // namespace
 
-Setup::Setup(std::filesystem::path const& path_json, bool override_timestamp) : Setup(load_json(path_json))
-{
-    timestamp_ = timeutil::get_of_file(path_json);
-}
+Setup::Setup(std::filesystem::path const& path_json, bool override_timestamp) : Setup(load_json(path_json)) { timestamp_ = timeutil::get_of_file(path_json); }
 
 Setup::Setup(ojson const& js_in)
 {
@@ -94,7 +93,7 @@ void Setup::export_to_three(std::filesystem::path const& directory, std::string_
         double const radius = 0.1 * radiator_length;
         container.add(three::make_cylinder(pos_start, pos_end, radius, radius));
     };
-    for (const auto& antenna : antennas_)
+    for (auto const& antenna : antennas_)
     {
         std::visit(
             [&](auto const& ant)
@@ -111,6 +110,55 @@ void Setup::export_to_three(std::filesystem::path const& directory, std::string_
                 }
             },
             antenna);
+    }
+
+    for (auto const& geo : geometries_)
+    {
+        std::visit(
+            [&container](auto const& g)
+            {
+                if constexpr (std::constructible_from<geometry::Curve, decltype(g)>)
+                {
+                    auto curve = geometry::Curve(g);
+                    std::vector<Pos> points(N_POINTS_THREE_GEOMETRIES);
+                    for (std::size_t k = 0; k < N_POINTS_THREE_GEOMETRIES; k++)
+                    {
+                        double t = static_cast<double>(k) / static_cast<double>(N_POINTS_THREE_GEOMETRIES - 1);
+                        points.at(k) = geometry::curve::get_pos_at(curve, t);
+                    }
+                    container.add(three::make_line(points, 2.0, Color::yellow));
+                }
+                else if constexpr (std::constructible_from<geometry::Surface, decltype(g)>)
+                {
+                    auto surface = geometry::Surface(g);
+                    for (std::size_t k1 = 0; k1 < N_POINTS_THREE_GEOMETRIES; k1++)
+                    {
+                        double const t1 = static_cast<double>(k1) / static_cast<double>(N_POINTS_THREE_GEOMETRIES - 1);
+                        std::vector<Pos> points(N_POINTS_THREE_GEOMETRIES);
+                        for (std::size_t k2 = 0; k2 < N_POINTS_THREE_GEOMETRIES; k2++)
+                        {
+                            double const t2 = static_cast<double>(k2) / static_cast<double>(N_POINTS_THREE_GEOMETRIES - 1);
+                            points.at(k2) = geometry::surface::get_pos_at(surface, t1, t2);
+                        }
+                        container.add(three::make_line(points, 2.0, Color::yellow));
+                    }
+
+                    for (std::size_t k2 = 0; k2 < N_POINTS_THREE_GEOMETRIES; k2++)
+                    {
+                        double const t2 = static_cast<double>(k2) / static_cast<double>(N_POINTS_THREE_GEOMETRIES - 1);
+                        std::vector<Pos> points(N_POINTS_THREE_GEOMETRIES);
+                        for (std::size_t k1 = 0; k1 < N_POINTS_THREE_GEOMETRIES; k1++)
+                        {
+                            double const t1 = static_cast<double>(k1) / static_cast<double>(N_POINTS_THREE_GEOMETRIES - 1);
+                            points.at(k1) = geometry::surface::get_pos_at(surface, t1, t2);
+                        }
+                        container.add(three::make_line(points, 2.0, Color::yellow));
+                    }
+                }
+                else
+                    throw SimulationError("Invalid geometry object");
+            },
+            geo);
     }
     container.export_to_javascript(p);
 }
@@ -134,10 +182,7 @@ void Setup::run_tasks(std::function<void(std::string_view)> const& builtin_handl
 
 Reference& Setup::get_reference(std::string_view const id) { return factory::find_reference_by_id(references_, id); }
 
-antenna::Antenna& Setup::get_antenna(std::string const& id)
-{
-    return antenna::get(std::span(antennas_), id);
-}
+antenna::Antenna& Setup::get_antenna(std::string const& id) { return antenna::get(std::span(antennas_), id); }
 
 bool Setup::isUpToDate(std::filesystem::path const& path_timestamp) const
 {
@@ -296,7 +341,10 @@ void Setup::extract_tasks(ojson& desc)
             std::ranges::transform(azimuth_angles_vec, azimuth_angles.begin(), [](auto const v) { return v * nc::constants::pi; });
             antenna::Antenna const& ant = antenna::get(antennas_, factory::get_string(task_desc, "antenna"));
             task_name = std::format("{}.{}", type, antenna::get_id(ant));
-            tasks_[task_name] = [&ant, azimuth_angles] { eval::output::directivity_over_polar(ant, azimuth_angles, {}); };
+            tasks_[task_name] = [&ant, azimuth_angles]
+            {
+                eval::output::directivity_over_polar(ant, azimuth_angles, {});
+            };
         }
         else if (type == "compute_voltage_field")
         {
@@ -306,7 +354,10 @@ void Setup::extract_tasks(ojson& desc)
             auto sweep = sweep::get(sweeps_, factory::get_string(task_desc, "sweep"));
             VoltageField voltage_field(tx, rx, num_params_);
             task_name = std::format("{}.{}.{}", type, antenna::get_id(tx), antenna::get_id(rx));
-            tasks_[task_name] = [voltage_field, geo, sweep] { eval::output::voltagefield_over_geometry(voltage_field, geo, sweep); };
+            tasks_[task_name] = [voltage_field, geo, sweep]
+            {
+                eval::output::voltagefield_over_geometry(voltage_field, geo, sweep);
+            };
         }
         // else if (type == "plot_gain_over_sphere")
         // {
@@ -318,13 +369,13 @@ void Setup::extract_tasks(ojson& desc)
         //     double wavelength = factory::get_double(task_desc, "wavelength", variables);
         //     double const polar = factory::get_double(task_desc, "polar", variables);
         //     double const azimuth = factory::get_double(task_desc, "azimuth", variables);
-        //     std::uint32_t const n_points_polar = factory::get_uint(task_desc, "n_points_polar", variables);
-        //     std::uint32_t const n_points_azimuth = factory::get_uint(task_desc, "n_points_azimuth", variables);
+        //     std::uint32_t const N_POINTS_THREE_GEOMETRIES_polar = factory::get_uint(task_desc, "N_POINTS_THREE_GEOMETRIES_polar", variables);
+        //     std::uint32_t const N_POINTS_THREE_GEOMETRIES_azimuth = factory::get_uint(task_desc, "N_POINTS_THREE_GEOMETRIES_azimuth", variables);
         //     auto const dir_north = factory::get_pos(task_desc, "dir_north", variables);
         //     pos_t const center = ref_center.global_pos();
         //     pos_t const pos_rect = ref_rect.global_pos();
         //     auto sr = geometry::SphericalRectangle::make(center, pos_rect, polar * pi, azimuth * pi, dir_north);
-        //     setup::NumParams num_params{.wavelength = wavelength, .n_polar = n_points_polar, .n_azimuth = n_points_azimuth};
+        //     setup::NumParams num_params{.wavelength = wavelength, .n_polar = N_POINTS_THREE_GEOMETRIES_polar, .n_azimuth = N_POINTS_THREE_GEOMETRIES_azimuth};
         //     auto voltage_field = antenna::get_voltage_field(tx, rx, num_params);
         //     task_name = std::format("{}.{}.{}", type, tx_id, antenna::get_id(rx));
         //     tasks.emplace_back(task_name, [voltage_field, sr] { plot::plot_gain_over_spherical_rectangle(voltage_field, sr); });

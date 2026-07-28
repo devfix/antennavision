@@ -69,8 +69,8 @@
       "normal": [0, 0, 1],
       "e1": [1, 0, 0],
       "radius": "distance",
-      "polar_span": 1.0,
-      "azimuth_span": 1.0
+      "polar_span": "pi",
+      "azimuth_span": "pi"
     }
   ],
   "sweeps": [

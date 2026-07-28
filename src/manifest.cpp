@@ -15,3 +15,5 @@ std::string_view const BANNER = R"(
  /_/    \_\_| |_|\__\___|_| |_|_| |_|\__,_| \/   |_|___/_|\___/|_| |_|
 
 )";
+
+std::size_t const N_POINTS_THREE_GEOMETRIES = 32;
