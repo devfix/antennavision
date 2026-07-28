@@ -80,42 +80,68 @@ namespace antenna
 
     Complex calc_voltage_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params, double wavelength)
     {
-        Radiator const& radiator_rx = cast<Radiator>(rx);
-        return std::visit(
-            [&](auto const& ant_tx)
-            {
-                using Type = std::decay_t<decltype(ant_tx)>;
-                if constexpr (std::is_same_v<Type, Radiator>) { return calc_voltage_gain_direct(ant_tx, radiator_rx, num_params, wavelength); }
-                else if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
-                {
-                    Complex gain = 0;
-                    for (std::size_t k = 0; k < ant_tx.elements.size(); k++)
-                        gain += ant_tx.coefficients[k] * calc_voltage_gain_direct(ant_tx.elements[k], radiator_rx, num_params, wavelength);
-                    return gain;
-                }
-                else
-                {
-                    throw SimulationError("Invalid antenna type");
-                }
-            },
-            tx);
+        std::size_t constexpr Key_TxArr_RxArr = 0b00;
+        std::size_t constexpr Key_TxArr_RxRad = 0b01;
+        std::size_t constexpr Key_TxRad_RxArr = 0b10;
+        std::size_t constexpr Key_TxRad_RxRad = 0b11;
+        std::size_t const key = (std::holds_alternative<Radiator>(tx) << 1) | std::holds_alternative<Radiator>(rx);
+        switch (key)
+        {
+            case Key_TxArr_RxArr:
+                return std::visit(
+                    [&](const auto& tx_arr, const auto& rx_arr)
+                    {
+                        using TxType = std::decay_t<decltype(tx_arr)>;
+                        using RxType = std::decay_t<decltype(rx_arr)>;
+                        Complex gain = 0;
+                        if constexpr (std::is_base_of_v<RadiatorArray<TxType>, TxType> and std::is_base_of_v<RadiatorArray<RxType>, RxType>)
+                            for (std::size_t k_rx = 0; k_rx < rx_arr.elements.size(); k_rx++)
+                                for (std::size_t k_tx = 0; k_tx < tx_arr.elements.size(); k_tx++)
+                                    gain += tx_arr.coefficients[k_tx] *
+                                        calc_voltage_gain_direct(tx_arr.elements[k_tx], rx_arr.elements[k_rx], num_params, wavelength) *
+                                        rx_arr.coefficients[k_rx];
+                        else
+                            std::unreachable();
+                        return gain;
+                    },
+                    tx,
+                    rx);
+            case Key_TxArr_RxRad:
+                return std::visit(
+                    [&](const auto& tx_arr)
+                    {
+                        using TxType = std::decay_t<decltype(tx_arr)>;
+                        Complex gain = 0;
+                        if constexpr (std::is_base_of_v<RadiatorArray<TxType>, TxType>)
+                            for (std::size_t k = 0; k < tx_arr.elements.size(); k++)
+                                gain += tx_arr.coefficients[k] * calc_voltage_gain_direct(tx_arr.elements[k], std::get<Radiator>(rx), num_params, wavelength);
+                        else
+                            std::unreachable();
+                        return gain;
+                    },
+                    tx);
+            case Key_TxRad_RxArr:
+                return std::visit(
+                    [&](const auto& rx_arr)
+                    {
+                        using RxType = std::decay_t<decltype(rx_arr)>;
+                        Complex gain = 0;
+                        if constexpr (std::is_base_of_v<RadiatorArray<RxType>, RxType>)
+                            for (std::size_t k = 0; k < rx_arr.elements.size(); k++)
+                                gain += calc_voltage_gain_direct(std::get<Radiator>(tx), rx_arr.elements[k], num_params, wavelength) * rx_arr.coefficients[k];
+                        else
+                            std::unreachable();
+                        return gain;
+                    },
+                    rx);
+                ;
+            case Key_TxRad_RxRad: return calc_voltage_gain_direct(std::get<Radiator>(tx), std::get<Radiator>(rx), num_params, wavelength); ;
+            default: std::unreachable();
+        }
     }
 
     double calc_power_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params, double wavelength)
     { return math::square(std::abs(calc_voltage_gain(tx, rx, num_params, wavelength))); }
-
-    // ScalarField<double> get_power_field(Antenna const& tx, Antenna& rx, setup::NumParams const& num_params)
-    // {
-    // TODO implement me
-
-    // return {std::format("power-field.{}.{}", get_id(tx), get_id(rx)),
-    //     [&tx, &rx, num_params](pos_t const& pos, double const wavelength) -> double
-    //     {
-    //         get_origin(rx)->pos = pos;
-    //         return calc_power_gain(tx, rx, num_params);
-    //     },
-    //     [] {}, num_params};
-    // }
 
     void resolve_origins(std::span<Antenna> antennas, std::span<Reference> references)
     {

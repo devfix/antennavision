@@ -7,27 +7,11 @@
 #include <magic_enum/magic_enum.hpp>
 #include <span>
 #include <variant>
+
 #include "components/uniformlineararray.hpp"
 #include "components/uniformplanararray.hpp"
+#include "memory.hpp"
 #include "simulationerror.hpp"
-
-namespace
-{
-    template <typename T, typename Variant>
-    constexpr std::size_t get_variant_index()
-    {
-        return []<typename... Types>(std::variant<Types...>*)
-        {
-            constexpr std::array<bool, sizeof...(Types)> matches = {std::is_same_v<T, Types>...};
-
-            for (std::size_t i = 0; i < matches.size(); ++i)
-            {
-                if (matches[i]) { return i; }
-            }
-            throw "Type not found in variant!";
-        }(static_cast<Variant*>(nullptr));
-    }
-} // namespace
 
 namespace antenna
 {
@@ -75,7 +59,7 @@ namespace antenna
         throw SimulationError("Antenna cast failed: {} has type {}, but {} was requested",
             static_cast<const void*>(&antenna),
             get_type_name(antenna),
-            magic_enum::enum_name(static_cast<AntennaType>(get_variant_index<T, Antenna>())));
+            magic_enum::enum_name(static_cast<AntennaType>(variant_index_v<T, Antenna>)));
     }
 
     [[nodiscard]] Complex calc_voltage_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params, double wavelength);
