@@ -10,10 +10,7 @@
 
 namespace
 {
-    [[nodiscard]] constexpr std::string hex_string_from_color(Color const color)
-    {
-        return std::format("#{:06x}", static_cast<std::uint32_t>(color));
-    }
+    [[nodiscard]] constexpr std::string hex_string_from_color(Color const color) { return std::format("#{:06x}", static_cast<std::uint32_t>(color)); }
 
     template <typename T, typename... Args>
     size_t total_size(const std::vector<T>& first, const Args&... rest)
@@ -32,7 +29,8 @@ namespace three
 {
     void Container::add(json&& object) { this->objects.push_back(std::move(object)); }
 
-    void Container::add(std::vector<json>&& new_objects) { this->objects.insert(this->objects.end(), std::make_move_iterator(new_objects.begin()), std::make_move_iterator(new_objects.end())); }
+    void Container::add(std::vector<json>&& new_objects)
+    { this->objects.insert(this->objects.end(), std::make_move_iterator(new_objects.begin()), std::make_move_iterator(new_objects.end())); }
 
     void Container::export_to_javascript(std::filesystem::path const& p) const
     {
@@ -61,10 +59,7 @@ namespace three
         return js;
     }
 
-    json make_line(Pos pos_a, Pos pos_b, double const width, Color const color)
-    {
-        return make_line({pos_a, pos_b}, width, color);
-    }
+    json make_line(Pos pos_a, Pos pos_b, double const width, Color const color) { return make_line({pos_a, pos_b}, width, color); }
 
     json make_sphere(Pos const& pos, double const radius, Color const color, std::uint16_t const segments_width, std::uint16_t const segments_height)
     {
@@ -80,7 +75,12 @@ namespace three
         return js;
     }
 
-    json make_cylinder(Pos const& pos_start, Pos const& pos_end, double const radius_start, double const radius_end, Color const color, std::uint16_t segments_radial)
+    json make_cylinder(Pos const& pos_start,
+        Pos const& pos_end,
+        double const radius_start,
+        double const radius_end,
+        Color const color,
+        std::uint16_t segments_radial)
     {
         json js;
         js["type"] = "cylinder";
@@ -132,7 +132,8 @@ namespace three
         return js;
     }
 
-    std::vector<json> create_arrow(Pos const& pos_start, Pos const& pos_end, double const len_head, double const radius_line, double const radius_head, Color const color)
+    std::vector<json>
+    create_arrow(Pos const& pos_start, Pos const& pos_end, double const len_head, double const radius_line, double const radius_head, Color const color)
     {
         auto const pos_contact = pos_end + (pos_start - pos_end).normalize() * len_head;
         return {make_cylinder(pos_start, pos_contact, radius_line, radius_line, color), make_cone(pos_contact, pos_end, radius_head, color)};
@@ -140,15 +141,74 @@ namespace three
 
     std::vector<json> create_coordinate_arrows(Pos const& pos_center, Pos const& dir_x, Pos const& dir_y, Pos const& dir_z, double const len_arrow)
     {
-        // auto objects_x = create_arrow(pos_center, pos_center + len_arrow * dir_x.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, Color::red);
-        // auto const objects_y = create_arrow(pos_center, pos_center + len_arrow * dir_y.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, Color::green);
-        // auto const objects_z = create_arrow(pos_center, pos_center + len_arrow * dir_z.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow, Color::blue);
-        // std::vector const ball = {make_sphere(pos_center, 0.05 * len_arrow)};
-        // return concat_and_destroy(std::move(objects_x), objects_y, objects_z, ball);
+        // auto objects_x = create_arrow(pos_center, pos_center + len_arrow * dir_x.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 * len_arrow,
+        // Color::red); auto const objects_y = create_arrow(pos_center, pos_center + len_arrow * dir_y.normalize(), 0.2 * len_arrow, 0.02 * len_arrow, 0.1 *
+        // len_arrow, Color::green); auto const objects_z = create_arrow(pos_center, pos_center + len_arrow * dir_z.normalize(), 0.2 * len_arrow, 0.02 *
+        // len_arrow, 0.1 * len_arrow, Color::blue); std::vector const ball = {make_sphere(pos_center, 0.05 * len_arrow)}; return
+        // concat_and_destroy(std::move(objects_x), objects_y, objects_z, ball);
         auto line_x = make_line(pos_center, pos_center + len_arrow * dir_x.normalize(), 2.0, Color::red);
         auto const line_y = make_line(pos_center, pos_center + len_arrow * dir_y.normalize(), 2.0, Color::lime);
         auto const line_z = make_line(pos_center, pos_center + len_arrow * dir_z.normalize(), 2.0, Color::blue);
         return {line_x, line_y, line_z};
+    }
+
+    std::vector<json> export_geometry(geometry::Geometry const& geo)
+    {
+        if (auto line = std::get_if<geometry::Line>(&geo))
+        {
+            return {make_line(line->pos_begin(), line->pos_end(), 2, Color::yellow)}; //
+        }
+        if (auto arc = std::get_if<geometry::CircleArc>(&geo))
+        {
+            std::vector<Pos> points(N_POINTS_THREE_CURVE);
+            for (std::size_t k = 0; k < N_POINTS_THREE_CURVE; k++)
+            {
+                double t = static_cast<double>(k) / static_cast<double>(N_POINTS_THREE_CURVE - 1);
+                points.at(k) = arc->pos_at(t);
+            }
+            return {make_line(points, 2, Color::yellow)};
+        }
+        return std::visit(
+            [](const auto& g) -> std::vector<json>
+            {
+                if constexpr (std::constructible_from<geometry::Surface, decltype(g)>)
+                {
+                    auto const surface = geometry::Surface(g);
+                    std::vector<json> objects = three::create_coordinate_arrows( //
+                        geometry::surface::get_center(g),
+                        geometry::surface::get_e1(g),
+                        geometry::surface::get_e2(g),
+                        geometry::surface::get_normal(g),
+                        0.25 * std::sqrt(geometry::surface::get_area(g)) //
+                    );
+                    for (std::size_t k1 = 0; k1 < N_POINTS_THREE_SURFACE; k1++)
+                    {
+                        double const t1 = static_cast<double>(k1) / static_cast<double>(N_POINTS_THREE_SURFACE - 1);
+                        std::vector<Pos> points(N_POINTS_THREE_SURFACE);
+                        for (std::size_t k2 = 0; k2 < N_POINTS_THREE_SURFACE; k2++)
+                        {
+                            double const t2 = static_cast<double>(k2) / static_cast<double>(N_POINTS_THREE_SURFACE - 1);
+                            points.at(k2) = geometry::surface::get_pos_at(surface, t1, t2);
+                        }
+                        objects.push_back(make_line(points, 2.0, Color::yellow));
+                    }
+                    for (std::size_t k2 = 0; k2 < N_POINTS_THREE_SURFACE; k2++)
+                    {
+                        double const t2 = static_cast<double>(k2) / static_cast<double>(N_POINTS_THREE_SURFACE - 1);
+                        std::vector<Pos> points(N_POINTS_THREE_SURFACE);
+                        for (std::size_t k1 = 0; k1 < N_POINTS_THREE_SURFACE; k1++)
+                        {
+                            double const t1 = static_cast<double>(k1) / static_cast<double>(N_POINTS_THREE_SURFACE - 1);
+                            points.at(k1) = geometry::surface::get_pos_at(surface, t1, t2);
+                        }
+                        objects.push_back(make_line(points, 2.0, Color::yellow));
+                    }
+                    return objects;
+                }
+                else
+                    throw SimulationError("Invalid geometry object");
+            },
+            geo);
     }
 
 } // namespace three

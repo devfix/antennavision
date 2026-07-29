@@ -2,16 +2,15 @@
   "metadata": {
     "setup_name": "upa-test"
   },
-  "variables": {
-    "system_wavelength": 0.1,
-    "wavelength": "system_wavelength",
-    "distance": "1000*wavelength",
-    "dipole_length": "0.5*wavelength"
-  },
   "num_params": {
     "system_wavelength": 0.1,
     "n_linear1": 201,
     "n_linear2": 201
+  },
+  "variables": {
+    "wavelength": "system_wavelength",
+    "distance": "1000*wavelength",
+    "dipole_length": "0.5*wavelength"
   },
   "references": [
     {
@@ -58,7 +57,7 @@
   ],
   "geometries": [
     {
-      "id": "sph_rect",
+      "id": "test_spherical_rectangle",
       "type": "SphericalRectangle",
       "center": [0, 0, 0],
       "normal": [0, 0, 1],
@@ -68,7 +67,7 @@
       "azimuth_span": "pi"
     },
     {
-      "id": "rect",
+      "id": "test_rectangle",
       "type": "Rectangle",
       "center": [0, 0, "distance"],
       "normal": [0, 0, 1],
@@ -79,7 +78,7 @@
   ],
   "sweeps": [
     {
-      "id": "sweep",
+      "id": "test_sweep",
       "type": "ListSweep",
       "values": [0.09, 0.1, 0.11]
     }
@@ -87,10 +86,19 @@
   "tasks": [
     {
       "type": "RxVoltageField@Wavelength",
+      "ref": "",
       "tx": "tx",
       "rx": "rx",
-      "geo": "sph_rect",
-      "sweep_wavelength": "sweep"
+      "geo": "test_rectangle",
+      "sweep": "test_sweep"
+    },
+    {
+      "type": "RxVoltageField@Wavelength",
+      "ref": "",
+      "tx": "tx",
+      "rx": "rx",
+      "geo": "test_spherical_rectangle",
+      "sweep": "test_sweep"
     }
   ]
 }

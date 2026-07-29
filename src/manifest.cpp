@@ -25,5 +25,6 @@ std::string_view const BANNER = R"(
 
 )";
 
-std::size_t const N_POINTS_THREE_GEOMETRIES = 32;
+std::size_t const N_POINTS_THREE_CURVE = 32;
+std::size_t const N_POINTS_THREE_SURFACE = 32;
 std::size_t const N_BATCH_PROGRESS_REPORT = 64 * (DEBUG_MODE ? 1 : 8);

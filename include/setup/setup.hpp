@@ -95,7 +95,7 @@ namespace setup
         void extract_antennas(ojson& js);
         void extract_geometries(ojson& js);
         void extract_sweeps(ojson& js);
-        void extract_tasks(ojson& desc);
+        void extract_tasks(ojson& js);
 
         timeutil::timestamp_t timestamp_{};
         std::string name_;

@@ -85,7 +85,7 @@ double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_s
 
 Vec Radiator::get_elv_spherical_from_cartesian(Pos const& pos_local, double const wavelength) const
 {
-    auto const [r, polar, azimuth] = math::spherical_from_cartesian(pos_local);
+    auto const [r, polar, azimuth] = math::spherical_from_cartesian<std::array<double, 3>>(pos_local);
     return elv_spherical(polar, azimuth, wavelength);
 }
 
@@ -97,6 +97,6 @@ double Radiator::calc_directivity_from_spherical(double polar, double azimuth, s
 
 double Radiator::calc_directivity_from_cartesian(Pos const& pos_local, setup::NumParams const& num_params) const
 {
-    auto const [r, polar, azimuth] = math::spherical_from_cartesian(pos_local);
+    auto const [r, polar, azimuth] = math::spherical_from_cartesian<std::array<double, 3>>(pos_local);
     return calc_directivity_from_spherical(polar, azimuth, num_params);
 }

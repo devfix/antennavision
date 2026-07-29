@@ -13,7 +13,6 @@
 #include "factory/get.hpp"
 #include "factory/make.hpp"
 #include "factory/parse.hpp"
-#include "manifest.hpp"
 #include "simulationerror.hpp"
 #include "three.hpp"
 
@@ -62,6 +61,23 @@ namespace setup
         // crucial: trace all origins by their id and connect the pointers
         reference::resolve_origins(references_);
         antenna::resolve_origins(antennas_, references_);
+
+        // check that objects exists
+        for (auto const& task : tasks_)
+        {
+            if (auto const directivity_over_polar_sweep_azimuth = std::get_if<task::DirectivityOverPolarSweepAzimuth>(&task))
+            {
+                (void) antenna::get(antennas_, directivity_over_polar_sweep_azimuth->antenna_id);
+                (void) sweep::get(sweeps_, directivity_over_polar_sweep_azimuth->sweep_azimuth_id);
+            }
+            if (auto const rx_voltage_field_at_wavelength = std::get_if<task::RxVoltageFieldAtWavelength>(&task))
+            {
+                (void) antenna::get(antennas_, rx_voltage_field_at_wavelength->tx_id);
+                (void) antenna::get(antennas_, rx_voltage_field_at_wavelength->rx_id);
+                (void) geometry::get(geometries_, rx_voltage_field_at_wavelength->geo_id);
+                (void) sweep::get(sweeps_, rx_voltage_field_at_wavelength->sweep_wavelength_id);
+            }
+        }
     }
 
     void Setup::export_to_three(std::filesystem::path const& directory, std::string_view const objects_name) const
@@ -113,72 +129,7 @@ namespace setup
                 antenna);
         }
 
-        for (auto const& geo : geometries_)
-        {
-            std::visit(
-                [&container](auto const& g)
-                {
-                    if constexpr (std::constructible_from<geometry::Curve, decltype(g)>)
-                    {
-                        auto curve = geometry::Curve(g);
-
-                        if constexpr (std::is_same_v<geometry::CircleArc, std::decay_t<decltype(g)>>)
-                        {
-                            container.add(three::create_coordinate_arrows( //
-                                g.center(),
-                                g.e1(),
-                                g.e2(),
-                                g.normal(),
-                                0.25 * g.length() //
-                                ));
-                        }
-                        std::vector<Pos> points(N_POINTS_THREE_GEOMETRIES);
-                        for (std::size_t k = 0; k < N_POINTS_THREE_GEOMETRIES; k++)
-                        {
-                            double t = static_cast<double>(k) / static_cast<double>(N_POINTS_THREE_GEOMETRIES - 1);
-                            points.at(k) = geometry::curve::get_pos_at(curve, t);
-                        }
-                        container.add(three::make_line(points, 2.0, Color::yellow));
-                    }
-                    else if constexpr (std::constructible_from<geometry::Surface, decltype(g)>)
-                    {
-                        auto surface = geometry::Surface(g);
-                        container.add(three::create_coordinate_arrows( //
-                            geometry::surface::get_center(g),
-                            geometry::surface::get_e1(g),
-                            geometry::surface::get_e2(g),
-                            geometry::surface::get_normal(g),
-                            0.25 * std::sqrt(geometry::surface::get_area(g)) //
-                            ));
-                        for (std::size_t k1 = 0; k1 < N_POINTS_THREE_GEOMETRIES; k1++)
-                        {
-                            double const t1 = static_cast<double>(k1) / static_cast<double>(N_POINTS_THREE_GEOMETRIES - 1);
-                            std::vector<Pos> points(N_POINTS_THREE_GEOMETRIES);
-                            for (std::size_t k2 = 0; k2 < N_POINTS_THREE_GEOMETRIES; k2++)
-                            {
-                                double const t2 = static_cast<double>(k2) / static_cast<double>(N_POINTS_THREE_GEOMETRIES - 1);
-                                points.at(k2) = geometry::surface::get_pos_at(surface, t1, t2);
-                            }
-                            container.add(three::make_line(points, 2.0, Color::yellow));
-                        }
-
-                        for (std::size_t k2 = 0; k2 < N_POINTS_THREE_GEOMETRIES; k2++)
-                        {
-                            double const t2 = static_cast<double>(k2) / static_cast<double>(N_POINTS_THREE_GEOMETRIES - 1);
-                            std::vector<Pos> points(N_POINTS_THREE_GEOMETRIES);
-                            for (std::size_t k1 = 0; k1 < N_POINTS_THREE_GEOMETRIES; k1++)
-                            {
-                                double const t1 = static_cast<double>(k1) / static_cast<double>(N_POINTS_THREE_GEOMETRIES - 1);
-                                points.at(k1) = geometry::surface::get_pos_at(surface, t1, t2);
-                            }
-                            container.add(three::make_line(points, 2.0, Color::yellow));
-                        }
-                    }
-                    else
-                        throw SimulationError("Invalid geometry object");
-                },
-                geo);
-        }
+        for (auto const& geo : geometries_) container.add(three::export_geometry(geo));
         container.export_to_javascript(p);
     }
 
@@ -186,7 +137,9 @@ namespace setup
     {
         for (auto const& task : tasks_)
         {
-            std::filesystem::path const path_json = path_cwd / (setup::task::get_id(task) + ".result.json");
+            auto const id = setup::task::get_id(task);
+            std::filesystem::path const path_json = path_cwd / (id + ".result.json");
+            std::println("{}Running task: {}{}", fg4::cyan,id , reset);
             if (std::holds_alternative<task::DirectivityOverPolarSweepAzimuth>(task))
             {
                 auto& t = std::get<task::DirectivityOverPolarSweepAzimuth>(task);
@@ -197,11 +150,12 @@ namespace setup
                     num_params_ //
                 );
             }
-            else if (std::holds_alternative<task::RxVoltageFieldSweepWavelength>(task))
+            else if (std::holds_alternative<task::RxVoltageFieldAtWavelength>(task))
             {
-                auto& t = std::get<task::RxVoltageFieldSweepWavelength>(task);
-                eval::output::voltagefield_over_geometry( //
+                auto& t = std::get<task::RxVoltageFieldAtWavelength>(task);
+                eval::output::complex_scalarfield_at_wavelength( //
                     path_json,
+                    reference::get(const_cast<decltype(references_) const&>(references_), t.ref_id),
                     RxVoltageField(antenna::get(antennas_, t.tx_id), antenna::get(antennas_, t.rx_id), num_params_),
                     geometry::get(geometries_, t.geo_id),
                     sweep::get(sweeps_, t.sweep_wavelength_id) //
@@ -281,6 +235,10 @@ namespace setup
                 bool is_double = type.empty() or type == "double";
                 if (!is_double and type != "int") { throw SimulationError("Variable '{}' has invalid type specifier '{}'", stripped_key, type); }
                 std::string key(stripped_key);
+
+                if (variables_.contains(key))
+                    throw SimulationError("Variable '{}' already exists", key);
+
                 if (val.is_string())
                 {
                     if (is_double) { variables_[key] = factory::parse_double(val.get<std::string>(), variables_); }
@@ -304,11 +262,10 @@ namespace setup
                 std::visit(
                     [&key](const auto& var)
                     {
-                        if constexpr (std::is_same_v<std::decay_t<decltype(var)>, std::int64_t>) { std::println("Define integer variable {}={}", key, var); }
+                        if constexpr (std::is_same_v<std::decay_t<decltype(var)>, std::int64_t>)
+                            std::println("Define integer variable {}={}", key, var);
                         else
-                        {
                             std::println("Define floating-point variable {}={:.15g}", key, var);
-                        }
                     },
                     variables_.at(key));
             }
@@ -350,10 +307,10 @@ namespace setup
         js.erase("sweeps");
     }
 
-    void Setup::extract_tasks(ojson& desc)
+    void Setup::extract_tasks(ojson& js)
     {
-        if (!desc.contains("tasks")) { return; }
-        for (auto& tasks = desc.at("tasks"); auto& task_desc : tasks)
+        if (!js.contains("tasks")) { return; }
+        for (auto& tasks = js.at("tasks"); auto& task_desc : tasks)
         {
             auto const type = factory::get_string(task_desc, "type");
             std::println("Found task of type '{}'", type);
@@ -362,15 +319,16 @@ namespace setup
             {
                 auto antenna_id = factory::get_string(task_desc, "antenna");
                 auto sweep_azimuth_id = factory::get_string(task_desc, "sweep_azimuth");
-                task = task::DirectivityOverPolarSweepAzimuth{{}, antenna_id, sweep_azimuth_id};
+                task = task::DirectivityOverPolarSweepAzimuth{antenna_id, sweep_azimuth_id};
             }
             else if (type == "RxVoltageField@Wavelength")
             {
+                auto ref_id = factory::get_string(task_desc, "ref");
                 auto tx_id = factory::get_string(task_desc, "tx");
                 auto rx_id = factory::get_string(task_desc, "rx");
                 auto geo_id = factory::get_string(task_desc, "geo");
-                auto sweep_wavelength_id = factory::get_string(task_desc, "sweep_wavelength");
-                task = task::RxVoltageFieldSweepWavelength{{}, tx_id, rx_id, geo_id, sweep_wavelength_id};
+                auto sweep_wavelength_id = factory::get_string(task_desc, "sweep");
+                task = task::RxVoltageFieldAtWavelength{ref_id, tx_id, rx_id, geo_id, sweep_wavelength_id};
             }
             else
                 throw SimulationError("Unknown task type \"{}\"", type);
@@ -378,6 +336,6 @@ namespace setup
             std::println("Created task: {}", setup::task::get_id(task));
             factory::assert_empty(task_desc);
         }
-        desc.erase("tasks");
+        js.erase("tasks");
     }
 } // namespace setup

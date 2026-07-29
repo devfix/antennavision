@@ -9,9 +9,9 @@
 #include <iterator>
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
-#include "types/math.hpp"
-#include "types/json.hpp"
 #include "setup/numparams.hpp"
+#include "types/json.hpp"
+#include "types/math.hpp"
 
 namespace math
 {
@@ -69,7 +69,8 @@ namespace math
      */
     [[nodiscard]] Complex constexpr complex_from_polar(double const mag, double const phi) { return {mag * std::cos(phi), mag * std::sin(phi)}; }
 
-    [[nodiscard]] std::tuple<double, double, double> constexpr spherical_from_cartesian(Pos const& pos)
+    template <typename T>
+    [[nodiscard]] T constexpr spherical_from_cartesian(Pos const& pos)
     {
         double const r = std::hypot(pos.x, pos.y, pos.z);
         if (r < NUMERICAL_MARGIN) { return {0, 0, 0}; }
@@ -124,14 +125,13 @@ namespace math
 
     [[nodiscard]] RealArray constexpr get_rot_mat_from_cartesian(Pos const& pos_local)
     {
-        auto const [r, polar, azimuth] = spherical_from_cartesian(pos_local);
+        auto const [r, polar, azimuth] = spherical_from_cartesian<std::array<double, 3>>(pos_local);
         return get_rot_mat_from_spherical(polar, azimuth);
     }
 
     OptResult f_min(OptParams opt_params);
 
     OptScanResult scan_f_min(OptParams const& opt_params);
-
 
     /**
      * Finds the index of the element closest to the target value.
@@ -141,8 +141,9 @@ namespace math
     std::optional<std::size_t> find_closest_index(const Container& container, T target)
     {
         if (container.empty()) { return std::nullopt; }
-        auto it = std::min_element(
-            std::begin(container), std::end(container), [target](const T& a, const T& b) { return std::abs(a - target) < std::abs(b - target); });
+        auto it = std::min_element(std::begin(container),
+            std::end(container),
+            [target](const T& a, const T& b) { return std::abs(a - target) < std::abs(b - target); });
         return std::distance(std::begin(container), it);
     }
 } // namespace math

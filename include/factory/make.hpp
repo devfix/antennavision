@@ -5,10 +5,10 @@
 #pragma once
 
 #include <variant>
-#include "types/setup.hpp"
 #include "components/antenna.hpp"
 #include "setup/geometry.hpp"
 #include "setup/sweep.hpp"
+#include "types/setup.hpp"
 
 namespace factory
 {

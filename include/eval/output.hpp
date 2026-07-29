@@ -17,10 +17,11 @@ namespace eval::output
     );
 
     template <typename T>
-    void voltagefield_over_geometry( //
+    void complex_scalarfield_at_wavelength( //
         std::filesystem::path const& path_json,
+        reference::Reference const& ref,
         ComplexScalarField<T> const& scalar_field,
         geometry::Geometry const& geo,
-        sweep::Sweep const& sweep //
+        sweep::Sweep const& sweep_wavelength //
     );
 } // namespace eval::output

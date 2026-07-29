@@ -5,7 +5,6 @@
 #pragma once
 
 #include <algorithm>
-#include <cmath>
 #include <span>
 #include <variant>
 #include <vector>

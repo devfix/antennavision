@@ -186,7 +186,7 @@ namespace geometry
     template <AnyJson JsonType>
     void to_json(JsonType& js, Geometry const& geo)
     {
-        if (auto* line = std::get_if<Line>(&geo); line)
+        if (auto* line = std::get_if<Line>(&geo))
         {
             js = JsonType{
                 {"type", "Line"},
@@ -195,7 +195,7 @@ namespace geometry
                 {"pos_end", line->pos_end()} //
             };
         }
-        else if (auto* circle_arc = std::get_if<CircleArc>(&geo); circle_arc)
+        else if (auto* circle_arc = std::get_if<CircleArc>(&geo))
         {
             js = JsonType{
                 {"type", "CircleArc"},
@@ -208,7 +208,7 @@ namespace geometry
                 {"angle_span", circle_arc->angle_span()} //
             };
         }
-        else if (auto* rectangle = std::get_if<Rectangle>(&geo); rectangle)
+        else if (auto* rectangle = std::get_if<Rectangle>(&geo))
         {
             js = JsonType{
                 {"type", "Rectangle"},
@@ -221,7 +221,7 @@ namespace geometry
                 {"height", rectangle->height()} //
             };
         }
-        else if (auto* spherical_rectangle = std::get_if<SphericalRectangle>(&geo); spherical_rectangle)
+        else if (auto* spherical_rectangle = std::get_if<SphericalRectangle>(&geo))
         {
             js = JsonType{
                 {"type", "SphericalRectangle"},
@@ -299,12 +299,11 @@ namespace geometry
             geo);
     }
 
-
     // -----------------------------------------------------------------------------
     // EXPLICIT INSTANTIATIONS
     // -----------------------------------------------------------------------------
-    template void geometry::to_json(nlohmann::json&, Geometry const&);
-    template void geometry::to_json(nlohmann::ordered_json&, Geometry const&);
-    template void geometry::from_json(nlohmann::json const&, Geometry&);
-    template void geometry::from_json(nlohmann::ordered_json const&, Geometry&);
+    template void to_json(nlohmann::json&, Geometry const&);
+    template void to_json(nlohmann::ordered_json&, Geometry const&);
+    template void from_json(nlohmann::json const&, Geometry&);
+    template void from_json(nlohmann::ordered_json const&, Geometry&);
 } // namespace geometry

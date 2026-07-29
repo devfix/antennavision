@@ -3,6 +3,7 @@
 //
 
 #include "eval/output.hpp"
+#include <execution>
 #include <nlohmann/json.hpp>
 #include <variant>
 #include "NumCpp/Functions/linspace.hpp"
@@ -12,10 +13,31 @@ namespace eval::output
 {
     using std::ranges::transform;
 
-    void directivity_over_polar(std::filesystem::path const& path_json,
+    namespace
+    {
+        Vec3Array calc_positions_spherical(reference::Reference const& ref, Vec3Array const& positions_cartesian)
+        {
+            Vec3Array positions_spherical(positions_cartesian.shape());
+            std::transform(//
+                std::execution::par,
+                positions_cartesian.begin(),
+                positions_cartesian.end(),
+                positions_spherical.begin(),
+                [&ref](Pos const& pos) -> Pos
+                {
+                    return math::spherical_from_cartesian<Pos>(ref.local_from_global_pos(pos));
+                } //
+            );
+            return positions_spherical;
+        }
+    } // namespace
+
+    void directivity_over_polar( //
+        std::filesystem::path const& path_json,
         antenna::Antenna const& antenna,
         sweep::Sweep const& sweep_azimuth,
-        setup::NumParams const& num_params)
+        setup::NumParams const& num_params //
+    )
     {
         // at the moment, we only support to calculate the directivity of single radiators
         auto& radiator = antenna::cast<Radiator>(antenna);
@@ -51,18 +73,23 @@ namespace eval::output
     }
 
     template <typename T>
-    void voltagefield_over_geometry(std::filesystem::path const& path_json,
+    void complex_scalarfield_at_wavelength( //
+        std::filesystem::path const& path_json,
+        reference::Reference const& ref,
         ComplexScalarField<T> const& scalar_field,
         geometry::Geometry const& geo,
-        sweep::Sweep const& sweep)
+        sweep::Sweep const& sweep_wavelength //
+    )
     {
         std::ofstream ofs(path_json); // first, acquire file to lock it to our process
         ojson js;
         js["geo"] = geo;
-        js["sweep"] = sweep;
+        js["sweep"] = sweep_wavelength;
         js["num_params"] = scalar_field.num_params;
-        auto const [positions, data] = scalar_field.eval_geometry_sweep(geo, sweep);
-        js["positions"] = positions;
+        auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(geo, sweep_wavelength);
+        js["positions"] = ojson();
+        js["positions"]["cartesian"] = positions_cartesian;
+        js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);
         js["data"] = data;
         ofs << js.dump(2) << '\n';
     }
@@ -70,9 +97,12 @@ namespace eval::output
     // -----------------------------------------------------------------------------
     // EXPLICIT INSTANTIATION
     // -----------------------------------------------------------------------------
-    template void voltagefield_over_geometry<RxVoltageField>(std::filesystem::path const&,
+    template void complex_scalarfield_at_wavelength<RxVoltageField>( //
+        std::filesystem::path const&,
+        reference::Reference const&,
         ComplexScalarField<RxVoltageField> const&,
         geometry::Geometry const&,
-        sweep::Sweep const&);
+        sweep::Sweep const& //
+    );
 
 } // namespace eval::output
