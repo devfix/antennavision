@@ -111,17 +111,22 @@ template <typename Derived, typename ScalarT>
 }
 
 template <typename Derived, typename ScalarT>
-ScalarField<Derived, ScalarT>::EvalResult ScalarField<Derived, ScalarT>::eval_geometry(geometry::Geometry const& geo, double wavelength) const
+ScalarField<Derived, ScalarT>::EvalResult
+ScalarField<Derived, ScalarT>::eval_geometry(geometry::Geometry const& geo, std::size_t n_dim1, std::size_t n_dim2, double wavelength) const
 {
-    Vec3Array const positions = geometry::get_positions(geo, num_params.n_linear1, num_params.n_linear2);
+    Vec3Array const positions = geometry::get_positions(geo, n_dim1, n_dim2);
     return {positions, eval(positions, wavelength)};
 }
 
 template <typename Derived, typename ScalarT>
-ScalarField<Derived, ScalarT>::EvalSweepResult ScalarField<Derived, ScalarT>::eval_geometry_sweep(geometry::Geometry const& geo,
-    sweep::Sweep const& sweep) const
+ScalarField<Derived, ScalarT>::EvalSweepResult ScalarField<Derived, ScalarT>::eval_geometry_sweep( //
+    geometry::Geometry const& geo,
+    std::size_t n_dim1,
+    std::size_t n_dim2,
+    sweep::Sweep const& sweep //
+) const
 {
-    Vec3Array const positions = geometry::get_positions(geo, num_params.n_linear1, num_params.n_linear2);
+    Vec3Array const positions = geometry::get_positions(geo, n_dim1, n_dim2);
     return {positions, eval_sweep(positions, sweep)};
 }
 

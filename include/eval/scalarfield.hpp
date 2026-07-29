@@ -54,10 +54,7 @@ struct ScalarField
         [[nodiscard]] ScalarT operator()(Pos const& pos, double wavelength) const { return (*static_cast<DerivedContext const*>(this))(pos, wavelength); }
     };
 
-    [[nodiscard]] auto make_context() const
-    {
-        return typename Derived::Context(static_cast<Derived const*>(this));
-    }
+    [[nodiscard]] auto make_context() const { return typename Derived::Context(static_cast<Derived const*>(this)); }
 
     // CRTP Interface: delegates to Derived::field_impl
     // [[nodiscard]] ScalarT field(Pos const& pos, double wavelength) const
@@ -87,14 +84,14 @@ struct ScalarField
      * @param wavelength wave propagation wavelength
      * @return [array of positions in space, vector of arrays with field values for each position]
      */
-    [[nodiscard]] EvalResult eval_geometry(geometry::Geometry const& geo, double wavelength) const;
+    [[nodiscard]] EvalResult eval_geometry(geometry::Geometry const& geo, std::size_t n_dim1, std::size_t n_dim2, double wavelength) const;
     /**
      * Evaluates the field over a geometry. The number of points for the dimensions is determined form num_params.
      * @param geo geometry to be evaluated
      * @param sweep sweep of wave propagation wavelengths
      * @return [array of positions in space, vector of arrays with field values for each position]
      */
-    [[nodiscard]] EvalSweepResult eval_geometry_sweep(geometry::Geometry const& geo, sweep::Sweep const& sweep) const;
+    [[nodiscard]] EvalSweepResult eval_geometry_sweep(geometry::Geometry const& geo, std::size_t n_dim1, std::size_t n_dim2, sweep::Sweep const& sweep) const;
 
     [[nodiscard]] ArgMaxResult argmax_curve_abs(geometry::Curve const& curve, double wavelength) const;
 

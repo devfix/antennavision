@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "eval/rxvoltagefield.hpp"
 #include "components/antenna.hpp"
+#include "eval/rxvoltagefield.hpp"
+#include "setup/task.hpp"
 
 namespace eval::output
 {
@@ -19,6 +20,7 @@ namespace eval::output
     template <typename T>
     void complex_scalarfield_at_wavelength( //
         std::filesystem::path const& path_json,
+        setup::task::RxVoltageFieldAtWavelength const& task,
         reference::Reference const& ref,
         ComplexScalarField<T> const& scalar_field,
         geometry::Geometry const& geo,

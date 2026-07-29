@@ -222,7 +222,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
     Pos const pos_end = ref_stop.global_pos();
 
     geometry::Line line("", pos_start, pos_end);
-    auto result = voltage_field.eval_geometry(line, setup.num_params().system_wavelength);
+    auto result = voltage_field.eval_geometry(line, setup.num_params().n_linear1, setup.num_params().n_linear2, setup.num_params().system_wavelength);
     auto &gains = result.values;
     auto const gains_abs = nc::abs(gains);
     auto const idx_max = nc::argmax(gains_abs);

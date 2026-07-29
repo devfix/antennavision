@@ -98,7 +98,7 @@ TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][Ar
         auto& rx = su.get_antenna("receiver");
 
         auto voltage_field = RxVoltageField(tx, rx, su.num_params());
-        voltage_field.num_params.n_linear1 = 101;
+        std::size_t const n_dim1 = 101;
         {
             auto line = geometry::Line("", Pos(0, distance, -0.5 * distance), Pos(0, distance, 0.5 * distance));
             auto result = voltage_field.argmax_curve_abs(line, wavelength);
@@ -159,18 +159,18 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
     SECTION("Evaluation over Line geometry")
     {
-        num_params.n_linear1 = 5;
-        num_params.n_linear2 = 4;
+        std::size_t const n_dim1 = 5;
+        std::size_t const n_dim2 = 4;
         Geometry const line = geometry::Line("", Pos(0, distance, -0.5 * distance), Pos(0, distance, 0.5 * distance));
 
         SECTION("Single wavelength evaluation (eval_geometry)")
         {
-            auto [positions, values] = voltage_field.eval_geometry(line, wavelength);
+            auto [positions, values] = voltage_field.eval_geometry(line, n_dim1, n_dim2, wavelength);
 
-            // Verify array shapes: curves generate shape (n_linear1, 1)
-            REQUIRE(positions.shape().rows == num_params.n_linear1);
+            // Verify array shapes: curves generate correct shape
+            REQUIRE(positions.shape().rows == n_dim1);
             REQUIRE(positions.shape().cols == 1);
-            REQUIRE(values.shape().rows == num_params.n_linear1);
+            REQUIRE(values.shape().rows == n_dim1);
             REQUIRE(values.shape().cols == 1);
 
             // Verify positions along the line
@@ -199,15 +199,15 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Wavelength sweep evaluation (eval_geometry_sweep)")
         {
-            auto [positions, data] = voltage_field.eval_geometry_sweep(line, sweep);
+            auto [positions, data] = voltage_field.eval_geometry_sweep(line, n_dim1, n_dim2, sweep);
 
             // Verify array shapes: curves generate shape (n_linear1, 1)
-            REQUIRE(positions.shape().rows == num_params.n_linear1);
+            REQUIRE(positions.shape().rows == n_dim1);
             REQUIRE(positions.shape().cols == 1);
             REQUIRE(data.size() == sweep.size());
             for (std::size_t page = 0; page < sweep.size(); ++page)
             {
-                REQUIRE(data[page].shape().rows == num_params.n_linear1);
+                REQUIRE(data[page].shape().rows == n_dim1);
                 REQUIRE(data[page].shape().cols == 1);
             }
 
@@ -285,18 +285,18 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
     SECTION("Evaluation over CircleArc geometry")
     {
-        num_params.n_linear1 = 5;
-        num_params.n_linear2 = 4;
+        std::size_t const n_dim1 = 5;
+        std::size_t const n_dim2 = 4;
         Geometry const arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
 
         SECTION("Single wavelength evaluation (eval_geometry)")
         {
-            auto [positions, values] = voltage_field.eval_geometry(arc, wavelength);
+            auto [positions, values] = voltage_field.eval_geometry(arc, n_dim1, n_dim2, wavelength);
 
             // Verify array shapes: curves generate shape (n_linear1, 1)
-            REQUIRE(positions.shape().rows == num_params.n_linear1);
+            REQUIRE(positions.shape().rows == n_dim1);
             REQUIRE(positions.shape().cols == 1);
-            REQUIRE(values.shape().rows == num_params.n_linear1);
+            REQUIRE(values.shape().rows == n_dim1);
             REQUIRE(values.shape().cols == 1);
 
             // Verify position mapping along the arc (-90 deg to +90 deg)
@@ -325,15 +325,15 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Wavelength sweep evaluation (eval_geometry_sweep)")
         {
-            auto [positions, data] = voltage_field.eval_geometry_sweep(arc, sweep);
+            auto [positions, data] = voltage_field.eval_geometry_sweep(arc, n_dim1, n_dim2, sweep);
 
             // Verify array shapes: curves generate shape (n_linear1, 1)
-            REQUIRE(positions.shape().rows == num_params.n_linear1);
+            REQUIRE(positions.shape().rows == n_dim1);
             REQUIRE(positions.shape().cols == 1);
             REQUIRE(data.size() == sweep.size());
             for (std::size_t page = 0; page < sweep.size(); ++page)
             {
-                REQUIRE(data[page].shape().rows == num_params.n_linear1);
+                REQUIRE(data[page].shape().rows == n_dim1);
                 REQUIRE(data[page].shape().cols == 1);
             }
 
@@ -411,19 +411,19 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
     SECTION("Evaluation over Rectangle geometry")
     {
-        num_params.n_linear1 = 16;
-        num_params.n_linear2 = 8;
+        std::size_t const n_dim1 = 16;
+        std::size_t const n_dim2 = 8;
         Geometry const rect = geometry::Rectangle{"rect_01", {0, distance, 0}, {0, 1, 0}, {-1, 0, 0}, {0, 0, 1}, 2 * distance, distance};
 
         SECTION("Single wavelength evaluation (eval_geometry)")
         {
-            auto [positions, values] = voltage_field.eval_geometry(rect, wavelength);
+            auto [positions, values] = voltage_field.eval_geometry(rect, n_dim1, n_dim2, wavelength);
 
             // Verify array shapes: surfaces generate correct shape
-            REQUIRE(positions.shape().rows == num_params.n_linear1);
-            REQUIRE(positions.shape().cols == num_params.n_linear2);
-            REQUIRE(values.shape().rows == num_params.n_linear1);
-            REQUIRE(values.shape().cols == num_params.n_linear2);
+            REQUIRE(positions.shape().rows == n_dim1);
+            REQUIRE(positions.shape().cols == n_dim2);
+            REQUIRE(values.shape().rows == n_dim1);
+            REQUIRE(values.shape().cols == n_dim2);
 
             // Verify grid corner positions
             CHECK_THAT(positions(0, 0).x, WithinAbs(100, 1e-9));
@@ -704,16 +704,16 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Wavelength sweep evaluation (eval_geometry_sweep)")
         {
-            auto [positions, data] = voltage_field.eval_geometry_sweep(rect, sweep);
+            auto [positions, data] = voltage_field.eval_geometry_sweep(rect, n_dim1, n_dim2, sweep);
 
             // Verify array shapes: surfaces generate correct shape
-            REQUIRE(positions.shape().rows == num_params.n_linear1);
-            REQUIRE(positions.shape().cols == num_params.n_linear2);
+            REQUIRE(positions.shape().rows == n_dim1);
+            REQUIRE(positions.shape().cols == n_dim2);
             REQUIRE(data.size() == sweep.size());
             for (std::size_t page = 0; page < sweep.size(); ++page)
             {
-                REQUIRE(data[page].shape().rows == num_params.n_linear1);
-                REQUIRE(data[page].shape().cols == num_params.n_linear2);
+                REQUIRE(data[page].shape().rows == n_dim1);
+                REQUIRE(data[page].shape().cols == n_dim2);
             }
 
             // Verify grid corner positions
@@ -1535,19 +1535,19 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
     SECTION("Evaluation over SphericalRectangle geometry")
     {
-        num_params.n_linear1 = 16;
-        num_params.n_linear2 = 8;
+        std::size_t const n_dim1 = 16;
+        std::size_t const n_dim2 = 8;
         Geometry const rect = geometry::SphericalRectangle{"rect_01", {0, 0, 0}, {0, 1, 0}, {-1, 0, 0}, {0, 0, 1}, distance, pi / 4, pi / 2};
 
         SECTION("Single wavelength evaluation (eval_geometry)")
         {
-            auto [positions, values] = voltage_field.eval_geometry(rect, wavelength);
+            auto [positions, values] = voltage_field.eval_geometry(rect, n_dim1, n_dim2, wavelength);
 
             // Verify array shapes: surfaces generate correct shape
-            REQUIRE(positions.shape().rows == num_params.n_linear1);
-            REQUIRE(positions.shape().cols == num_params.n_linear2);
-            REQUIRE(values.shape().rows == num_params.n_linear1);
-            REQUIRE(values.shape().cols == num_params.n_linear2);
+            REQUIRE(positions.shape().rows == n_dim1);
+            REQUIRE(positions.shape().cols == n_dim2);
+            REQUIRE(values.shape().rows == n_dim1);
+            REQUIRE(values.shape().cols == n_dim2);
 
             // Verify grid corner positions
             CHECK_THAT(positions(0, 0).x, WithinAbs(65.32814824381881635, 1e-9));
@@ -1828,16 +1828,16 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Wavelength sweep evaluation (eval_geometry_sweep)")
         {
-            auto [positions, data] = voltage_field.eval_geometry_sweep(rect, sweep);
+            auto [positions, data] = voltage_field.eval_geometry_sweep(rect, n_dim1, n_dim2, sweep);
 
             // Verify array shapes: surfaces generate correct shape
-            REQUIRE(positions.shape().rows == num_params.n_linear1);
-            REQUIRE(positions.shape().cols == num_params.n_linear2);
+            REQUIRE(positions.shape().rows == n_dim1);
+            REQUIRE(positions.shape().cols == n_dim2);
             REQUIRE(data.size() == sweep.size());
             for (std::size_t page = 0; page < sweep.size(); ++page)
             {
-                REQUIRE(data[page].shape().rows == num_params.n_linear1);
-                REQUIRE(data[page].shape().cols == num_params.n_linear2);
+                REQUIRE(data[page].shape().rows == n_dim1);
+                REQUIRE(data[page].shape().cols == n_dim2);
             }
 
             // Verify grid corner positions

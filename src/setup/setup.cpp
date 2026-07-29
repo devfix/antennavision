@@ -65,17 +65,17 @@ namespace setup
         // check that objects exists
         for (auto const& task : tasks_)
         {
-            if (auto const directivity_over_polar_sweep_azimuth = std::get_if<task::DirectivityOverPolarSweepAzimuth>(&task))
+            if (auto const t = std::get_if<task::DirectivityOverPolarAtAzimuth>(&task))
             {
-                (void) antenna::get(antennas_, directivity_over_polar_sweep_azimuth->antenna_id);
-                (void) sweep::get(sweeps_, directivity_over_polar_sweep_azimuth->sweep_azimuth_id);
+                (void)antenna::get(antennas_, t->antenna_id);
+                (void)sweep::get(sweeps_, t->sweep_id);
             }
-            if (auto const rx_voltage_field_at_wavelength = std::get_if<task::RxVoltageFieldAtWavelength>(&task))
+            if (auto const t = std::get_if<task::RxVoltageFieldAtWavelength>(&task))
             {
-                (void) antenna::get(antennas_, rx_voltage_field_at_wavelength->tx_id);
-                (void) antenna::get(antennas_, rx_voltage_field_at_wavelength->rx_id);
-                (void) geometry::get(geometries_, rx_voltage_field_at_wavelength->geo_id);
-                (void) sweep::get(sweeps_, rx_voltage_field_at_wavelength->sweep_wavelength_id);
+                (void)antenna::get(antennas_, t->tx_id);
+                (void)antenna::get(antennas_, t->rx_id);
+                (void)geometry::get(geometries_, t->geo_id);
+                (void)sweep::get(sweeps_, t->sweep_wavelength_id);
             }
         }
     }
@@ -139,14 +139,14 @@ namespace setup
         {
             auto const id = setup::task::get_id(task);
             std::filesystem::path const path_json = path_cwd / (id + ".result.json");
-            std::println("{}Running task: {}{}", fg4::cyan,id , reset);
-            if (std::holds_alternative<task::DirectivityOverPolarSweepAzimuth>(task))
+            std::println("{}Running task: {}{}", fg4::cyan, id, reset);
+            if (std::holds_alternative<task::DirectivityOverPolarAtAzimuth>(task))
             {
-                auto& t = std::get<task::DirectivityOverPolarSweepAzimuth>(task);
+                auto& t = std::get<task::DirectivityOverPolarAtAzimuth>(task);
                 eval::output::directivity_over_polar( //
                     path_json,
                     antenna::get(antennas_, t.antenna_id),
-                    sweep::get(sweeps_, t.sweep_azimuth_id),
+                    sweep::get(sweeps_, t.sweep_id),
                     num_params_ //
                 );
             }
@@ -155,6 +155,7 @@ namespace setup
                 auto& t = std::get<task::RxVoltageFieldAtWavelength>(task);
                 eval::output::complex_scalarfield_at_wavelength( //
                     path_json,
+                    t,
                     reference::get(const_cast<decltype(references_) const&>(references_), t.ref_id),
                     RxVoltageField(antenna::get(antennas_, t.tx_id), antenna::get(antennas_, t.rx_id), num_params_),
                     geometry::get(geometries_, t.geo_id),
@@ -236,8 +237,7 @@ namespace setup
                 if (!is_double and type != "int") { throw SimulationError("Variable '{}' has invalid type specifier '{}'", stripped_key, type); }
                 std::string key(stripped_key);
 
-                if (variables_.contains(key))
-                    throw SimulationError("Variable '{}' already exists", key);
+                if (variables_.contains(key)) throw SimulationError("Variable '{}' already exists", key);
 
                 if (val.is_string())
                 {
@@ -289,53 +289,27 @@ namespace setup
     void Setup::extract_antennas(ojson& js)
     {
         if (!js.contains("antennas")) { return; }
-        for (auto& antennas = js.at("antennas"); auto& desc : antennas) { antennas_.push_back(factory::make_antenna(desc, variables_)); }
-        js.erase("antennas");
+        for (auto& antennas = js.at("antennas"); auto& desc : antennas) antennas_.push_back(factory::make_antenna(desc, variables_));        js.erase("antennas");
     }
 
     void Setup::extract_geometries(ojson& js)
     {
         if (!js.contains("geometries")) { return; }
-        for (auto& geometries = js.at("geometries"); auto& desc : geometries) { geometries_.push_back(factory::make_geometry(desc, variables_)); }
+        for (auto& geometries = js.at("geometries"); auto& desc : geometries) geometries_.push_back(factory::make_geometry(desc, variables_));
         js.erase("geometries");
     }
 
     void Setup::extract_sweeps(ojson& js)
     {
         if (!js.contains("sweeps")) { return; }
-        for (auto& sweeps = js.at("sweeps"); auto& desc : sweeps) { sweeps_.push_back(factory::make_sweep(desc, variables_)); }
+        for (auto& sweeps = js.at("sweeps"); auto& desc : sweeps) sweeps_.push_back(factory::make_sweep(desc, variables_));
         js.erase("sweeps");
     }
 
     void Setup::extract_tasks(ojson& js)
     {
         if (!js.contains("tasks")) { return; }
-        for (auto& tasks = js.at("tasks"); auto& task_desc : tasks)
-        {
-            auto const type = factory::get_string(task_desc, "type");
-            std::println("Found task of type '{}'", type);
-            task::Task task;
-            if (type == "DirectivityOverPolar@Azimuth")
-            {
-                auto antenna_id = factory::get_string(task_desc, "antenna");
-                auto sweep_azimuth_id = factory::get_string(task_desc, "sweep_azimuth");
-                task = task::DirectivityOverPolarSweepAzimuth{antenna_id, sweep_azimuth_id};
-            }
-            else if (type == "RxVoltageField@Wavelength")
-            {
-                auto ref_id = factory::get_string(task_desc, "ref");
-                auto tx_id = factory::get_string(task_desc, "tx");
-                auto rx_id = factory::get_string(task_desc, "rx");
-                auto geo_id = factory::get_string(task_desc, "geo");
-                auto sweep_wavelength_id = factory::get_string(task_desc, "sweep");
-                task = task::RxVoltageFieldAtWavelength{ref_id, tx_id, rx_id, geo_id, sweep_wavelength_id};
-            }
-            else
-                throw SimulationError("Unknown task type \"{}\"", type);
-            tasks_.push_back(task);
-            std::println("Created task: {}", setup::task::get_id(task));
-            factory::assert_empty(task_desc);
-        }
+        for (auto& tasks = js.at("tasks"); auto& desc : tasks) tasks_.push_back(factory::make_task(desc, variables_));
         js.erase("tasks");
     }
 } // namespace setup

@@ -14,6 +14,8 @@ namespace geometry
 {
     struct Line
     {
+        static constexpr std::string_view name = "Line";
+
         [[nodiscard]] Line() = default;
 
         [[nodiscard]] Line(std::string id, Pos const& pos1, Pos const& pos2) : id_(std::move(id)), pos_begin_(pos1), pos_end_(pos2) {}
@@ -51,6 +53,8 @@ namespace geometry
     //             |
     struct CircleArc
     {
+        static constexpr std::string_view name = "CircleArc";
+
         [[nodiscard]] CircleArc() = default;
 
         [[nodiscard]] CircleArc( //
@@ -111,6 +115,8 @@ namespace geometry
     //  +-------------------+   v
     struct Rectangle
     {
+        static constexpr std::string_view name = "Rectangle";
+
         [[nodiscard]] Rectangle() = default;
 
         [[nodiscard]] Rectangle( //
@@ -156,6 +162,8 @@ namespace geometry
 
     struct SphericalRectangle
     {
+        static constexpr std::string_view name = "SphericalRectangle";
+
         [[nodiscard]] SphericalRectangle() = default;
 
         [[nodiscard]] SphericalRectangle( //
@@ -234,7 +242,7 @@ namespace geometry
 
     [[nodiscard]] Geometry& get(std::span<Geometry> geometries, std::string const& id);
 
-    Vec3Array get_positions(Geometry const& geo, std::size_t n_linear1, std::size_t n_linear2);
+    Vec3Array get_positions(Geometry const& geo, std::size_t n_dim1, std::size_t n_dim2);
 
     namespace curve
     {

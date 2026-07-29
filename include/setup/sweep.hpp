@@ -14,6 +14,8 @@ namespace sweep
 {
     struct ListSweep
     {
+        static constexpr  std::string_view name = "ListSweep";
+
         [[nodiscard]] ListSweep() = default;
 
         [[nodiscard]] explicit ListSweep(std::string id, std::span<double const> values) : id_(std::move(id)), values_(values.begin(), values.end())
@@ -36,6 +38,8 @@ namespace sweep
 
     struct LinearSweep
     {
+        static constexpr  std::string_view name = "LinearSweep";
+
         [[nodiscard]] LinearSweep() = default;
 
         [[nodiscard]] explicit LinearSweep(std::string id, double value_begin, double value_end, std::size_t size) :
@@ -61,6 +65,8 @@ namespace sweep
 
     struct ExpSweep
     {
+        static constexpr  std::string_view name = "ExpSweep";
+
         [[nodiscard]] ExpSweep() = default;
 
         [[nodiscard]] explicit ExpSweep(std::string id, double value_begin, double value_end, std::size_t size, double base = 10.0) :
@@ -89,6 +95,8 @@ namespace sweep
 
     struct LogSweep
     {
+        static constexpr  std::string_view name = "LogSweep";
+
         [[nodiscard]] LogSweep() = default;
 
         [[nodiscard]] explicit LogSweep(std::string id, double value_begin, double value_end, std::size_t size, double base = 10.0) :

@@ -16,7 +16,7 @@ namespace sweep
         void load_list_sweep(JsonType const& js, Sweep& sweep)
         {
             serialization::assert_structure(js,
-                "sweep::ListSweep",
+                ListSweep::name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -34,7 +34,7 @@ namespace sweep
         void load_linear_sweep(JsonType const& js, Sweep& sweep)
         {
             serialization::assert_structure(js,
-                "sweep::LinearSweep",
+                LinearSweep::name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -58,7 +58,7 @@ namespace sweep
         void load_exp_sweep(JsonType const& js, Sweep& sweep)
         {
             serialization::assert_structure(js,
-                "sweep::ExpSweep",
+                ExpSweep::name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -85,7 +85,7 @@ namespace sweep
         void load_log_sweep(JsonType const& js, Sweep& sweep)
         {
             serialization::assert_structure(js,
-                "sweep::LogSweep",
+                LogSweep::name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -115,7 +115,7 @@ namespace sweep
         if (auto* list_sweep = std::get_if<ListSweep>(&sweep); list_sweep)
         {
             js = JsonType{
-                {"type", "ListSweep"},
+                {"type", ListSweep::name},
                 {"id", list_sweep->id()},
                 {"values", list_sweep->values()}, //
             };
@@ -123,7 +123,7 @@ namespace sweep
         else if (auto* linear_sweep = std::get_if<LinearSweep>(&sweep); linear_sweep)
         {
             js = JsonType{
-                {"type", "LinearSweep"},
+                {"type", LinearSweep::name},
                 {"id", linear_sweep->id()},
                 {"begin", linear_sweep->begin_val()},
                 {"end", linear_sweep->end_val()},
@@ -134,7 +134,7 @@ namespace sweep
         else if (auto* exp_sweep = std::get_if<ExpSweep>(&sweep); exp_sweep)
         {
             js = JsonType{
-                {"type", "ExpSweep"},
+                {"type", ExpSweep::name},
                 {"id", exp_sweep->id()},
                 {"begin", exp_sweep->begin_val()},
                 {"end", exp_sweep->end_val()},
@@ -146,7 +146,7 @@ namespace sweep
         else if (auto* log_sweep = std::get_if<LogSweep>(&sweep); log_sweep)
         {
             js = JsonType{
-                {"type", "LogSweep"},
+                {"type", LogSweep::name},
                 {"id", log_sweep->id()},
                 {"begin", log_sweep->begin_val()},
                 {"end", log_sweep->end_val()},
@@ -167,13 +167,13 @@ namespace sweep
             throw SimulationError("Sweep attribute type must be string, but is {}", js.at("type").type_name());
         auto const type = js.at("type").template get<std::string>();
 
-        if (type == "ListSweep")
+        if (type == ListSweep::name)
             load_list_sweep(js, sweep);
-        else if (type == "LinearSweep")
+        else if (type == LinearSweep::name)
             load_linear_sweep(js, sweep);
-        else if (type == "ExpSweep")
+        else if (type == ExpSweep::name)
             load_exp_sweep(js, sweep);
-        else if (type == "LogSweep")
+        else if (type == LogSweep::name)
             load_log_sweep(js, sweep);
         else
             throw SimulationError("Unknown sweep type '{}'", type);

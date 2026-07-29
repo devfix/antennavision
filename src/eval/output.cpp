@@ -18,7 +18,7 @@ namespace eval::output
         Vec3Array calc_positions_spherical(reference::Reference const& ref, Vec3Array const& positions_cartesian)
         {
             Vec3Array positions_spherical(positions_cartesian.shape());
-            std::transform(//
+            std::transform( //
                 std::execution::par,
                 positions_cartesian.begin(),
                 positions_cartesian.end(),
@@ -75,6 +75,7 @@ namespace eval::output
     template <typename T>
     void complex_scalarfield_at_wavelength( //
         std::filesystem::path const& path_json,
+        setup::task::RxVoltageFieldAtWavelength const& task,
         reference::Reference const& ref,
         ComplexScalarField<T> const& scalar_field,
         geometry::Geometry const& geo,
@@ -83,10 +84,11 @@ namespace eval::output
     {
         std::ofstream ofs(path_json); // first, acquire file to lock it to our process
         ojson js;
+        js["num_params"] = scalar_field.num_params;
         js["geo"] = geo;
         js["sweep"] = sweep_wavelength;
-        js["num_params"] = scalar_field.num_params;
-        auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(geo, sweep_wavelength);
+        js["task"] = task;
+        auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(geo, task.n_dim1, task.n_dim2, sweep_wavelength);
         js["positions"] = ojson();
         js["positions"]["cartesian"] = positions_cartesian;
         js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);
@@ -99,6 +101,7 @@ namespace eval::output
     // -----------------------------------------------------------------------------
     template void complex_scalarfield_at_wavelength<RxVoltageField>( //
         std::filesystem::path const&,
+        setup::task::RxVoltageFieldAtWavelength const&,
         reference::Reference const&,
         ComplexScalarField<RxVoltageField> const&,
         geometry::Geometry const&,

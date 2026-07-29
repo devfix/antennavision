@@ -38,7 +38,7 @@ namespace geometry
         void load_line(JsonType const& js, Geometry& g)
         {
             serialization::assert_structure(js,
-                "geometry::Rectangle",
+                Line::name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -58,7 +58,7 @@ namespace geometry
         void load_circle_arc(JsonType const& js, Geometry& g)
         {
             serialization::assert_structure(js,
-                "geometry::CircleArc",
+                CircleArc::name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -84,7 +84,7 @@ namespace geometry
         void load_rectangle(JsonType const& js, Geometry& g)
         {
             serialization::assert_structure(js,
-                "geometry::Rectangle",
+                Rectangle::name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -110,7 +110,7 @@ namespace geometry
         void load_spherical_rectangle(JsonType const& js, Geometry& g)
         {
             serialization::assert_structure(js,
-                "geometry::SphericalRectangle",
+                SphericalRectangle::name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -178,10 +178,7 @@ namespace geometry
         return center_ + radius_ * local_normal;
     }
 
-    double SphericalRectangle::area() const
-    {
-        return 2.0 * math::square(radius_) * azimuth_span_ * std::sin(polar_span_ / 2.0);
-    }
+    double SphericalRectangle::area() const { return 2.0 * math::square(radius_) * azimuth_span_ * std::sin(polar_span_ / 2.0); }
 
     template <AnyJson JsonType>
     void to_json(JsonType& js, Geometry const& geo)
@@ -189,7 +186,7 @@ namespace geometry
         if (auto* line = std::get_if<Line>(&geo))
         {
             js = JsonType{
-                {"type", "Line"},
+                {"type", Line::name},
                 {"id", line->id()},
                 {"pos_begin", line->pos_begin()},
                 {"pos_end", line->pos_end()} //
@@ -198,7 +195,7 @@ namespace geometry
         else if (auto* circle_arc = std::get_if<CircleArc>(&geo))
         {
             js = JsonType{
-                {"type", "CircleArc"},
+                {"type", CircleArc::name},
                 {"id", circle_arc->id()},
                 {"center", circle_arc->center()},
                 {"normal", circle_arc->normal()},
@@ -211,7 +208,7 @@ namespace geometry
         else if (auto* rectangle = std::get_if<Rectangle>(&geo))
         {
             js = JsonType{
-                {"type", "Rectangle"},
+                {"type", Rectangle::name},
                 {"id", rectangle->id()},
                 {"center", rectangle->center()},
                 {"normal", rectangle->normal()},
@@ -224,7 +221,7 @@ namespace geometry
         else if (auto* spherical_rectangle = std::get_if<SphericalRectangle>(&geo))
         {
             js = JsonType{
-                {"type", "SphericalRectangle"},
+                {"type", SphericalRectangle::name},
                 {"id", spherical_rectangle->id()},
                 {"center", spherical_rectangle->center()},
                 {"normal", spherical_rectangle->normal()},
@@ -247,13 +244,13 @@ namespace geometry
             throw SimulationError("Geometry attribute type must be string, but is {}", js.at("type").type_name());
         auto const type = js.at("type").template get<std::string>();
 
-        if (type == "Line")
+        if (type == Line::name)
             load_line(js, geo);
-        else if (type == "CircleArc")
+        else if (type == CircleArc::name)
             load_circle_arc(js, geo);
-        else if (type == "Rectangle")
+        else if (type == Rectangle::name)
             load_rectangle(js, geo);
-        else if (type == "SphericalRectangle")
+        else if (type == SphericalRectangle::name)
             load_spherical_rectangle(js, geo);
         else
             throw SimulationError("Unknown geometry type '{}'", type);
@@ -266,30 +263,30 @@ namespace geometry
         return *it;
     }
 
-    Vec3Array get_positions(Geometry const& geo, std::size_t n_linear1, std::size_t n_linear2)
+    Vec3Array get_positions(Geometry const& geo, std::size_t n_dim1, std::size_t n_dim2)
     {
         return std::visit(
-            [&n_linear1, &n_linear2]<typename T>(T const& shape) -> Vec3Array
+            [&n_dim1, &n_dim2]<typename T>(T const& shape) -> Vec3Array
             {
                 if constexpr (is_variant_alternative<T, Curve>)
                 {
-                    Vec3Array positions(n_linear1, 1);
-                    for (ComplexArray::index_type k = 0; k < n_linear1; k++)
+                    Vec3Array positions(n_dim1, 1);
+                    for (ComplexArray::index_type k = 0; k < n_dim1; k++)
                     {
-                        double const t = static_cast<double>(k) / static_cast<double>(n_linear1 - 1);
+                        double const t = static_cast<double>(k) / static_cast<double>(n_dim1 - 1);
                         positions(k, 0) = geometry::curve::get_pos_at(shape, t);
                     }
                     return positions;
                 }
                 else
                 {
-                    Vec3Array positions(n_linear1, n_linear2);
-                    for (std::int32_t k2 = 0; k2 < n_linear2; k2++)
+                    Vec3Array positions(n_dim1, n_dim2);
+                    for (std::int32_t k2 = 0; k2 < n_dim2; k2++)
                     {
-                        double const t2 = static_cast<double>(k2) / static_cast<double>(n_linear2 - 1);
-                        for (std::int32_t k1 = 0; k1 < n_linear1; k1++)
+                        double const t2 = static_cast<double>(k2) / static_cast<double>(n_dim2 - 1);
+                        for (std::int32_t k1 = 0; k1 < n_dim1; k1++)
                         {
-                            double const t1 = static_cast<double>(k1) / static_cast<double>(n_linear1 - 1);
+                            double const t1 = static_cast<double>(k1) / static_cast<double>(n_dim1 - 1);
                             positions(k1, k2) = geometry::surface::get_pos_at(shape, t1, t2);
                         }
                     }
