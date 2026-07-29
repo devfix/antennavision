@@ -14,9 +14,11 @@ file_path = sys.argv[1]
 with open(file_path, "r") as f:
     data = json.load(f)
 
+num_params = data["num_params"]
+
 # Extract structural boundaries from the metadata
-n_points_1 = data["n_points_axis1"]
-n_points_2 = data["n_points_axis2"]
+n_points_1 = num_params["n_linear1"]
+n_points_2 = num_params["n_linear2"]
 
 # 2. Function to dynamically detect active axes
 def detect_axes_from_positions(positions_array):
@@ -64,7 +66,7 @@ X_mesh = positions[:, :, idx1]  # Physical coordinates for axis1
 Y_mesh = positions[:, :, idx2]  # Physical coordinates for axis2
 
 # 4. Vectorized Loading of Complex Numbers
-raw_floats = np.array(data["gains"], dtype=np.float64)
+raw_floats = np.array(data["data"][0], dtype=np.float64)
 complex_gains = raw_floats.view(dtype=np.complex128).squeeze(-1)
 gain_magnitudes = 20 * np.log10(np.abs(complex_gains))
 

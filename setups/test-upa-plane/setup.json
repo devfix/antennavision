@@ -23,13 +23,8 @@
     {
       "id": "ref_rx",
       "origin": "",
-      "pos": [0, 0, "distance"],
-      "rot": {"yaw": 0.5, "pitch": 0.5, "roll": 0}
-    },
-    {
-      "id": "ref_rect",
-      "origin": "",
-      "pos": [0, 0, "distance"]
+      "pos": [0, 0, "2*wavelength"],
+      "rot": {"yaw": 0, "pitch": "pi/2", "roll": 0}
     }
   ],
   "antennas": [
@@ -41,7 +36,7 @@
       "spacing_y": "wavelength * 0.5",
       "size_x": 8,
       "size_y": 8,
-      "rot": {"yaw": 0, "pitch": 0.5, "roll": 0},
+      "rot": {"yaw": 0, "pitch": "pi/2", "roll": 0},
       "radiator": {
         "type": "StandingWaveDipole",
         "dipole_length": "dipole_length"
@@ -63,14 +58,23 @@
   ],
   "geometries": [
     {
-      "id": "geo",
+      "id": "sph_rect",
       "type": "SphericalRectangle",
       "center": [0, 0, 0],
       "normal": [0, 0, 1],
       "e1": [1, 0, 0],
       "radius": "distance",
-      "polar_span": "pi",
+      "polar_span": "pi/2",
       "azimuth_span": "pi"
+    },
+    {
+      "id": "rect",
+      "type": "Rectangle",
+      "center": [0, 0, "distance"],
+      "normal": [0, 0, 1],
+      "e1": [1, 0, 0],
+      "width": "distance*2",
+      "height": "distance*2"
     }
   ],
   "sweeps": [
@@ -85,7 +89,7 @@
       "type": "RxVoltageField@Wavelength",
       "tx": "tx",
       "rx": "rx",
-      "geo": "geo",
+      "geo": "sph_rect",
       "sweep_wavelength": "sweep"
     }
   ]
