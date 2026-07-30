@@ -352,9 +352,7 @@ namespace factory
         {
             try_resolve_int_expressions(desc, variables, "n_dim1");
             try_resolve_int_expressions(desc, variables, "n_dim2");
-            auto task = desc.get<setup::task::Task>();
-            assert_valid_id(setup::task::get_id(task));
-            return task;
+            return desc.get<setup::task::Task>(); // no id check here since the user doesn't choose the id by himself
         }
         catch (...)
         {

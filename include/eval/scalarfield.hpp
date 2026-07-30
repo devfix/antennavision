@@ -39,11 +39,25 @@ struct ScalarField
         std::vector<nc::NdArray<ScalarT>> data;
     };
 
-    struct ArgMaxResult
+    struct ArgMaxCurveResult
     {
         double t{};
         Pos pos;
         double max{};
+    };
+
+    struct ArgMaxSurfaceResult
+    {
+        double t1{};
+        double t2{};
+        Pos pos;
+        double max{};
+    };
+
+    struct Isoline
+    {
+        std::vector<Pos> points;
+        double area;
     };
 
     template <typename DerivedContext>
@@ -93,11 +107,15 @@ struct ScalarField
      */
     [[nodiscard]] EvalSweepResult eval_geometry_sweep(geometry::Geometry const& geo, std::size_t n_dim1, std::size_t n_dim2, sweep::Sweep const& sweep) const;
 
-    [[nodiscard]] ArgMaxResult argmax_curve_abs(geometry::Curve const& curve, double wavelength) const;
+    [[nodiscard]] ArgMaxCurveResult argmax_curve_abs(geometry::Curve const& curve, double wavelength) const;
+
+    [[nodiscard]] ArgMaxSurfaceResult argmax_surface_abs(geometry::Surface const& surf, double wavelength) const;
 
     [[nodiscard]] CurvePeakSpan find_curve_peak_and_cutoffs(geometry::Curve const& curve, double wavelength, double ratio) const;
 
     [[nodiscard]] std::pair<Pos, double> calc_beamwidth(geometry::CircleArc const& arc, double wavelength, double ratio) const;
+
+    [[nodiscard]] std::vector<Isoline> trace_isolines(geometry::Geometry const& geo, std::size_t n_dim1, std::size_t n_dim2, double wavelength) const;
 
     setup::NumParams num_params;
 

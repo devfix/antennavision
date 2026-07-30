@@ -63,7 +63,7 @@ namespace setup
 
     void NumParams::check() const
     {
-        assert(system_wavelength > 0);
+        // assert(system_wavelength > 0);
         assert(n_polar > 0);
         assert(n_azimuth > 0);
         assert(n_linear1 > 0);

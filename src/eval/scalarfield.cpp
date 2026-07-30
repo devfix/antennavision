@@ -7,6 +7,7 @@
 #include <print>
 #include <thread>
 
+#include "eval/opt.hpp"
 #include "eval/rxvoltagefield.hpp"
 #include "manifest.hpp"
 
@@ -23,7 +24,7 @@ nc::NdArray<ScalarT> ScalarField<Derived, ScalarT>::eval(Vec3Array const& positi
     nc::NdArray<ScalarT> values(positions.shape());
     std::size_t const total_size = positions.size();
 
-#ifdef ANTENNAVISION_SINGLE_THREADED
+#ifndef ANTENNAVISION_SINGLE_THREADED
     auto const ctx = make_context();
     auto it = positions.begin();
     auto ot = values.begin();
@@ -91,10 +92,10 @@ nc::NdArray<ScalarT> ScalarField<Derived, ScalarT>::eval(Vec3Array const& positi
 
     // Wait for all threads to finish computing their chunks
     for (auto& f : futures) f.get();
+#endif
 
     // Print final 100% completion cleanup
     std::println("\033[2K\rScalarField::eval @ λ={:.04f}m : done", wavelength);
-#endif
 
     return values;
 }
@@ -131,7 +132,7 @@ ScalarField<Derived, ScalarT>::EvalSweepResult ScalarField<Derived, ScalarT>::ev
 }
 
 template <typename Derived, typename ScalarT>
-ScalarField<Derived, ScalarT>::ArgMaxResult ScalarField<Derived, ScalarT>::argmax_curve_abs(geometry::Curve const& curve, double wavelength) const
+ScalarField<Derived, ScalarT>::ArgMaxCurveResult ScalarField<Derived, ScalarT>::argmax_curve_abs(geometry::Curve const& curve, double wavelength) const
 {
     auto const ctx = make_context();
     math::OptParams const params{
@@ -145,9 +146,19 @@ ScalarField<Derived, ScalarT>::ArgMaxResult ScalarField<Derived, ScalarT>::argma
 }
 
 template <typename Derived, typename ScalarT>
+typename ScalarField<Derived, ScalarT>::ArgMaxSurfaceResult ScalarField<Derived, ScalarT>::argmax_surface_abs(geometry::Surface const& surf,
+    double wavelength) const
+{
+
+
+}
+
+template <typename Derived, typename ScalarT>
 ScalarField<Derived, ScalarT>::CurvePeakSpan
 ScalarField<Derived, ScalarT>::find_curve_peak_and_cutoffs(geometry::Curve const& curve, double wavelength, double ratio) const
 {
+    using namespace eval::opt;
+
     std::string const& curve_id = std::visit([](auto const& shape) -> std::string const& { return shape.id(); }, curve);
 
     // Important: math::scan_f_min and math::f_min find a local minimum. We want to find a maximum we flip the sign in the objective function.
@@ -180,32 +191,30 @@ ScalarField<Derived, ScalarT>::find_curve_peak_and_cutoffs(geometry::Curve const
     if (k_upper == opt_peak.scan_t.size() - 1) { throw SimulationError("Could not find right cutoff bound of curve '{}'", curve_id); }
 
     // step 4: find left cutoff
-    math::OptParams const params_left{
-        [&curve, &wavelength, thres, &ctx](double const t) -> double
-        { return std::abs(std::abs(ctx(geometry::curve::get_pos_at(curve, t), wavelength)) - thres); },
-        dbl(k_lower) / dbl(opt_peak.scan_t.size() - 1),
-        opt_peak.opt.t_min,
-        num_params //
+    SingleOpt::Params const params_left{
+        .bounds_a = {dbl(k_lower) / dbl(opt_peak.scan_t.size() - 1)},
+        .bounds_b = {opt_peak.opt.t_min},
+        .fn = [&curve, &wavelength, thres, &ctx](double t) -> double
+        { return std::abs(std::abs(ctx(geometry::curve::get_pos_at(curve, t), wavelength)) - thres); }//
     };
-    auto const opt_left = math::f_min(params_left);
+    auto const opt_left = SingleOpt::run(params_left, num_params);
 
     // step 5: find right cutoff
-    math::OptParams const params_right{
-        [&curve, &wavelength, thres, &ctx](double const t) -> double
-        { return std::abs(std::abs(ctx(geometry::curve::get_pos_at(curve, t), wavelength)) - thres); },
-        opt_peak.opt.t_min,
-        dbl(k_upper) / dbl(opt_peak.scan_t.size() - 1),
-        num_params //
+    SingleOpt::Params const params_right{
+        .bounds_a =opt_peak.opt.t_min,
+        .bounds_b =dbl(k_upper) / dbl(opt_peak.scan_t.size() - 1),
+        .fn = [&curve, &wavelength, thres, &ctx](double const t) -> double
+        { return std::abs(std::abs(ctx(geometry::curve::get_pos_at(curve, t), wavelength)) - thres); }//
     };
-    auto const opt_right = math::f_min(params_right);
+    auto const opt_right = SingleOpt::run(params_left, num_params);
 
     return {
-        opt_left.t_min,
+        opt_left.ts_min,
         opt_peak.opt.t_min,
-        opt_right.t_min,
-        geometry::curve::get_pos_at(curve, opt_left.t_min),
+        opt_right.ts_min,
+        geometry::curve::get_pos_at(curve, opt_left.ts_min),
         geometry::curve::get_pos_at(curve, opt_peak.opt.t_min),
-        geometry::curve::get_pos_at(curve, opt_right.t_min),
+        geometry::curve::get_pos_at(curve, opt_right.ts_min),
     };
 }
 
@@ -215,6 +224,13 @@ std::pair<Pos, double> ScalarField<Derived, ScalarT>::calc_beamwidth(geometry::C
     auto curve_peak_span = find_curve_peak_and_cutoffs(arc, wavelength, ratio);
     double angle_span = std::abs(arc.angle_at(curve_peak_span.t_left) - arc.angle_at(curve_peak_span.t_right));
     return {curve_peak_span.pos_peak, angle_span};
+}
+
+template <typename Derived, typename ScalarT>
+std::vector<typename ScalarField<Derived, ScalarT>::Isoline>
+ScalarField<Derived, ScalarT>::trace_isolines(geometry::Geometry const& geo, std::size_t n_dim1, std::size_t n_dim2, double wavelength) const
+{
+    auto const sampled_area = eval_geometry(geo, n_dim1, n_dim2, wavelength);
 }
 
 // -----------------------------------------------------------------------------

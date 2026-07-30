@@ -92,25 +92,6 @@ namespace math
         return egamma + std::log(x) - cix + 0.5 * std::sin(x) * (si2x - 2.0 * six) + 0.5 * std::cos(x) * (egamma + std::log(0.5 * x) + ci2x - 2.0 * cix);
     }
 
-    OptResult f_min(OptParams opt_params)
-    {
-        double const t_lower = std::min(opt_params.t_a, opt_params.t_b);
-        double const t_upper = std::max(opt_params.t_a, opt_params.t_b);
-
-        nlopt_opt opt = nlopt_create(NLOPT_LN_BOBYQA, 1); // set algorithm and dimension of x
-        nlopt_set_min_objective(opt, objective_function, &opt_params);
-        nlopt_set_lower_bounds(opt, &t_lower);
-        nlopt_set_upper_bounds(opt, &t_upper);
-        nlopt_set_xtol_rel(opt, opt_params.num_params.xtol_rel);
-        nlopt_set_ftol_rel(opt, opt_params.num_params.ftol_rel);
-        double t = 0.5 * (opt_params.t_a + opt_params.t_b); // initial guess
-        double f_min;
-        nlopt_result const result = nlopt_optimize(opt, &t, &f_min);
-        nlopt_destroy(opt);
-        if (result < 0) { throw SimulationError("Error: nlopt returned '{}'", magic_enum::enum_name(result)); }
-        return {t, f_min};
-    }
-
     OptScanResult scan_f_min(OptParams const& opt_params)
     {
         auto const& n_samples = opt_params.num_params.n_linear1;
@@ -135,7 +116,8 @@ namespace math
         params_nlopt.t_a = opt_params.t_a + u_lower * delta;
         params_nlopt.t_b = opt_params.t_a + u_upper * delta;
 
-        opt_result.opt = f_min(params_nlopt); // perform the nl precide optimization
+        // TODO Fix this
+        //opt_result.opt = f_min(params_nlopt); // perform the nl precise optimization
 
         return opt_result;
     }

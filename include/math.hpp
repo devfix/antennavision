@@ -23,6 +23,12 @@ namespace math
         setup::NumParams const& num_params;
     };
 
+    template<std::size_t N>
+    struct MultiOptParams
+    {
+
+    };
+
     struct OptResult
     {
         double t_min{};
@@ -128,8 +134,6 @@ namespace math
         auto const [r, polar, azimuth] = spherical_from_cartesian<std::array<double, 3>>(pos_local);
         return get_rot_mat_from_spherical(polar, azimuth);
     }
-
-    OptResult f_min(OptParams opt_params);
 
     OptScanResult scan_f_min(OptParams const& opt_params);
 
