@@ -11,17 +11,18 @@ namespace eval
     {
         struct Context : ComplexScalarField<ComplexScalarMathField>::Context<Context>
         {
-            [[nodiscard]] explicit Context(ComplexScalarMathField const* field) : fn_(field->fn_) {}
+            [[nodiscard]] explicit Context(ComplexScalarMathField const* field, double wavelength) : fn_(field->fn_), wavelength_(wavelength) {}
 
             Context(Context const&) = delete;
             Context(Context&&) = delete;
             Context& operator=(Context const&) = delete;
             Context& operator=(Context&&) = delete;
 
-            [[nodiscard]] Complex operator()(Pos const& pos, double wavelength) const { return fn_(pos, wavelength); }
+            [[nodiscard]] Complex eval(Pos const& pos) const { return fn_(pos, wavelength_); }
 
         private:
             std::function<Complex(Pos const& pos, double wavelength)> const& fn_;
+            double const wavelength_;
         };
 
         [[nodiscard]] ComplexScalarMathField(std::function<Complex(Pos const& pos, double wavelength)> fn, setup::NumParams const& num_params) :

@@ -40,7 +40,7 @@ namespace eval
             [[nodiscard]] std::pair<std::size_t, std::size_t> find_min() const;
         };
 
-        template<typename ScalarT>
+        template <typename ScalarT>
         struct EvalSweepResult
         {
             Vec3Array positions;
@@ -65,6 +65,7 @@ namespace eval
         struct Isoline
         {
             std::vector<Pos> points;
+            std::vector<nc::Vec2> surf_points;
             double area;
         };
     } // namespace result
@@ -82,7 +83,42 @@ namespace eval
             [[nodiscard]] Context() = default;
 
             // CRTP Interface
-            [[nodiscard]] ScalarT operator()(Pos const& pos, double wavelength) const { return (*static_cast<DerivedContext const*>(this))(pos, wavelength); }
+            [[nodiscard]] ScalarT operator()(Pos const& pos) const { return (*static_cast<DerivedContext const*>(this)).eval(pos); }
+
+            [[nodiscard]] ScalarT val(Pos const& pos) const { return (*static_cast<DerivedContext const*>(this)).eval(pos); }
+
+            [[nodiscard]] double abs(Pos const& pos) const { return std::abs((*static_cast<DerivedContext const*>(this)).eval(pos)); }
+
+            [[nodiscard]] Pos grad(Pos const& pos) const
+            {
+                double const v = abs(pos);
+                double const delta = 1e-3;
+                return {
+                    abs(pos + Pos(delta, 0, 0)) - v,
+                    abs(pos + Pos(0, delta, 0)) - v,
+                    abs(pos + Pos(0, 0, delta)) - v //
+                };
+            }
+
+            [[nodiscard]] nc::Vec2 surf_grad(geometry::Surface const& surf, nc::Vec2 const& ts, double delta) const
+            {
+                using geometry::surface::get_pos_at;
+                double v = abs(get_pos_at(surf, ts.x, ts.y));
+                return {
+                    abs(get_pos_at(surf, ts.x + delta, ts.y)) - v, // d(t1)
+                    abs(get_pos_at(surf, ts.x, ts.y + delta)) - v // d(t2)
+                };
+            }
+
+            [[nodiscard]] nc::Vec2 surf_tang(geometry::Surface const& surf, nc::Vec2 const& ts, double delta) const
+            {
+                using geometry::surface::get_pos_at;
+                double v = abs(get_pos_at(surf, ts.x, ts.y));
+                return {
+                    v - abs(get_pos_at(surf, ts.x, ts.y + delta)), // -d(t2)
+                    abs(get_pos_at(surf, ts.x + delta, ts.y)) -v // d(t1)
+                };
+            }
         };
 
         /**
@@ -120,9 +156,11 @@ namespace eval
         //  * @param sweep sweep of wave propagation wavelengths
         //  * @return [array of positions in space, vector of arrays with field values for each position]
         //  */
-        [[nodiscard]] result::EvalSweepResult<ScalarT> eval_geometry_sweep(geometry::Geometry const& geo, sweep::Sweep const& sweep, std::size_t n1, std::size_t n2) const;
+        [[nodiscard]] result::EvalSweepResult<ScalarT>
+        eval_geometry_sweep(geometry::Geometry const& geo, sweep::Sweep const& sweep, std::size_t n1, std::size_t n2) const;
 
-        [[nodiscard]] result::EvalSweepResult<double> eval_geometry_sweep_abs(geometry::Geometry const& geo, sweep::Sweep const& sweep, std::size_t n1, std::size_t n2) const;
+        [[nodiscard]] result::EvalSweepResult<double>
+        eval_geometry_sweep_abs(geometry::Geometry const& geo, sweep::Sweep const& sweep, std::size_t n1, std::size_t n2) const;
 
         [[nodiscard]] result::ArgMaxCurveResult argmax_curve_abs(geometry::Curve const& curve, double wavelength, std::size_t n) const;
 
@@ -132,7 +170,8 @@ namespace eval
 
         [[nodiscard]] std::pair<Pos, double> calc_beamwidth(geometry::CircleArc const& arc, double wavelength, double ratio, std::size_t n) const;
 
-        [[nodiscard]] std::vector<result::Isoline> trace_isolines(geometry::Surface const& surf, double wavelength, double ratio, std::size_t n1, std::size_t n2) const;
+        [[nodiscard]] std::vector<result::Isoline>
+        trace_isolines(geometry::Surface const& surf, double wavelength, double ratio, std::size_t n1, std::size_t n2) const;
 
         setup::NumParams num_params;
 
@@ -140,7 +179,7 @@ namespace eval
         // Prevent direct deletion through base pointer without virtual destructor
         ~ScalarField() = default;
 
-        [[nodiscard]] auto make_context() const { return typename Derived::Context(static_cast<Derived const*>(this)); }
+        [[nodiscard]] auto make_context(double wavelength) const { return typename Derived::Context(static_cast<Derived const*>(this), wavelength); }
 
         template <typename OutputT, typename OutputCast>
         [[nodiscard]] nc::NdArray<OutputT> eval_impl(Vec3Array const& positions, double wavelength) const;
@@ -154,7 +193,7 @@ namespace eval
         [[nodiscard]] std::pair<result::EvalResult<double>, opt::DualOpt::Result>
         argmax_surface_abs_impl(geometry::Surface const& surf, double wavelength, std::size_t n1, std::size_t n2) const;
 
-        [[nodiscard]] result::Isoline trace_isoline(geometry::Surface const& surf, double wavelength, double thres, double t1, double t2) const;
+        [[nodiscard]] result::Isoline trace_isoline(geometry::Surface const& surf, double wavelength, nc::Vec2 ts, double thres) const;
     };
 
     template <typename Derived>

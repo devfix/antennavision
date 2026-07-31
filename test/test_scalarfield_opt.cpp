@@ -160,7 +160,7 @@ TEST_CASE("Optimization Algorithms", "[ScalarField][ComplexMathField][Optimizati
         },
         setup::NumParams::create());
 
-    geometry::Rectangle const rect("rect", POS_ZERO, Pos(0, 0, 1), Pos(1, 0, 0), Pos(0, 1, 0), 4, 4);
+    geometry::Rectangle const rect("rect", POS_ZERO, Pos(0, 0, 1), Pos(1, 0, 0), Pos(0, 1, 0), 5, 5);
 
     SECTION("Correct Maximum on geometry::Rectangle")
     {

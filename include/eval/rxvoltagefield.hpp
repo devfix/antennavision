@@ -13,7 +13,8 @@ namespace eval
     {
         struct Context : ComplexScalarField<RxVoltageField>::Context<Context>
         {
-            [[nodiscard]] explicit Context(RxVoltageField const* field) : tx_(field->tx_), rx_(field->rx_), num_params_(field->num_params)
+            [[nodiscard]] explicit Context(RxVoltageField const* field, double wavelength)
+            : tx_(field->tx_), rx_(field->rx_), wavelength_(wavelength), num_params_(field->num_params)
             {
                 for (const auto* origin = antenna::get_origin(rx_); origin; origin = origin->origin) references_.push_back(*origin);
                 validate();
@@ -25,10 +26,10 @@ namespace eval
             Context& operator=(Context const&) = delete;
             Context& operator=(Context&&) = delete;
 
-            [[nodiscard]] Complex operator()(Pos const& pos, double wavelength) const
+            [[nodiscard]] Complex eval(Pos const& pos) const
             {
                 rx_origin_->pos = pos;
-                return antenna::calc_voltage_gain(tx_, rx_, num_params_, wavelength);
+                return antenna::calc_voltage_gain(tx_, rx_, num_params_, wavelength_);
             }
 
         private:
@@ -40,6 +41,7 @@ namespace eval
 
             antenna::Antenna const& tx_; /// const reference to original tx antenna
             antenna::Antenna rx_; /// copy of the rx antenna
+            double const wavelength_;
             setup::NumParams const& num_params_;
             std::vector<reference::Reference> references_;
             reference::Reference* rx_origin_{};
