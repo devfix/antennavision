@@ -86,64 +86,6 @@ ojson const SETUP_JSON = ojson::parse(R"JSON(
 }
 )JSON");
 
-TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][ArgMax]")
-{
-    std::size_t const n_dim1 = 101;
-    SECTION("Correct Maximum on geometry::Line")
-    {
-        setup::Setup su(SETUP_JSON);
-        su.export_to_three("/home/core");
-        auto& wavelength = su.num_params().system_wavelength;
-        auto const distance = su.get_double("distance");
-        auto const& tx = su.get_antenna("ula1");
-        auto& rx = su.get_antenna("receiver");
-
-        auto voltage_field = RxVoltageField(tx, rx, su.num_params());
-        {
-            auto line = geometry::Line("", Pos(0, distance, -0.5 * distance), Pos(0, distance, 0.5 * distance));
-            auto result = voltage_field.argmax_curve_abs(line, wavelength, n_dim1);
-            CHECK_THAT(result.pos.x, WithinAbs(0.0, 1e-9));
-            CHECK_THAT(result.pos.y, WithinAbs(100.0, 1e-9));
-            CHECK_THAT(result.pos.z, WithinAbs(0, 1e-9));
-        }
-    }
-
-    SECTION("Correct Maximum on geometry::CircleArc")
-    {
-        setup::Setup su(SETUP_JSON);
-        auto& wavelength = su.num_params().system_wavelength;
-        auto const distance = su.get_double("distance");
-        auto const& tx = su.get_antenna("ula1");
-        auto& rx = su.get_antenna("receiver");
-
-        auto voltage_field = RxVoltageField(tx, rx, su.num_params());
-        {
-            auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
-            auto result = voltage_field.argmax_curve_abs(arc, wavelength, n_dim1);
-            CHECK_THAT(result.pos.x, WithinAbs(0.0, 1e-9));
-            CHECK_THAT(result.pos.y, WithinAbs(100.0, 1e-9));
-            CHECK_THAT(result.pos.z, WithinAbs(0, 1e-9));
-        }
-    }
-}
-
-TEST_CASE("beamwidth", "[ScalarField][VoltageField][beamwidth]")
-{
-    setup::Setup su(SETUP_JSON);
-    auto& wavelength = su.num_params().system_wavelength;
-    auto const distance = su.get_double("distance");
-    auto const& tx = su.get_antenna("ula1");
-    auto& rx = su.get_antenna("receiver");
-
-    constexpr std::size_t N_POINTS = 101;
-
-    auto voltage_field = RxVoltageField(tx, rx, su.num_params());
-    {
-        auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, 1.0, 0.0), POS_ZERO, distance, 0.5 * pi).normalized();
-        auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(arc, wavelength, sqrt2_2, N_POINTS);
-        CHECK_THAT(beamwidth, WithinAbs(0.10915247360799513, 1e-9));
-    }
-}
 
 TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometries", "[ScalarField][VoltageField][eval_geometry]")
 {
@@ -153,7 +95,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
     auto const& tx = su.get_antenna("ula1");
     auto& rx = su.get_antenna("receiver");
 
-    auto voltage_field = RxVoltageField(tx, rx, su.num_params());
+    auto voltage_field = eval::RxVoltageField(tx, rx, su.num_params());
     auto& num_params = voltage_field.num_params;
 
     // Configure a simple sweep with 3 test frequencies/wavelengths

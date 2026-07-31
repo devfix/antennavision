@@ -17,7 +17,7 @@ double constexpr DIPOLE_LENGTH = 1e-3;
 TEST_CASE("Mean squared effective length", "[Radiator]")
 {
     double constexpr wavelength = 0.1;
-    auto num_params = setup::NumParams::configure({.system_wavelength = wavelength, .n_polar = 101, .n_azimuth = 201});
+    auto num_params = setup::NumParams::create({.system_wavelength = wavelength, .n_polar = 101, .n_azimuth = 201});
     // Hertzian Dipole
     {
         Radiator::elv_spherical_t elv_sherical = [](double const polar, double, double) -> nc::NdArray<Complex> { return {0, -DIPOLE_LENGTH * std::sin(polar), 0}; };
@@ -55,7 +55,7 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
 
 TEST_CASE("HertzianDipole", "[Radiator]")
 {
-    auto num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
+    auto num_params = setup::NumParams::create({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     reference::Reference reference;
     auto radiator = Radiator::HertzianDipole::create("HertzianDipole", "");
     radiator.origin = &reference;
@@ -73,7 +73,7 @@ TEST_CASE("HertzianDipole", "[Radiator]")
 
 TEST_CASE("HalfWaveDipole direct", "[Radiator]")
 {
-    auto num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
+    auto num_params = setup::NumParams::create({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     reference::Reference reference;
     auto radiator = Radiator::StandingWaveDipole::create("HalfWaveDipole", "", 0.5 * num_params.system_wavelength);
     radiator.origin = &reference;
@@ -120,7 +120,7 @@ TEST_CASE("HalfWaveDipole via setup", "[Radiator]")
 
 TEST_CASE("FullWaveDipole direct", "[Radiator]")
 {
-    auto num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
+    auto num_params = setup::NumParams::create({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     reference::Reference reference;
     auto radiator = Radiator::StandingWaveDipole::create("FullWaveDipole", "", 1.0 * num_params.system_wavelength);
     radiator.origin = &reference;
@@ -162,7 +162,7 @@ TEST_CASE("FullWaveDipole via setup", "[Radiator]")
 
 TEST_CASE("3/2-WaveDipole direct", "[Radiator]")
 {
-    auto num_params = setup::NumParams::configure({.system_wavelength = 0.1,.n_polar = 101,.n_azimuth = 201});
+    auto num_params = setup::NumParams::create({.system_wavelength = 0.1,.n_polar = 101,.n_azimuth = 201});
     reference::Reference reference;
     auto radiator = Radiator::StandingWaveDipole::create("3/2-WaveDipole", "", 1.5 * num_params.system_wavelength);
     radiator.origin = &reference;

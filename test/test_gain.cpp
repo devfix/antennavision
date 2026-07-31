@@ -13,7 +13,7 @@
 
 TEST_CASE("Power Gain of auto With X-Translation", "[Gain]")
 {
-    auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
+    auto const num_params = setup::NumParams::create({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     reference::Reference ref1{.id="ref1"};
     antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
     reference::Reference ref2{.id="ref2", .pos= {1000, 0, 0}};
@@ -33,7 +33,7 @@ TEST_CASE("Power Gain of auto With X-Translation", "[Gain]")
 
 TEST_CASE("Power Gain of auto With Y-Translation", "[Gain]")
 {
-    auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
+    auto const num_params = setup::NumParams::create({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     reference::Reference ref1{.id="ref1"};
     antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
     reference::Reference ref2{.id="ref2",  .pos={0, 1000, 0}};
@@ -53,7 +53,7 @@ TEST_CASE("Power Gain of auto With Y-Translation", "[Gain]")
 
 TEST_CASE("Power Gain of auto With Z-Translation", "[Gain]")
 {
-    auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
+    auto const num_params = setup::NumParams::create({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     reference::Reference ref1{.id="ref1"};
     antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
     reference::Reference ref2{.id="ref2",  .pos={0, 0, 1000}};
@@ -73,7 +73,7 @@ TEST_CASE("Power Gain of auto With Z-Translation", "[Gain]")
 
 TEST_CASE("Power Gain of auto With X-Rotation", "[Gain]")
 {
-    auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
+    auto const num_params = setup::NumParams::create({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     reference::Reference ref1{.id="ref1"};
     antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
     reference::Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot={pi / 6.0, 0.0, 0.0}};
@@ -93,7 +93,7 @@ TEST_CASE("Power Gain of auto With X-Rotation", "[Gain]")
 
 TEST_CASE("Power Gain of auto With Y-Rotation", "[Gain]")
 {
-    auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
+    auto const num_params = setup::NumParams::create({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     reference::Reference ref1{.id="ref1"};
     antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
     reference::Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot={0.0, pi / 6.0, 0.0}};
@@ -113,7 +113,7 @@ TEST_CASE("Power Gain of auto With Y-Rotation", "[Gain]")
 
 TEST_CASE("Power Gain of auto With Z-Rotation", "[Gain]")
 {
-    auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
+    auto const num_params = setup::NumParams::create({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     reference::Reference ref1{.id="ref1"};
     antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
     reference::Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot={0.0, 0.0, pi / 6.0}};
@@ -133,7 +133,7 @@ TEST_CASE("Power Gain of auto With Z-Rotation", "[Gain]")
 
 TEST_CASE("Power Gain of auto Complicated 1", "[Gain]")
 {
-    auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
+    auto const num_params = setup::NumParams::create({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     reference::Reference ref1{.id="ref1"};
     antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
     reference::Reference ref2{.id="ref2",  .pos={0, 1000, 0}, .rot=math::quaternion_from_directions({0,0,1}, {1,1,1})};
@@ -153,7 +153,7 @@ TEST_CASE("Power Gain of auto Complicated 1", "[Gain]")
 
 TEST_CASE("Power Gain of auto Complicated 2", "[Gain]")
 {
-    auto const num_params = setup::NumParams::configure({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
+    auto const num_params = setup::NumParams::create({.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201});
     reference::Reference ref1{.id="ref1"};
     antenna::Antenna antenna1 = Radiator::HertzianDipole::create("auto1", "ref1");
     reference::Reference ref2{.id="ref2",  .pos={0, 1000, 500}, .rot=math::quaternion_from_directions({0,0,1}, {1,1,1})};

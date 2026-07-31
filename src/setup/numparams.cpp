@@ -6,7 +6,6 @@
 #include <nlohmann/json.hpp>
 #include "serialization.hpp"
 
-
 namespace setup
 {
     template <AnyJson JsonType>
@@ -47,7 +46,9 @@ namespace setup
         if (js.contains("ftol_rel")) { js.at("ftol_rel").get_to(num_params.ftol_rel); }
     }
 
-    NumParams NumParams::configure(NumParams const& num_params)
+    NumParams NumParams::create() { return create({}); }
+
+    NumParams NumParams::create(NumParams const& num_params)
     {
         NumParams copy = DEFAULT_NUM_PARAMS;
         if (num_params.system_wavelength != 0) { copy.system_wavelength = num_params.system_wavelength; }
@@ -71,7 +72,7 @@ namespace setup
         assert(xtol_rel > 0);
         assert(ftol_rel > 0);
     }
-    
+
     template void to_json(nlohmann::json&, NumParams const&);
     template void to_json(nlohmann::ordered_json&, NumParams const&);
     template void from_json(nlohmann::json const&, NumParams&);

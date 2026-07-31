@@ -12,7 +12,7 @@ TEST_CASE("SingleOpt finds correct minimum", "[eval::opt][SingleOpt]")
     using namespace eval::opt;
     using Catch::Matchers::WithinAbs;
 
-    auto const num_params = setup::NumParams::configure({});
+    auto const num_params = setup::NumParams::create({});
 
     SECTION("Find minimum of exp((x-1)^2)")
     {
@@ -47,7 +47,7 @@ TEST_CASE("DualOpt finds correct minimum", "[eval::opt][DualOpt]")
     using namespace eval::opt;
     using Catch::Matchers::WithinAbs;
 
-    auto const num_params = setup::NumParams::configure({});
+    auto const num_params = setup::NumParams::create({});
     SECTION("Find minimum of sqrt( (x-1)^2 + (y+1)^2 )")
     {
         DualOpt::Params params{

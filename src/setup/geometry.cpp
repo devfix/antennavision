@@ -263,29 +263,29 @@ namespace geometry
         return *it;
     }
 
-    Vec3Array get_positions(Geometry const& geo, std::size_t n_dim1, std::size_t n_dim2)
+    Vec3Array get_positions(Geometry const& geo, std::size_t n1, std::size_t n2)
     {
         return geo.visit(
-            [&n_dim1, &n_dim2]<typename T>(T const& shape) -> Vec3Array
+            [&n1, &n2]<typename T>(T const& shape) -> Vec3Array
             {
-                if (n_dim1 == 0) throw SimulationError("Sample dimension 1 is zero");
+                if (n1 == 0) throw SimulationError("Sample dimension 1 is zero");
                 if constexpr (is_variant_alternative<T, Curve>)
                 {
-                    Vec3Array positions(n_dim1, 1);
-                    for (ComplexArray::index_type k = 0; k < n_dim1; k++)
-                        positions(k, 0) = curve::get_pos_at(shape, math::nidx(k, n_dim1));
+                    Vec3Array positions(n1, 1);
+                    for (ComplexArray::index_type k = 0; k < n1; k++)
+                        positions(k, 0) = curve::get_pos_at(shape, math::nidx(k, n1));
                     return positions;
                 }
                 else
                 {
-                    if (n_dim2 == 0) throw SimulationError("Sample dimension 2 is zero");
-                    Vec3Array positions(n_dim1, n_dim2);
-                    for (std::int32_t k2 = 0; k2 < n_dim2; k2++)
+                    if (n2 == 0) throw SimulationError("Sample dimension 2 is zero");
+                    Vec3Array positions(n1, n2);
+                    for (std::int32_t k2 = 0; k2 < n2; k2++)
                     {
-                        double const t2 = math::nidx(k2, n_dim2);
-                        for (std::int32_t k1 = 0; k1 < n_dim1; k1++)
+                        double const t2 = math::nidx(k2, n2);
+                        for (std::int32_t k1 = 0; k1 < n1; k1++)
                         {
-                            double const t1 = math::nidx(k1, n_dim1);
+                            double const t1 = math::nidx(k1, n1);
                             positions(k1, k2) = surface::get_pos_at(shape, t1, t2);
                         }
                     }

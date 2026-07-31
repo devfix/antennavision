@@ -18,7 +18,8 @@ namespace setup
         double xtol_rel{};
         double ftol_rel{};
 
-        [[nodiscard]] static NumParams configure(NumParams const& num_params);
+        [[nodiscard]] static NumParams create();
+        [[nodiscard]] static NumParams create(NumParams const& num_params);
         void check() const;
     };
 

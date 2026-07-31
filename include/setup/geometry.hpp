@@ -6,10 +6,10 @@
 
 #include <utility>
 #include <variant>
+#include "math/functions.hpp"
 #include "serialization.hpp"
 #include "types/json.hpp"
 #include "types/math.hpp"
-#include "math/functions.hpp"
 
 namespace geometry
 {
@@ -220,41 +220,20 @@ namespace geometry
     template <AnyJson JsonType>
     void from_json(JsonType const& js, Geometry& geo);
 
-    [[nodiscard]] constexpr std::string const& get_id(Geometry const& geo) noexcept
-    {
-        return std::visit([](auto const& g) -> std::string const& { return g.id(); }, geo);
-    }
-
     using Curve = std::variant<Line, CircleArc>;
 
-    template <AnyJson JsonType>
-    void to_json(JsonType& js, Curve const& curve)
-    {
-        std::visit([&js](auto const& c) { js = c; }, curve);
-    }
-
     using Surface = std::variant<Rectangle, SphericalRectangle>;
-
-    template <AnyJson JsonType>
-    void to_json(JsonType& js, Surface const& surf)
-    {
-        std::visit([&js](auto const& s) { js = s; }, surf);
-    }
-
-    [[nodiscard]] Geometry& get(std::span<Geometry> geometries, std::string const& id);
-
-    Vec3Array get_positions(Geometry const& geo, std::size_t n_dim1, std::size_t n_dim2);
 
     namespace curve
     {
         [[nodiscard]] constexpr double get_length(Curve const& curve) noexcept
         {
-            return std::visit([](auto const& c) -> double { return c.length(); }, curve);
+            return curve.visit([](auto const& c) -> double { return c.length(); });
         }
 
         [[nodiscard]] constexpr Pos get_pos_at(Curve const& curve, double t) noexcept
         {
-            return std::visit([&t](auto const& c) -> Pos { return c.pos_at(t); }, curve);
+            return curve.visit([&t](auto const& c) -> Pos { return c.pos_at(t); });
         }
     } // namespace curve
 
@@ -262,33 +241,48 @@ namespace geometry
     {
         [[nodiscard]] constexpr Pos const& get_center(Surface const& surf) noexcept
         {
-            return std::visit([](auto const& gt) -> Pos const& { return gt.center(); }, surf);
+            return surf.visit([](auto const& gt) -> Pos const& { return gt.center(); });
         }
 
         [[nodiscard]] constexpr Pos const& get_normal(Surface const& surf) noexcept
         {
-            return std::visit([](auto const& gt) -> Pos const& { return gt.normal(); }, surf);
+            return surf.visit([](auto const& gt) -> Pos const& { return gt.normal(); });
         }
 
         [[nodiscard]] constexpr Pos const& get_e1(Surface const& surf) noexcept
         {
-            return std::visit([](auto const& gt) -> Pos const& { return gt.e1(); }, surf);
+            return surf.visit([](auto const& gt) -> Pos const& { return gt.e1(); });
         }
 
         [[nodiscard]] constexpr Pos const& get_e2(Surface const& surf) noexcept
         {
-            return std::visit([](auto const& gt) -> Pos const& { return gt.e2(); }, surf);
+            return surf.visit([](auto const& gt) -> Pos const& { return gt.e2(); });
         }
 
         [[nodiscard]] constexpr double get_area(Surface const& surf) noexcept
         {
-            return std::visit([](auto const& s) -> double { return s.area(); }, surf);
+            return surf.visit([](auto const& s) -> double { return s.area(); });
         }
 
         [[nodiscard]] constexpr Pos get_pos_at(Surface const& surf, double t1, double t2) noexcept
         {
-            return std::visit([&t1, &t2](auto const& s) -> Pos { return s.pos_at(t1, t2); }, surf);
+            return surf.visit([&t1, &t2](auto const& s) -> Pos { return s.pos_at(t1, t2); });
         }
     } // namespace surface
 
+    template<typename T>
+    [[nodiscard]] constexpr std::string const& get_id(T const& obj) noexcept
+    {
+        return obj.visit([](auto const& g) -> std::string const& { return g.id(); });
+    }
+
+    [[nodiscard]] Geometry& get(std::span<Geometry> geometries, std::string const& id);
+
+    Vec3Array get_positions(Geometry const& geo, std::size_t n1, std::size_t n2);
+
+    template <typename T>
+    [[nodiscard]] constexpr Geometry as_geometry(T const& obj) noexcept
+    {
+        return obj.visit([](auto const& o) -> Geometry { return o; });
+    }
 } // namespace geometry

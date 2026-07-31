@@ -157,7 +157,7 @@ namespace setup
                     path_json,
                     t,
                     reference::get(const_cast<decltype(references_) const&>(references_), t.ref_id),
-                    RxVoltageField(antenna::get(antennas_, t.tx_id), antenna::get(antennas_, t.rx_id), num_params_),
+                    eval::RxVoltageField(antenna::get(antennas_, t.tx_id), antenna::get(antennas_, t.rx_id), num_params_),
                     geometry::get(geometries_, t.geo_id),
                     sweep::get(sweeps_, t.sweep_wavelength_id) //
                 );
