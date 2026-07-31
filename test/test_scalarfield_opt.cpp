@@ -148,7 +148,7 @@ TEST_CASE("beamwidth", "[ScalarField][VoltageField][beamwidth]")
     }
 }
 
-TEST_CASE("peak", "[ScalarField][ComplexMathField][peak]")
+TEST_CASE("Optimization Algorithms", "[ScalarField][ComplexMathField][Optimization Algorithms]")
 {
     constexpr auto pos_peak = Pos(1, 2, 0);
     ComplexScalarMathField field(
@@ -162,10 +162,20 @@ TEST_CASE("peak", "[ScalarField][ComplexMathField][peak]")
 
     geometry::Rectangle const rect("rect", POS_ZERO, Pos(0, 0, 1), Pos(1, 0, 0), Pos(0, 1, 0), 4, 4);
 
-    constexpr std::size_t N = 33;  // we use this "strange" number to guarantee that we don't hit the maximum exactly during the pre-scan
-    auto const [t1, t2, pos, peak] = field.argmax_surface_abs(rect, 0, N, N);
-    CHECK_THAT(t1, WithinAbs(pos_peak.x / rect.width() + 0.5, 1e-6));
-    CHECK_THAT(t2, WithinAbs(pos_peak.y / rect.height() + 0.5, 1e-6));
-    CHECK_THAT((pos - pos_peak).norm(), WithinAbs(0.0, 1e-9));
-    CHECK_THAT(peak, WithinAbs(1.0, 1e-9));
+    SECTION("Correct Maximum on geometry::Rectangle")
+    {
+        constexpr std::size_t N = 33;  // we use this "strange" number to guarantee that we don't hit the maximum exactly during the pre-scan
+        auto const [t1, t2, pos, peak] = field.argmax_surface_abs(rect, 0, N, N);
+        CHECK_THAT(t1, WithinAbs(pos_peak.x / rect.width() + 0.5, 1e-6));
+        CHECK_THAT(t2, WithinAbs(pos_peak.y / rect.height() + 0.5, 1e-6));
+        CHECK_THAT((pos - pos_peak).norm(), WithinAbs(0.0, 1e-9));
+        CHECK_THAT(peak, WithinAbs(1.0, 1e-9));
+    }
+
+    SECTION("Correct Isolines")
+    {
+        constexpr std::size_t N = 33;  // we use this "strange" number to guarantee that we don't hit the maximum exactly during the pre-scan
+        field.trace_isolines(rect, 0, sqrt2_2, N, N);
+    }
 }
+

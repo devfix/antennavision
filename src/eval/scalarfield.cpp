@@ -214,9 +214,29 @@ namespace eval
 
     template <typename Derived, typename ScalarT>
     std::vector<result::Isoline>
-    ScalarField<Derived, ScalarT>::trace_isolines(geometry::Surface const& surf, double wavelength, std::size_t n1, std::size_t n2) const
+    ScalarField<Derived, ScalarT>::trace_isolines(geometry::Surface const& surf, double wavelength, double ratio, std::size_t n1, std::size_t n2) const
     {
-        // auto const sampled_area = eval_geometry(geo, wavelength, n1, n2);
+        using namespace opt;
+
+        auto [scan_result, opt_result] = argmax_surface_abs_impl(surf, wavelength, n1, n2);
+        auto const thres = ratio * (-opt_result.f_min);
+
+        // zero-out all values below the threshold
+        for (auto& val : scan_result.values)
+            if (val < thres) val = 0.0;
+
+        auto const ctx = make_context();
+
+        auto [t1, t2] = opt_result.args_min;
+        SingleOpt::Params const params_init{
+            .bound_a = 0,
+            .bound_b = t1,
+            .fn = [&surf, &wavelength, thres, &ctx, t2](double const t) -> double
+            { return std::abs(std::abs(ctx(geometry::surface::get_pos_at(surf, t, t2), wavelength)) - thres); },
+            .arg_initial = -1 // will be set to midpoint during initialization of optimization
+        };
+        auto const opt_init = SingleOpt::run(params_init, num_params);
+        trace_isoline(surf, wavelength, thres, opt_init.arg_min, t2);
     }
 
     template <typename Derived, typename ScalarT>
@@ -358,6 +378,12 @@ namespace eval
         };
         auto const opt_result = DualOpt::run(params, num_params);
         return {scan_result, opt_result};
+    }
+
+    template <typename Derived, typename ScalarT>
+    result::Isoline ScalarField<Derived, ScalarT>::trace_isoline(geometry::Surface const& surf, double wavelength, double thres, double t1, double t2) const
+    {
+
     }
 
     // -----------------------------------------------------------------------------

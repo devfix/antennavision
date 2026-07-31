@@ -132,7 +132,7 @@ namespace eval
 
         [[nodiscard]] std::pair<Pos, double> calc_beamwidth(geometry::CircleArc const& arc, double wavelength, double ratio, std::size_t n) const;
 
-        [[nodiscard]] std::vector<result::Isoline> trace_isolines(geometry::Surface const& surf, double wavelength, std::size_t n1, std::size_t n2) const;
+        [[nodiscard]] std::vector<result::Isoline> trace_isolines(geometry::Surface const& surf, double wavelength, double ratio, std::size_t n1, std::size_t n2) const;
 
         setup::NumParams num_params;
 
@@ -153,6 +153,8 @@ namespace eval
 
         [[nodiscard]] std::pair<result::EvalResult<double>, opt::DualOpt::Result>
         argmax_surface_abs_impl(geometry::Surface const& surf, double wavelength, std::size_t n1, std::size_t n2) const;
+
+        [[nodiscard]] result::Isoline trace_isoline(geometry::Surface const& surf, double wavelength, double thres, double t1, double t2) const;
     };
 
     template <typename Derived>
