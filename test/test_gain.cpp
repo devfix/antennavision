@@ -5,9 +5,10 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
-#include "../include/setup/setup.hpp"
+#include "math/functions.hpp"
+#include "math/coords.hpp"
 #include "components/radiator.hpp"
-#include "math.hpp"
+#include "setup/setup.hpp"
 #include "testutil.hpp"
 
 TEST_CASE("Power Gain of auto With X-Translation", "[Gain]")

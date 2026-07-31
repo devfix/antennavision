@@ -4,8 +4,8 @@
 
 #include "setup/geometry.hpp"
 #include <nlohmann/json.hpp>
-
-#include "math.hpp"
+#include "math/functions.hpp"
+#include "math/coords.hpp"
 #include "memory.hpp"
 #include "serialization.hpp"
 #include "simulationerror.hpp"
@@ -258,42 +258,40 @@ namespace geometry
 
     Geometry& get(std::span<Geometry> geometries, std::string const& id)
     {
-        auto const it = std::ranges::find(geometries, id, [](auto& geo) { return std::visit([](auto& g) { return g.id(); }, geo); });
+        auto const it = std::ranges::find(geometries, id, [](auto& geo) { return geo.visit([](auto& g) { return g.id(); }); });
         if (it == geometries.end()) { throw SimulationError("Could not find geometry with id '{}'", id); }
         return *it;
     }
 
     Vec3Array get_positions(Geometry const& geo, std::size_t n_dim1, std::size_t n_dim2)
     {
-        return std::visit(
+        return geo.visit(
             [&n_dim1, &n_dim2]<typename T>(T const& shape) -> Vec3Array
             {
+                if (n_dim1 == 0) throw SimulationError("Sample dimension 1 is zero");
                 if constexpr (is_variant_alternative<T, Curve>)
                 {
                     Vec3Array positions(n_dim1, 1);
                     for (ComplexArray::index_type k = 0; k < n_dim1; k++)
-                    {
-                        double const t = static_cast<double>(k) / static_cast<double>(n_dim1 - 1);
-                        positions(k, 0) = geometry::curve::get_pos_at(shape, t);
-                    }
+                        positions(k, 0) = curve::get_pos_at(shape, math::nidx(k, n_dim1));
                     return positions;
                 }
                 else
                 {
+                    if (n_dim2 == 0) throw SimulationError("Sample dimension 2 is zero");
                     Vec3Array positions(n_dim1, n_dim2);
                     for (std::int32_t k2 = 0; k2 < n_dim2; k2++)
                     {
-                        double const t2 = static_cast<double>(k2) / static_cast<double>(n_dim2 - 1);
+                        double const t2 = math::nidx(k2, n_dim2);
                         for (std::int32_t k1 = 0; k1 < n_dim1; k1++)
                         {
-                            double const t1 = static_cast<double>(k1) / static_cast<double>(n_dim1 - 1);
-                            positions(k1, k2) = geometry::surface::get_pos_at(shape, t1, t2);
+                            double const t1 = math::nidx(k1, n_dim1);
+                            positions(k1, k2) = surface::get_pos_at(shape, t1, t2);
                         }
                     }
                     return positions;
                 }
-            },
-            geo);
+            });
     }
 
     // -----------------------------------------------------------------------------

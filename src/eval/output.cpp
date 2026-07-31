@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <variant>
 #include "NumCpp/Functions/linspace.hpp"
+#include "math/coords.hpp"
 #include "setup/setup.hpp"
 
 namespace eval::output
@@ -88,7 +89,7 @@ namespace eval::output
         js["geo"] = geo;
         js["sweep"] = sweep_wavelength;
         js["task"] = task;
-        auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(geo, task.n_dim1, task.n_dim2, sweep_wavelength);
+        auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(geo, sweep_wavelength, task.n_dim1, task.n_dim2);
         js["positions"] = ojson();
         js["positions"]["cartesian"] = positions_cartesian;
         js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);

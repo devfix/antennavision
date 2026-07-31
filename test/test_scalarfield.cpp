@@ -88,6 +88,7 @@ ojson const SETUP_JSON = ojson::parse(R"JSON(
 
 TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][ArgMax]")
 {
+    std::size_t const n_dim1 = 101;
     SECTION("Correct Maximum on geometry::Line")
     {
         setup::Setup su(SETUP_JSON);
@@ -98,10 +99,9 @@ TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][Ar
         auto& rx = su.get_antenna("receiver");
 
         auto voltage_field = RxVoltageField(tx, rx, su.num_params());
-        std::size_t const n_dim1 = 101;
         {
             auto line = geometry::Line("", Pos(0, distance, -0.5 * distance), Pos(0, distance, 0.5 * distance));
-            auto result = voltage_field.argmax_curve_abs(line, wavelength);
+            auto result = voltage_field.argmax_curve_abs(line, wavelength, n_dim1);
             CHECK_THAT(result.pos.x, WithinAbs(0.0, 1e-9));
             CHECK_THAT(result.pos.y, WithinAbs(100.0, 1e-9));
             CHECK_THAT(result.pos.z, WithinAbs(0, 1e-9));
@@ -119,7 +119,7 @@ TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][Ar
         auto voltage_field = RxVoltageField(tx, rx, su.num_params());
         {
             auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
-            auto result = voltage_field.argmax_curve_abs(arc, wavelength);
+            auto result = voltage_field.argmax_curve_abs(arc, wavelength, n_dim1);
             CHECK_THAT(result.pos.x, WithinAbs(0.0, 1e-9));
             CHECK_THAT(result.pos.y, WithinAbs(100.0, 1e-9));
             CHECK_THAT(result.pos.z, WithinAbs(0, 1e-9));
@@ -135,10 +135,12 @@ TEST_CASE("beamwidth", "[ScalarField][VoltageField][beamwidth]")
     auto const& tx = su.get_antenna("ula1");
     auto& rx = su.get_antenna("receiver");
 
+    constexpr std::size_t N_POINTS = 101;
+
     auto voltage_field = RxVoltageField(tx, rx, su.num_params());
     {
         auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, 1.0, 0.0), POS_ZERO, distance, 0.5 * pi).normalized();
-        auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(arc, wavelength, sqrt2_2);
+        auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(arc, wavelength, sqrt2_2, N_POINTS);
         CHECK_THAT(beamwidth, WithinAbs(0.10915247360799513, 1e-9));
     }
 }
@@ -165,7 +167,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Single wavelength evaluation (eval_geometry)")
         {
-            auto [positions, values] = voltage_field.eval_geometry(line, n_dim1, n_dim2, wavelength);
+            auto [positions, values] = voltage_field.eval_geometry(line, wavelength, n_dim1, n_dim2);
 
             // Verify array shapes: curves generate correct shape
             REQUIRE(positions.shape().rows == n_dim1);
@@ -199,7 +201,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Wavelength sweep evaluation (eval_geometry_sweep)")
         {
-            auto [positions, data] = voltage_field.eval_geometry_sweep(line, n_dim1, n_dim2, sweep);
+            auto [positions, data] = voltage_field.eval_geometry_sweep(line, sweep, n_dim1, n_dim2);
 
             // Verify array shapes: curves generate shape (n_linear1, 1)
             REQUIRE(positions.shape().rows == n_dim1);
@@ -291,7 +293,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Single wavelength evaluation (eval_geometry)")
         {
-            auto [positions, values] = voltage_field.eval_geometry(arc, n_dim1, n_dim2, wavelength);
+            auto [positions, values] = voltage_field.eval_geometry(arc, wavelength, n_dim1, n_dim2);
 
             // Verify array shapes: curves generate shape (n_linear1, 1)
             REQUIRE(positions.shape().rows == n_dim1);
@@ -325,7 +327,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Wavelength sweep evaluation (eval_geometry_sweep)")
         {
-            auto [positions, data] = voltage_field.eval_geometry_sweep(arc, n_dim1, n_dim2, sweep);
+            auto [positions, data] = voltage_field.eval_geometry_sweep(arc, sweep, n_dim1, n_dim2);
 
             // Verify array shapes: curves generate shape (n_linear1, 1)
             REQUIRE(positions.shape().rows == n_dim1);
@@ -417,7 +419,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Single wavelength evaluation (eval_geometry)")
         {
-            auto [positions, values] = voltage_field.eval_geometry(rect, n_dim1, n_dim2, wavelength);
+            auto [positions, values] = voltage_field.eval_geometry(rect, wavelength, n_dim1, n_dim2);
 
             // Verify array shapes: surfaces generate correct shape
             REQUIRE(positions.shape().rows == n_dim1);
@@ -704,7 +706,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Wavelength sweep evaluation (eval_geometry_sweep)")
         {
-            auto [positions, data] = voltage_field.eval_geometry_sweep(rect, n_dim1, n_dim2, sweep);
+            auto [positions, data] = voltage_field.eval_geometry_sweep(rect, sweep, n_dim1, n_dim2);
 
             // Verify array shapes: surfaces generate correct shape
             REQUIRE(positions.shape().rows == n_dim1);
@@ -1541,7 +1543,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Single wavelength evaluation (eval_geometry)")
         {
-            auto [positions, values] = voltage_field.eval_geometry(rect, n_dim1, n_dim2, wavelength);
+            auto [positions, values] = voltage_field.eval_geometry(rect, wavelength, n_dim1, n_dim2);
 
             // Verify array shapes: surfaces generate correct shape
             REQUIRE(positions.shape().rows == n_dim1);
@@ -1828,7 +1830,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
 
         SECTION("Wavelength sweep evaluation (eval_geometry_sweep)")
         {
-            auto [positions, data] = voltage_field.eval_geometry_sweep(rect, n_dim1, n_dim2, sweep);
+            auto [positions, data] = voltage_field.eval_geometry_sweep(rect, sweep, n_dim1, n_dim2);
 
             // Verify array shapes: surfaces generate correct shape
             REQUIRE(positions.shape().rows == n_dim1);

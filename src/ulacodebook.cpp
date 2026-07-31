@@ -4,9 +4,9 @@
 
 #include "ulacodebook.hpp"
 #include <fstream>
-#include <print>
 #include <nlohmann/json.hpp>
-#include "math.hpp"
+#include <print>
+#include "../include/math/coords.hpp"
 #include "simulationerror.hpp"
 
 UlaCodebook::UlaCodebook(std::filesystem::path const& p)

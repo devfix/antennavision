@@ -5,7 +5,7 @@
 #include "setup/sweep.hpp"
 #include <nlohmann/json.hpp>
 #include "serialization.hpp"
-
+#include "math/functions.hpp"
 #include "memory.hpp"
 
 namespace sweep
@@ -182,11 +182,7 @@ namespace sweep
     std::vector<double> LinearSweep::values() const noexcept
     {
         std::vector<double> values(size_);
-        for (std::size_t k = 0; k < size_; ++k)
-        {
-            double const t = static_cast<double>(k) / static_cast<double>(size_ - 1); // t in [0,1]
-            values[k] = value_begin_ + t * (value_end_ - value_begin_);
-        }
+        for (std::size_t k = 0; k < size_; ++k) values[k] = value_begin_ + math::nidx(k, size_) * (value_end_ - value_begin_);
         return values;
     }
 
@@ -195,7 +191,7 @@ namespace sweep
         std::vector<double> values(size_);
         for (std::size_t k = 0; k < size_; ++k)
         {
-            double const t = static_cast<double>(k) / static_cast<double>(size_ - 1); // t in [0,1]
+            double const t = math::nidx(k, size_); // t in [0,1]
             double const u = (std::pow(base_, t) - 1) / (base_ - 1); // u in [0,1]
             values[k] = value_begin_ + u * (value_end_ - value_begin_);
         }
@@ -207,7 +203,7 @@ namespace sweep
         std::vector<double> values(size_);
         for (std::size_t k = 0; k < size_; ++k)
         {
-            double const t = static_cast<double>(k) / static_cast<double>(size_ - 1); // t in [0,1]
+            double const t = math::nidx(k, size_); // t in [0,1]
             double const u = std::log((base_ - 1) * t + 1) / std::log(base_); // u in [0,1]
             values[k] = value_begin_ + u * (value_end_ - value_begin_);
         }

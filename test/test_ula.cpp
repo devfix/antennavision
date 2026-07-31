@@ -5,12 +5,13 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
-#include "../include/setup/setup.hpp"
+#include "math/functions.hpp"
+#include "math/coords.hpp"
 #include "NumCpp/Coordinates/Cartesian.hpp"
 #include "NumCpp/Functions/abs.hpp"
 #include "NumCpp/Functions/angle.hpp"
 #include "eval/rxvoltagefield.hpp"
-#include "math.hpp"
+#include "setup/setup.hpp"
 #include "testutil.hpp"
 
 TEST_CASE("ULA position and rotation", "[TestULA]")
@@ -222,7 +223,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
     Pos const pos_end = ref_stop.global_pos();
 
     geometry::Line line("", pos_start, pos_end);
-    auto result = voltage_field.eval_geometry(line, setup.num_params().n_linear1, setup.num_params().n_linear2, setup.num_params().system_wavelength);
+    auto result = voltage_field.eval_geometry(line, setup.num_params().system_wavelength, setup.num_params().n_linear1, setup.num_params().n_linear2);
     auto &gains = result.values;
     auto const gains_abs = nc::abs(gains);
     auto const idx_max = nc::argmax(gains_abs);

@@ -7,6 +7,8 @@
 #include <locale>
 #include <nlohmann/json.hpp>
 #include <print>
+#include "math/functions.hpp"
+#include "math/coords.hpp"
 #include "NumCpp/Functions/var.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
@@ -146,7 +148,7 @@ namespace factory
             references.reserve(size);
             for (std::size_t k = 0; k < size; k++)
             {
-                double const t = static_cast<double>(k) / static_cast<double>(size - 1);
+                double const t = math::nidx(k, size);
                 Pos const pos = dir * (t - 0.5) * length;
                 references.push_back(Reference{
                     .id = std::format("{}", k),
@@ -214,9 +216,9 @@ namespace factory
             {
                 for (std::decay_t<decltype(size_x)> x = 0; x < size_x; x++)
                 {
-                    double const fx = static_cast<double>(x) / static_cast<double>(size_x - 1);
-                    double const fy = static_cast<double>(y) / static_cast<double>(size_y - 1);
-                    Pos const pos = Pos(1.0, 0.0, 0.0) * (fx - 0.5) * length_x + Pos(0.0, 1.0, 0.0) * (fy - 0.5) * length_y;
+                    double const tx = math::nidx(x, size_x);
+                    double const ty = math::nidx(y, size_y);
+                    Pos const pos = Pos(1.0, 0.0, 0.0) * (tx - 0.5) * length_x + Pos(0.0, 1.0, 0.0) * (ty - 0.5) * length_y;
                     references.push_back(Reference{
                         .id = std::format("ref:{}:{}", x, y),
                         .origin_id = origin_id,

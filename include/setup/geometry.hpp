@@ -9,6 +9,7 @@
 #include "serialization.hpp"
 #include "types/json.hpp"
 #include "types/math.hpp"
+#include "math/functions.hpp"
 
 namespace geometry
 {
@@ -28,7 +29,7 @@ namespace geometry
 
         [[nodiscard]] double length() const { return (pos_end_ - pos_begin_).norm(); }
 
-        [[nodiscard]] Pos constexpr pos_at(double t) const { return pos_begin_ + t * (pos_end_ - pos_begin_); }
+        [[nodiscard]] Pos constexpr pos_at(double t) const { return math::lerp(pos_begin_, pos_end_, t); }
 
     private:
         std::string id_; /// id of the geometry

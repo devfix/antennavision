@@ -7,44 +7,11 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
-#include <nlohmann/json_fwd.hpp>
 #include <optional>
-#include "setup/numparams.hpp"
-#include "types/json.hpp"
 #include "types/math.hpp"
 
 namespace math
 {
-    struct OptParams
-    {
-        std::function<double(double x)> fn; // objective function that gets minimized
-        double t_a;
-        double t_b;
-        setup::NumParams const& num_params;
-    };
-
-    template<std::size_t N>
-    struct MultiOptParams
-    {
-
-    };
-
-    struct OptResult
-    {
-        double t_min{};
-        double f_min{};
-    };
-
-    struct OptScanResult
-    {
-        OptResult opt{};
-        std::vector<double> scan_t;
-        std::vector<double> scan_f;
-        std::size_t k_min;
-        std::size_t k_lower;
-        std::size_t k_upper;
-    };
-
     template <typename R, typename T1, typename T2, typename T3>
     nc::NdArray<R> constexpr vec(T1 a, T2 b, T3 c)
     {
@@ -63,9 +30,6 @@ namespace math
 
     Quaternion quaternion_from_directions(Pos dir_initial, Pos dir_target);
 
-    std::pair<double, double> sici(double x);
-
-    double q_function(double x);
 
     /**
      * polar to complex number
@@ -85,14 +49,6 @@ namespace math
         double const phi = std::atan2(pos.y, pos.x);
         return {r, theta, phi};
     }
-
-    [[nodiscard]] double constexpr db_from_power_ratio(double const power_ratio) { return 10.0 * std::log10(power_ratio); }
-
-    [[nodiscard]] double constexpr power_ratio_from_db(double const db) { return std::pow(10.0, db / 10.0); }
-
-    template <typename T>
-    [[nodiscard]] T constexpr square(T x)
-    { return x * x; }
 
     template <typename T>
     [[nodiscard]] double constexpr norm(nc::NdArray<T> array)
@@ -135,7 +91,7 @@ namespace math
         return get_rot_mat_from_spherical(polar, azimuth);
     }
 
-    OptScanResult scan_f_min(OptParams const& opt_params);
+    // OptScanResult scan_f_min(OptParams const& opt_params);
 
     /**
      * Finds the index of the element closest to the target value.

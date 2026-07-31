@@ -5,7 +5,7 @@
 #include "reference.hpp"
 #include <nlohmann/json.hpp>
 #include <ranges>
-#include "math.hpp"
+#include "../include/math/coords.hpp"
 #include "serialization.hpp"
 #include "simulationerror.hpp"
 

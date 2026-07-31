@@ -7,9 +7,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
 
-#include "../include/setup/setup.hpp"
+#include "setup/setup.hpp"
 #include "components/radiator.hpp"
-#include "math.hpp"
+#include "math/functions.hpp"
 #include "testutil.hpp"
 
 double constexpr DIPOLE_LENGTH = 1e-3;

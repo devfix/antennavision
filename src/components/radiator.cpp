@@ -3,17 +3,17 @@
 //
 
 #include "components/radiator.hpp"
-#include <print>
-#include <string>
-#include <utility>
 #include <NumCpp/Functions/linspace.hpp>
 #include <NumCpp/Functions/meshgrid.hpp>
 #include <NumCpp/Functions/sin.hpp>
 #include <NumCpp/Functions/sum.hpp>
+#include <print>
+#include <string>
+#include <utility>
+#include "math/functions.hpp"
+#include "math/coords.hpp"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
-#include "math.hpp"
-
 
 Radiator Radiator::HertzianDipole::create(std::string const& id, std::string const& origin_id)
 { return {.id = id, .origin_id = origin_id, .elv_spherical = elv_spherical, .mean_squared_elv = ms_elv}; }

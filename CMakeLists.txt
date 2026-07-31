@@ -3,27 +3,83 @@ project(antennavision)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+include(FetchContent)
+include(CheckIPOSupported)
 
-# static runtime linkage
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-if(NOT MSVC)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
+# Link-Time-Optimization
+check_ipo_supported(RESULT ipo_supported)
+if(ipo_supported)
+    message(STATUS "[AntennaVision] IPO detected")
+
+    # Enable LTO automatically whenever CMAKE_BUILD_TYPE is "Release" or "RelWithDebInfo"
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
+else()
+    message(STATUS "[AntennaVision] IPO not found")
 endif()
 
-# static dependency linkage
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-include(FetchContent)
+option(BUILD_ALL_SHARED "[AntennaVision] Build all internal libraries as shared and place next to executable" ON)
+
+
+# === static runtime linkage ===
+# since antennavision used latest c++ features that might be missing on other systems,
+# we link these libraries directly into the executable
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+
+if (NOT MSVC)
+    # Separate functions and data into individual sections during compilation
+    add_compile_options(-ffunction-sections -fdata-sections)
+
+    # Tell the linker to drop any unreferenced sections
+    add_link_options(-Wl,--gc-sections)
+endif()
+
+
+# === static/shared library linkage ===
+if(BUILD_ALL_SHARED)
+    message(STATUS "[AntennaVision] Build with shared linkage")
+
+    # Force non-interface targets to build as SHARED
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build all libraries as shared" FORCE)
+
+    #  Output ALL targets (executables & .so files) into the same bin/ directory
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        add_link_options(-static-libstdc++ -static-libgcc)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT MSVC)
+        add_link_options(-static-libstdc++) # Clang on Linux/macOS
+    endif()
+
+    #  Configure RPATH so the linker finds .so files next to the binary at runtime
+    if(NOT WIN32)
+        set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+        set(CMAKE_INSTALL_RPATH "$ORIGIN")
+    endif()
+else()
+    message(STATUS "[AntennaVision] Build with static linkage")
+
+    if(NOT MSVC)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
+    endif()
+
+    # static dependency linkage
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+endif()
 
 
 ######### Enable CCache if available
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
-    message(STATUS "CCache found: ${CCACHE_PROGRAM}")
+    message(STATUS "[AntennaVision] CCache found: ${CCACHE_PROGRAM}")
     set(CMAKE_C_COMPILER_LAUNCHER   ${CCACHE_PROGRAM})
     set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
 else()
-    message(STATUS "CCache not found. Proceeding with standard compilation.")
+    message(STATUS "[AntennaVision] CCache not found. Proceeding with standard compilation.")
 endif()
 #########
 

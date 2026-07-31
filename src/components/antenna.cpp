@@ -6,6 +6,8 @@
 #include <functional>
 #include <print>
 #include <ranges>
+#include "math/functions.hpp"
+#include "math/coords.hpp"
 
 namespace antenna
 {

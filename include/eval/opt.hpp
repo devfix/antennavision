@@ -13,26 +13,47 @@
 
 namespace eval::opt
 {
-    template <std::size_t N>
-    struct MultiOpt
+
+    struct SingleOpt
     {
         struct Params
         {
-            std::conditional_t<N == 1, double, std::array<double, N>> bounds_a;
-            std::conditional_t<N == 1, double, std::array<double, N>> bounds_b;
-            std::function<double(std::conditional_t<(N == 1), double const&, std::span<double const> const&>)> fn;
-            std::conditional_t<N == 1, double, std::array<double, N>> ts_initial;
+            double bound_a{};
+            double bound_b{};
+            std::function<double(double)> fn;
+            double arg_initial{};
         };
 
         struct Result
         {
-            std::conditional_t<N == 1, double, std::array<double, N>> ts_min;
+            double arg_min;
             double f_min;
         };
 
         static Result run(Params const& params, setup::NumParams const& num_params);
     };
 
-    using SingleOpt = MultiOpt<1>;
+    template <std::size_t N>
+    struct MultiOpt
+    {
+        struct Params
+        {
+            std::array<double, N> bounds_a{};
+            std::array<double, N> bounds_b{};
+            std::function<double(std::span<double const>)> fn;
+            std::array<double, N> args_initial{};
+        };
+
+        using AnyFn = std::conditional_t<N == 1, decltype(SingleOpt::Params::fn), decltype(MultiOpt<N>::Params::fn)>;
+
+        struct Result
+        {
+            std::array<double, N> args_min;
+            double f_min;
+        };
+
+        static Result run(Params const& params, setup::NumParams const& num_params);
+    };
+
     using DualOpt = MultiOpt<2>;
 } // namespace eval::opt

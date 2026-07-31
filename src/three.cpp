@@ -5,8 +5,9 @@
 #include "three.hpp"
 #include <format>
 #include <nlohmann/json.hpp>
+#include "math/functions.hpp"
+#include "math/coords.hpp"
 #include "manifest.hpp"
-#include "math.hpp"
 
 namespace
 {
@@ -163,7 +164,7 @@ namespace three
             std::vector<Pos> points(N_POINTS_THREE_CURVE);
             for (std::size_t k = 0; k < N_POINTS_THREE_CURVE; k++)
             {
-                double t = static_cast<double>(k) / static_cast<double>(N_POINTS_THREE_CURVE - 1);
+                double t = math::nidx(k, N_POINTS_THREE_CURVE);
                 points.at(k) = arc->pos_at(t);
             }
             return {make_line(points, 2, Color::yellow)};
@@ -183,22 +184,22 @@ namespace three
                     );
                     for (std::size_t k1 = 0; k1 < N_POINTS_THREE_SURFACE; k1++)
                     {
-                        double const t1 = static_cast<double>(k1) / static_cast<double>(N_POINTS_THREE_SURFACE - 1);
+                        double const t1 = math::nidx(k1, N_POINTS_THREE_SURFACE);
                         std::vector<Pos> points(N_POINTS_THREE_SURFACE);
                         for (std::size_t k2 = 0; k2 < N_POINTS_THREE_SURFACE; k2++)
                         {
-                            double const t2 = static_cast<double>(k2) / static_cast<double>(N_POINTS_THREE_SURFACE - 1);
+                            double const t2 = math::nidx(k2, N_POINTS_THREE_SURFACE);
                             points.at(k2) = geometry::surface::get_pos_at(surface, t1, t2);
                         }
                         objects.push_back(make_line(points, 2.0, Color::yellow));
                     }
                     for (std::size_t k2 = 0; k2 < N_POINTS_THREE_SURFACE; k2++)
                     {
-                        double const t2 = static_cast<double>(k2) / static_cast<double>(N_POINTS_THREE_SURFACE - 1);
+                        double const t2 = math::nidx(k2, N_POINTS_THREE_SURFACE);
                         std::vector<Pos> points(N_POINTS_THREE_SURFACE);
                         for (std::size_t k1 = 0; k1 < N_POINTS_THREE_SURFACE; k1++)
                         {
-                            double const t1 = static_cast<double>(k1) / static_cast<double>(N_POINTS_THREE_SURFACE - 1);
+                            double const t1 = math::nidx(k1, N_POINTS_THREE_SURFACE);
                             points.at(k1) = geometry::surface::get_pos_at(surface, t1, t2);
                         }
                         objects.push_back(make_line(points, 2.0, Color::yellow));

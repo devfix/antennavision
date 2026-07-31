@@ -5,8 +5,8 @@
 #pragma once
 
 #include <functional>
-#include "math.hpp"
 #include "reference.hpp"
+#include "setup/numparams.hpp"
 
 // Coordinate System
 // -----------------
