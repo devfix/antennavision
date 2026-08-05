@@ -2,6 +2,12 @@
   "metadata": {
     "setup_name": "upa-test"
   },
+  "codebooks": [
+    {
+      "id": "test_codebook",
+      "path": "../codebooks/upa_dft_codebook.json"
+    }
+  ],
   "num_params": {
     "system_wavelength": 0.1
   },
@@ -37,13 +43,6 @@
       "radiator": {
         "type": "StandingWaveDipole",
         "dipole_length": "dipole_length"
-      },
-      "codebook":
-      {
-        "file": "../codebooks/upa_dft_codebook.json",
-        "ratio": "1000",
-        "row": "8",
-        "col": "8"
       }
     },
     {
@@ -87,6 +86,8 @@
       "ref": "",
       "tx": "tx",
       "rx": "rx",
+      "tx_codebook": ["test_codebook", 0, 0, 0],
+      "rx_codebook": ["test_codebook", 0, 0, 0],
       "geo": "test_rectangle",
       "n_dim1": 21,
       "n_dim2": 21,

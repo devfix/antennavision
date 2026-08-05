@@ -34,7 +34,7 @@ namespace eval::output
     } // namespace
 
     void directivity_over_polar( //
-        std::filesystem::path const& path_json,
+        std::filesystem::path const& path_output,
         antenna::Antenna const& antenna,
         sweep::Sweep const& sweep_azimuth,
         setup::NumParams const& num_params //
@@ -43,7 +43,7 @@ namespace eval::output
         // at the moment, we only support to calculate the directivity of single radiators
         auto& radiator = antenna::cast<Radiator>(antenna);
 
-        std::ofstream ofs(path_json); // first, acquire file to lock it to our process
+        std::ofstream ofs(path_output); // first, acquire file to lock it to our process
         ojson js;
         js["sweep"] = sweep_azimuth;
         js["num_params"] = num_params;
@@ -75,7 +75,7 @@ namespace eval::output
 
     template <typename T>
     void complex_scalarfield_at_wavelength( //
-        std::filesystem::path const& path_json,
+        std::filesystem::path const& path_output,
         setup::task::RxVoltageFieldAtWavelength const& task,
         reference::Reference const& ref,
         ComplexScalarField<T> const& scalar_field,
@@ -83,7 +83,7 @@ namespace eval::output
         sweep::Sweep const& sweep_wavelength //
     )
     {
-        std::ofstream ofs(path_json); // first, acquire file to lock it to our process
+        std::ofstream ofs(path_output); // first, acquire file to lock it to our process
         ojson js;
         js["num_params"] = scalar_field.num_params;
         js["geo"] = geo;

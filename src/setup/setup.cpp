@@ -33,6 +33,14 @@ namespace setup
             file.close();
             return js;
         }
+
+        std::vector<Complex> get_coeffs_from_codebook(std::span<Codebook const> codebooks, std::span<std::string const> key)
+        {
+            auto const& id_cb = key.at(0);
+            auto it = std::ranges::find(codebooks, id_cb, &Codebook::id);
+            if (it == codebooks.end()) throw SimulationError("Could not find codebook with id '{}'", id_cb);
+            return (*it)[key.subspan(1)] | std::ranges::to<std::vector<Complex>>();
+        }
     } // namespace
 
     Setup::Setup(std::filesystem::path const& path_json, bool override_timestamp) : Setup(load_json(path_json))
@@ -42,6 +50,7 @@ namespace setup
     {
         ojson js = js_in; // create a copy of the json object in order to decompose it
         extract_meta(js);
+        extract_codebooks(js);
         extract_num_params(js);
         extract_variables(js);
         extract_references(js);
@@ -143,24 +152,31 @@ namespace setup
             if (std::holds_alternative<task::DirectivityOverPolarAtAzimuth>(task))
             {
                 auto& t = std::get<task::DirectivityOverPolarAtAzimuth>(task);
-                eval::output::directivity_over_polar( //
-                    path_json,
-                    antenna::get(antennas_, t.antenna_id),
-                    sweep::get(sweeps_, t.sweep_id),
-                    num_params_ //
-                );
+                auto& ant = antenna::get(antennas_, t.antenna_id);
+                auto& sweep = sweep::get(sweeps_, t.sweep_id);
+                eval::output::directivity_over_polar(t.path_output, ant, sweep, num_params_);
             }
             else if (std::holds_alternative<task::RxVoltageFieldAtWavelength>(task))
             {
                 auto& t = std::get<task::RxVoltageFieldAtWavelength>(task);
-                eval::output::complex_scalarfield_at_wavelength( //
-                    path_json,
-                    t,
-                    reference::get(const_cast<decltype(references_) const&>(references_), t.ref_id),
-                    eval::RxVoltageField(antenna::get(antennas_, t.tx_id), antenna::get(antennas_, t.rx_id), num_params_),
-                    geometry::get(geometries_, t.geo_id),
-                    sweep::get(sweeps_, t.sweep_wavelength_id) //
-                );
+
+                auto& tx = antenna::get(antennas_, t.tx_id);
+                auto& rx = antenna::get(antennas_, t.rx_id);
+
+                auto const tx_coeffs = t.tx_codebook.empty() //
+                    ? std::vector<Complex>(antenna::size(tx), 1.0)
+                    : get_coeffs_from_codebook(codebooks_, t.tx_codebook);
+
+                auto const rx_coeffs = t.rx_codebook.empty() //
+                    ? std::vector<Complex>(antenna::size(rx), 1.0)
+                    : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
+
+                auto const& ref = reference::get(const_cast<decltype(references_) const&>(references_), t.ref_id);
+                auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, num_params_);
+                auto const& geo = geometry::get(geometries_, t.geo_id);
+                auto const& sweep = sweep::get(sweeps_, t.sweep_wavelength_id);
+
+                eval::output::complex_scalarfield_at_wavelength(t.path_output, t, ref, field, geo, sweep);
             }
         }
     }
@@ -201,6 +217,28 @@ namespace setup
         std::println("Setup name: {}", name_);
         factory::assert_empty(metadata);
         js.erase("metadata");
+    }
+
+    void Setup::extract_codebooks(ojson& js)
+    {
+        if (js.contains("codebooks"))
+        {
+            auto const& desc = js.at("codebooks");
+            try
+            {
+                for (auto& cb_desc : desc)
+                {
+                    auto id = cb_desc.at("id").get<std::string>();
+                    auto path = cb_desc.at("path").get<std::string>();
+                    codebooks_.emplace_back(id, path);
+                }
+                js.erase("codebooks");
+            }
+            catch (...)
+            {
+                std::throw_with_nested(SimulationError("Failed to parse codebooks:\n{}'", desc.dump(2)));
+            }
+        }
     }
 
     void Setup::extract_num_params(ojson& js)
@@ -289,7 +327,8 @@ namespace setup
     void Setup::extract_antennas(ojson& js)
     {
         if (!js.contains("antennas")) { return; }
-        for (auto& antennas = js.at("antennas"); auto& desc : antennas) antennas_.push_back(factory::make_antenna(desc, variables_));        js.erase("antennas");
+        for (auto& antennas = js.at("antennas"); auto& desc : antennas) antennas_.push_back(factory::make_antenna(desc, variables_));
+        js.erase("antennas");
     }
 
     void Setup::extract_geometries(ojson& js)

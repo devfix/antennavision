@@ -11,7 +11,7 @@
 namespace eval::output
 {
     void directivity_over_polar( //
-        std::filesystem::path const& path_json,
+        std::filesystem::path const& path_output,
         antenna::Antenna const& antenna,
         sweep::Sweep const& sweep_azimuth,
         setup::NumParams const& num_params //
@@ -19,7 +19,7 @@ namespace eval::output
 
     template <typename T>
     void complex_scalarfield_at_wavelength( //
-        std::filesystem::path const& path_json,
+        std::filesystem::path const& path_output,
         setup::task::RxVoltageFieldAtWavelength const& task,
         reference::Reference const& ref,
         ComplexScalarField<T> const& scalar_field,

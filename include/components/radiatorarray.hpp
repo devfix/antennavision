@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "codebook.hpp"
 #include "components/radiator.hpp"
-#include "ulacodebook.hpp"
 
 /**
  * @brief Base class implementing the Curiously Recurring Template Pattern (CRTP). The derived classes are of Aggregate Type.
@@ -22,6 +22,5 @@ struct RadiatorArray
     std::string origin_id;
     std::vector<reference::Reference> references;
     std::vector<Radiator> elements;
-    std::vector<Complex> coefficients;
     reference::Reference* origin{};
 };

@@ -179,7 +179,7 @@ namespace eval
         // Prevent direct deletion through base pointer without virtual destructor
         ~ScalarField() = default;
 
-        [[nodiscard]] auto make_context(double wavelength) const { return typename Derived::Context(static_cast<Derived const*>(this), wavelength); }
+        [[nodiscard]] auto make_context(double wavelength) const { return typename Derived::Context(*static_cast<Derived const*>(this), wavelength); }
 
         template <typename OutputT, typename OutputCast>
         [[nodiscard]] nc::NdArray<OutputT> eval_impl(Vec3Array const& positions, double wavelength) const;

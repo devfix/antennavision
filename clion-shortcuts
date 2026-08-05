@@ -4,3 +4,4 @@ Fn+Alt+Shift+End Generate Code
 Ctrl+Alt+Shift+B Surround Code
 Ctrl+0 Find function
 F10 Switch Between Header/Cpp
+Ctrl+Shift+A -> Registry -> clion.clangd.max.memory

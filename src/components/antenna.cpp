@@ -6,8 +6,8 @@
 #include <functional>
 #include <print>
 #include <ranges>
-#include "math/functions.hpp"
 #include "math/coords.hpp"
+#include "math/functions.hpp"
 
 namespace antenna
 {
@@ -80,7 +80,14 @@ namespace antenna
         }
     } // namespace
 
-    Complex calc_voltage_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params, double wavelength)
+    Complex calc_voltage_gain( //
+        Antenna const& tx,
+        Antenna const& rx,
+        double wavelength,
+        std::span<Complex const> tx_coeffs,
+        std::span<Complex const> rx_coeffs,
+        setup::NumParams const& num_params //
+    )
     {
         std::size_t constexpr Key_TxArr_RxArr = 0b00;
         std::size_t constexpr Key_TxArr_RxRad = 0b01;
@@ -97,11 +104,25 @@ namespace antenna
                         using RxType = std::decay_t<decltype(rx_arr)>;
                         Complex gain = 0;
                         if constexpr (std::is_base_of_v<RadiatorArray<TxType>, TxType> and std::is_base_of_v<RadiatorArray<RxType>, RxType>)
+                        {
+                            if (tx_coeffs.size() != tx_arr.elements.size())
+                                throw SimulationError("Invalid number of transmitter coefficients for '{}': expected {}, got {}", //
+                                    tx_arr.id,
+                                    tx_arr.elements.size(),
+                                    tx_coeffs.size());
+                            if (rx_coeffs.size() != rx_arr.elements.size())
+                                throw SimulationError("Invalid number of receiver coefficients for '{}': expected {}, got {}", //
+                                    rx_arr.id,
+                                    rx_arr.elements.size(),
+                                    rx_coeffs.size());
+
+                            // core computation loop
                             for (std::size_t k_rx = 0; k_rx < rx_arr.elements.size(); k_rx++)
                                 for (std::size_t k_tx = 0; k_tx < tx_arr.elements.size(); k_tx++)
-                                    gain += tx_arr.coefficients[k_tx] *
-                                        calc_voltage_gain_direct(tx_arr.elements[k_tx], rx_arr.elements[k_rx], num_params, wavelength) *
-                                        rx_arr.coefficients[k_rx];
+                                    gain += tx_coeffs[k_tx] //
+                                        * calc_voltage_gain_direct(tx_arr.elements[k_tx], rx_arr.elements[k_rx], num_params, wavelength) //
+                                        * rx_coeffs[k_rx];
+                        }
                         else
                             std::unreachable();
                         return gain;
@@ -109,41 +130,74 @@ namespace antenna
                     tx,
                     rx);
             case Key_TxArr_RxRad:
-                return std::visit(
+                return tx.visit(
                     [&](const auto& tx_arr)
                     {
                         using TxType = std::decay_t<decltype(tx_arr)>;
+                        auto& rx_rad = std::get<Radiator>(rx);
                         Complex gain = 0;
                         if constexpr (std::is_base_of_v<RadiatorArray<TxType>, TxType>)
+                        {
+                            if (tx_coeffs.size() != tx_arr.elements.size())
+                                throw SimulationError("Invalid number of transmitter coefficients for '{}': expected {}, got {}", //
+                                    tx_arr.id,
+                                    tx_arr.elements.size(),
+                                    tx_coeffs.size());
+                            if (rx_coeffs.size() != 1)
+                                throw SimulationError("Invalid number of receiver coefficients for '{}': expected 1, got {}", rx_rad.id, rx_coeffs.size());
+
+                            // core computation loop
                             for (std::size_t k = 0; k < tx_arr.elements.size(); k++)
-                                gain += tx_arr.coefficients[k] * calc_voltage_gain_direct(tx_arr.elements[k], std::get<Radiator>(rx), num_params, wavelength);
+                                gain += tx_coeffs[k] //
+                                    * calc_voltage_gain_direct(tx_arr.elements[k], rx_rad, num_params, wavelength);
+                        }
                         else
                             std::unreachable();
                         return gain;
-                    },
-                    tx);
+                    });
             case Key_TxRad_RxArr:
-                return std::visit(
+                return rx.visit(
                     [&](const auto& rx_arr)
                     {
                         using RxType = std::decay_t<decltype(rx_arr)>;
+                        auto& tx_rad = std::get<Radiator>(tx);
                         Complex gain = 0;
                         if constexpr (std::is_base_of_v<RadiatorArray<RxType>, RxType>)
+                        {
+                            if (tx_coeffs.size() != 1)
+                                throw SimulationError("Invalid number of receiver coefficients for '{}': expected 1, got {}", tx_rad.id, tx_coeffs.size());
+                            if (rx_coeffs.size() != rx_arr.elements.size())
+                                throw SimulationError("Invalid number of receiver coefficients for '{}': expected {}, got {}", //
+                                    rx_arr.id,
+                                    rx_arr.elements.size(),
+                                    rx_coeffs.size());
+
+                            // core computation loop
                             for (std::size_t k = 0; k < rx_arr.elements.size(); k++)
-                                gain += calc_voltage_gain_direct(std::get<Radiator>(tx), rx_arr.elements[k], num_params, wavelength) * rx_arr.coefficients[k];
+                                gain += calc_voltage_gain_direct(tx_rad, rx_arr.elements[k], num_params, wavelength) //
+                                    * rx_coeffs[k];
+                        }
                         else
                             std::unreachable();
                         return gain;
-                    },
-                    rx);
+                    });
                 ;
-            case Key_TxRad_RxRad: return calc_voltage_gain_direct(std::get<Radiator>(tx), std::get<Radiator>(rx), num_params, wavelength); ;
+            case Key_TxRad_RxRad: //
+                // no computation loop, only direct forward
+                return calc_voltage_gain_direct(std::get<Radiator>(tx), std::get<Radiator>(rx), num_params, wavelength);
             default: std::unreachable();
         }
     }
 
-    double calc_power_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params, double wavelength)
-    { return math::square(std::abs(calc_voltage_gain(tx, rx, num_params, wavelength))); }
+    double calc_power_gain( //
+        Antenna const& tx,
+        Antenna const& rx,
+        double wavelength,
+        std::span<Complex const> tx_coeffs,
+        std::span<Complex const> rx_coeffs,
+        setup::NumParams const& num_params //
+    )
+    { return math::square(std::abs(calc_voltage_gain(tx, rx, wavelength, tx_coeffs, rx_coeffs, num_params))); }
 
     void resolve_origins(std::span<Antenna> antennas, std::span<Reference> references)
     {
@@ -181,6 +235,18 @@ namespace antenna
         // std::as_const converts std::span<Antenna> -> std::span<Antenna const>
         // const_cast safe here because the original span contains non-const elements
         return const_cast<Antenna&>(get_const(antennas, id));
+    }
+
+    std::size_t size(Antenna const& ant)
+    {
+        return ant.visit([](auto const&a )
+        {
+            using Type = std::decay_t<decltype(a)>;
+            if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
+                return a.elements.size();
+            // the antenna is not an array -> it is definitely a single radiator -> return unity
+            return 1uz;
+        });
     }
 
 } // namespace antenna

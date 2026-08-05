@@ -27,6 +27,16 @@ using geometry::Geometry;
 
 namespace
 {
+    /**
+     * create vector of unity coefficients (uc)
+     * @param ant antenna, used to determine correct vector size
+     * @return vector of ones
+     */
+    std::vector<Complex> uc(antenna::Antenna const& ant) { return std::vector<Complex>(antenna::size(ant), 1.0); }
+} // namespace
+
+namespace
+{
     using std::ranges::max;
     using std::ranges::transform;
 
@@ -95,7 +105,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
     auto const& tx = su.get_antenna("ula1");
     auto& rx = su.get_antenna("receiver");
 
-    auto voltage_field = eval::RxVoltageField(tx, rx, su.num_params());
+    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), su.num_params());
     auto& num_params = voltage_field.num_params;
 
     // Configure a simple sweep with 3 test frequencies/wavelengths

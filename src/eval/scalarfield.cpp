@@ -321,7 +321,8 @@ namespace eval
             .arg_initial = -1 // will be set to midpoint during initialization of optimization
         };
         auto const opt_init = SingleOpt::run(params_init, num_params);
-        trace_isoline(surf, wavelength, Vec2(opt_init.arg_min, t2), thres);
+        auto isoline = trace_isoline(surf, wavelength, Vec2(opt_init.arg_min, t2), thres);
+        return {isoline};
     }
 
     template <typename Derived, typename ScalarT>
@@ -489,6 +490,7 @@ namespace eval
             isoline.surf_points.push_back(ts);
         }
         asm("nop");
+        return isoline;
     }
 
     // -----------------------------------------------------------------------------

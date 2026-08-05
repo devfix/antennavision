@@ -89,6 +89,7 @@ namespace setup
 
     private:
         void extract_meta(ojson& js);
+        void extract_codebooks(ojson& js);
         void extract_num_params(ojson& js);
         void extract_variables(ojson& js);
         void extract_references(ojson& js);
@@ -99,8 +100,9 @@ namespace setup
 
         timeutil::timestamp_t timestamp_{};
         std::string name_;
-        VarMap variables_;
+        std::vector<Codebook> codebooks_;
         NumParams num_params_;
+        VarMap variables_;
         std::vector<reference::Reference> references_;
         std::vector<antenna::Antenna> antennas_;
         std::vector<geometry::Geometry> geometries_;

@@ -7,12 +7,12 @@
 #include <locale>
 #include <nlohmann/json.hpp>
 #include <print>
-#include "math/functions.hpp"
-#include "math/coords.hpp"
 #include "NumCpp/Functions/var.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/parse.hpp"
+#include "math/coords.hpp"
+#include "math/functions.hpp"
 
 using ansi_color::fg4;
 using ansi_color::reset;
@@ -166,23 +166,11 @@ namespace factory
                 elements.push_back(make_radiator(ula_element_desc, variables));
             }
 
-            std::vector<Complex> coeffs(size, 1.0); // default values
-            if (desc.contains("codebook"))
-            {
-                throw SimulationError("codebook not implemented for ULA");
-                // auto& codebook = desc.at("codebook");
-                // auto const codebook_path = codebook.at("file").get<std::string>();
-                // auto const codebook_ratio = codebook.at("ratio").get<std::string>();
-                // coeffs = load_upa_codebook(codebook_path, codebook_ratio);
-                desc.erase("codebook");
-            }
-            assert(size == coeffs.size());
             return UniformLinearArray{{
                 .id = id,
                 .origin_id = origin_id,
                 .references = references,
-                .elements = std::move(elements),
-                .coefficients = std::move(coeffs) //
+                .elements = std::move(elements) //
             }};
         }
 
@@ -236,29 +224,12 @@ namespace factory
                 }
             }
 
-            std::vector<Complex> coeffs(size_x * size_y, 1.0); // default values
-            if (desc.contains("codebook"))
-            {
-                auto& codebook = desc.at("codebook");
-                if (codebook.empty()) { std::println("{}Warning: empty codebook for UPA{}", ansi_color::fg4::bright_yellow, ansi_color::reset); }
-                else
-                {
-                    auto const codebook_path = codebook.at("file").get<std::string>();
-                    auto const codebook_ratio = codebook.at("ratio").get<std::string>();
-                    auto const codebook_row = codebook.at("row").get<std::string>();
-                    auto const codebook_col = codebook.at("col").get<std::string>();
-                    coeffs = load_upa_codebook(codebook_path, codebook_ratio, codebook_row, codebook_col);
-                }
-                desc.erase("codebook");
-            }
-            assert(size_x * size_y == coeffs.size());
             return UniformPlanarArray{
                 {
                     .id = id,
                     .origin_id = origin_id,
                     .references = std::move(references),
-                    .elements = std::move(elements),
-                    .coefficients = std::move(coeffs) //
+                    .elements = std::move(elements) //
                 },
                 size_x,
                 size_y //

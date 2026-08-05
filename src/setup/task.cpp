@@ -17,6 +17,7 @@ namespace setup::task
             serialization::assert_structure(js,
                 DirectivityOverPolarAtAzimuth::name,
                 {
+                    {"path_output", json::value_t::string},
                     {"type", json::value_t::string},
                     {"tx", json::value_t::string},
                     {"sweep", json::value_t::string},
@@ -24,6 +25,7 @@ namespace setup::task
                 {});
             reconstruct_at(t,
                 DirectivityOverPolarAtAzimuth{
+                    .path_output = js.at("path_output").template get<std::string>(),
                     .antenna_id = js.at("tx").template get<std::string>(),
                     .sweep_id = js.at("sweep").template get<std::string>(), //
                 });
@@ -35,10 +37,13 @@ namespace setup::task
             serialization::assert_structure(js,
                 RxVoltageFieldAtWavelength::name,
                 {
+                    {"path_output", json::value_t::string},
                     {"type", json::value_t::string},
                     {"ref", json::value_t::string},
                     {"tx", json::value_t::string},
                     {"rx", json::value_t::string},
+                    {"tx_codebook", json::value_t::array},
+                    {"rx_codebook", json::value_t::array},
                     {"geo", json::value_t::string},
                     {"n_dim1", json::value_t::number_integer},
                     {"n_dim2", json::value_t::number_integer},
@@ -47,9 +52,12 @@ namespace setup::task
                 {});
             reconstruct_at(t,
                 RxVoltageFieldAtWavelength{
+                    .path_output = js.at("path_output").template get<std::string>(),
                     .ref_id = js.at("ref").template get<std::string>(),
                     .tx_id = js.at("tx").template get<std::string>(),
                     .rx_id = js.at("rx").template get<std::string>(),
+                    .tx_codebook = js.at("tx_codebook").template get<std::vector<std::string>>(),
+                    .rx_codebook = js.at("rx_codebook").template get<std::vector<std::string>>(),
                     .geo_id = js.at("geo").template get<std::string>(),
                     .n_dim1 = js.at("n_dim1").template get<std::size_t>(),
                     .n_dim2 = js.at("n_dim2").template get<std::size_t>(),
@@ -65,6 +73,7 @@ namespace setup::task
         {
             js = JsonType{
                 {"type", DirectivityOverPolarAtAzimuth::name},
+                {"path_output", directivity_over_polar_sweep_azimuth->path_output},
                 {"tx", directivity_over_polar_sweep_azimuth->antenna_id},
                 {"sweep", directivity_over_polar_sweep_azimuth->sweep_id} //
             };
@@ -73,9 +82,12 @@ namespace setup::task
         {
             js = JsonType{
                 {"type", RxVoltageFieldAtWavelength::name},
+                {"path_output", rx_voltage_field_at_wavelength->path_output},
                 {"ref", rx_voltage_field_at_wavelength->ref_id},
                 {"tx", rx_voltage_field_at_wavelength->tx_id},
                 {"rx", rx_voltage_field_at_wavelength->rx_id},
+                {"tx_codebook", rx_voltage_field_at_wavelength->tx_codebook},
+                {"rx_codebook", rx_voltage_field_at_wavelength->rx_codebook},
                 {"geo", rx_voltage_field_at_wavelength->geo_id},
                 {"n_dim1", rx_voltage_field_at_wavelength->n_dim1},
                 {"n_dim2", rx_voltage_field_at_wavelength->n_dim2},

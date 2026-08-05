@@ -14,6 +14,16 @@
 #include "setup/setup.hpp"
 #include "testutil.hpp"
 
+namespace
+{
+    /**
+     * create vector of unity coefficients (uc)
+     * @param ant antenna, used to determine correct vector size
+     * @return vector of ones
+     */
+    std::vector<Complex> uc(antenna::Antenna const& ant) { return std::vector<Complex>(antenna::size(ant), 1.0); }
+} // namespace
+
 TEST_CASE("ULA position and rotation", "[TestULA]")
 {
     ojson const js = ojson::parse(R"JSON(
@@ -137,7 +147,7 @@ TEST_CASE("ULA gain", "[TestULA]")
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         const_cast<Pos&>(ref_start.pos) = ref_start_initial.pos + pos_delta * f; // TODO user better approach than const_cast
-        gains.at(k) = antenna::calc_voltage_gain(tx, rx, setup.num_params(), setup.num_params().system_wavelength);
+        gains.at(k) = antenna::calc_voltage_gain(tx, rx, setup.num_params().system_wavelength, uc(tx), uc(rx), setup.num_params());
         distances.at(k) = *distance_ptr;
     }
     const_cast<Pos&>(ref_start.pos) = ref_start_initial.pos; // TODO user better approach than const_cast
@@ -217,7 +227,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
     auto const& tx = setup.get_antenna("ula1");
     auto const& rx = setup.get_antenna("receiver");
     reference::Reference const& ref_stop = setup.get_reference("ref_rx_stop");
-    auto voltage_field = eval::RxVoltageField(tx, rx, setup.num_params());
+    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), setup.num_params());
 
     Pos const pos_start = antenna::get_origin(rx)->global_pos();
     Pos const pos_end = ref_stop.global_pos();

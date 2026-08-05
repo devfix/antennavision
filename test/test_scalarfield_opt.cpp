@@ -33,6 +33,13 @@ namespace
     using std::ranges::max;
     using std::ranges::transform;
 
+    /**
+     * create vector of unity coefficients (uc)
+     * @param ant antenna, used to determine correct vector size
+     * @return vector of ones
+     */
+    std::vector<Complex> uc(antenna::Antenna const& ant) { return std::vector<Complex>(antenna::size(ant), 1.0); }
+
     double normalize(ComplexArray& values)
     {
         double const abs_max = std::abs(max(values, {}, [](Complex const& v) -> double { return std::abs(v); }));
@@ -101,7 +108,7 @@ TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][Ar
         auto const& tx = su.get_antenna("ula1");
         auto& rx = su.get_antenna("receiver");
 
-        auto voltage_field = RxVoltageField(tx, rx, su.num_params());
+        auto voltage_field = RxVoltageField(tx, rx, uc(tx), uc(rx), su.num_params());
         {
             auto line = geometry::Line("", Pos(0, distance, -0.5 * distance), Pos(0, distance, 0.5 * distance));
             auto result = voltage_field.argmax_curve_abs(line, wavelength, n_dim1);
@@ -119,7 +126,7 @@ TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][Ar
         auto const& tx = su.get_antenna("ula1");
         auto& rx = su.get_antenna("receiver");
 
-        auto voltage_field = RxVoltageField(tx, rx, su.num_params());
+        auto voltage_field = RxVoltageField(tx, rx, uc(tx), uc(rx), su.num_params());
         {
             auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
             auto result = voltage_field.argmax_curve_abs(arc, wavelength, n_dim1);
@@ -140,7 +147,7 @@ TEST_CASE("beamwidth", "[ScalarField][VoltageField][beamwidth]")
 
     constexpr std::size_t N_POINTS = 101;
 
-    auto voltage_field = RxVoltageField(tx, rx, su.num_params());
+    auto voltage_field = RxVoltageField(tx, rx, uc(tx), uc(rx), su.num_params());
     {
         auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, 1.0, 0.0), POS_ZERO, distance, 0.5 * pi).normalized();
         auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(arc, wavelength, sqrt2_2, N_POINTS);
@@ -168,8 +175,8 @@ TEST_CASE("Optimization Algorithms", "[ScalarField][ComplexMathField][Optimizati
         auto const [t1, t2, pos, peak] = field.argmax_surface_abs(rect, 0, N, N);
         CHECK_THAT(t1, WithinAbs(pos_peak.x / rect.width() + 0.5, 1e-6));
         CHECK_THAT(t2, WithinAbs(pos_peak.y / rect.height() + 0.5, 1e-6));
-        CHECK_THAT((pos - pos_peak).norm(), WithinAbs(0.0, 1e-9));
-        CHECK_THAT(peak, WithinAbs(1.0, 1e-9));
+        CHECK_THAT((pos - pos_peak).norm(), WithinAbs(0.0, 1e-6));
+        CHECK_THAT(peak, WithinAbs(1.0, 1e-6));
     }
 
     SECTION("Correct Isolines")

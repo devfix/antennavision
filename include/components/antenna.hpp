@@ -67,8 +67,23 @@ namespace antenna
             magic_enum::enum_name(static_cast<AntennaType>(variant_index_v<T, Antenna>)));
     }
 
-    [[nodiscard]] Complex calc_voltage_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params, double wavelength);
-    [[nodiscard]] double calc_power_gain(Antenna const& tx, Antenna const& rx, setup::NumParams const& num_params, double wavelength);
+    [[nodiscard]] Complex calc_voltage_gain( //
+        Antenna const& tx,
+        Antenna const& rx,
+        double wavelength,
+        std::span<Complex const> tx_coeffs,
+        std::span<Complex const> rx_coeffs,
+        setup::NumParams const& num_params //
+    );
+
+    [[nodiscard]] double calc_power_gain( //
+        Antenna const& tx,
+        Antenna const& rx,
+        double wavelength,
+        std::span<Complex const> tx_coeffs,
+        std::span<Complex const> rx_coeffs,
+        setup::NumParams const& num_params //
+    );
 
     /**
      * Creates new scalar field that is the power field if the tx is fixed in space and the rx is moved around
@@ -125,5 +140,7 @@ namespace antenna
 
     [[nodiscard]] Antenna const& get_const(std::span<Antenna const> antennas, std::string const& id);
     [[nodiscard]] Antenna& get(std::span<Antenna> antennas, std::string const& id);
+
+    [[nodiscard]] std::size_t size(Antenna const& ant);
 
 } // namespace antenna
