@@ -14,8 +14,8 @@
 using Catch::Matchers::WithinAbs;
 using Catch::Matchers::WithinRel;
 
-constexpr std::size_t N_POLAR = 11;
-constexpr std::size_t N_AZIMUTH = 21;
+constexpr std::size_t N_POLAR = 101;
+constexpr std::size_t N_AZIMUTH = 201;
 
 namespace
 {
