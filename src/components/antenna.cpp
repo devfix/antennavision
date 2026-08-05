@@ -17,7 +17,7 @@ namespace antenna
 
     namespace
     {
-        Complex calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, setup::NumParams const& num_params, double wavelength)
+        Complex calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, double wavelength, setup::NumParams const& num_params)
         {
             if (tx.origin == nullptr) { throw SimulationError("TX Radiator '{}' has unresolved origin '{}'", tx.id, tx.origin_id); }
             if (rx.origin == nullptr) { throw SimulationError("RX Radiator '{}' has unresolved origin '{}'", rx.id, rx.origin_id); }
@@ -42,9 +42,9 @@ namespace antenna
             auto const g = elv_global_tx.dot(elv_global_rx).item();
             auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * wavelength / (4.0 * pi * r);
             auto const mean_squared_elv_tx =
-                tx.mean_squared_elv ? tx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(tx.elv_spherical, num_params);
+                tx.mean_squared_elv ? tx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(tx.elv_spherical, wavelength, num_params);
             auto const mean_squared_elv_rx =
-                rx.mean_squared_elv ? rx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(rx.elv_spherical, num_params);
+                rx.mean_squared_elv ? rx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(rx.elv_spherical, wavelength, num_params);
             return -j * g / std::sqrt(mean_squared_elv_tx * mean_squared_elv_rx) * propagation;
         }
 
@@ -120,7 +120,7 @@ namespace antenna
                             for (std::size_t k_rx = 0; k_rx < rx_arr.elements.size(); k_rx++)
                                 for (std::size_t k_tx = 0; k_tx < tx_arr.elements.size(); k_tx++)
                                     gain += tx_coeffs[k_tx] //
-                                        * calc_voltage_gain_direct(tx_arr.elements[k_tx], rx_arr.elements[k_rx], num_params, wavelength) //
+                                        * calc_voltage_gain_direct(tx_arr.elements[k_tx], rx_arr.elements[k_rx], wavelength, num_params) //
                                         * rx_coeffs[k_rx];
                         }
                         else
@@ -149,7 +149,7 @@ namespace antenna
                             // core computation loop
                             for (std::size_t k = 0; k < tx_arr.elements.size(); k++)
                                 gain += tx_coeffs[k] //
-                                    * calc_voltage_gain_direct(tx_arr.elements[k], rx_rad, num_params, wavelength);
+                                    * calc_voltage_gain_direct(tx_arr.elements[k], rx_rad, wavelength, num_params);
                         }
                         else
                             std::unreachable();
@@ -174,7 +174,7 @@ namespace antenna
 
                             // core computation loop
                             for (std::size_t k = 0; k < rx_arr.elements.size(); k++)
-                                gain += calc_voltage_gain_direct(tx_rad, rx_arr.elements[k], num_params, wavelength) //
+                                gain += calc_voltage_gain_direct(tx_rad, rx_arr.elements[k], wavelength, num_params) //
                                     * rx_coeffs[k];
                         }
                         else
@@ -184,7 +184,7 @@ namespace antenna
                 ;
             case Key_TxRad_RxRad: //
                 // no computation loop, only direct forward
-                return calc_voltage_gain_direct(std::get<Radiator>(tx), std::get<Radiator>(rx), num_params, wavelength);
+                return calc_voltage_gain_direct(std::get<Radiator>(tx), std::get<Radiator>(rx), wavelength, num_params);
             default: std::unreachable();
         }
     }
@@ -239,14 +239,14 @@ namespace antenna
 
     std::size_t size(Antenna const& ant)
     {
-        return ant.visit([](auto const&a )
-        {
-            using Type = std::decay_t<decltype(a)>;
-            if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
-                return a.elements.size();
-            // the antenna is not an array -> it is definitely a single radiator -> return unity
-            return 1uz;
-        });
+        return ant.visit(
+            [](auto const& a)
+            {
+                using Type = std::decay_t<decltype(a)>;
+                if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>) return a.elements.size();
+                // the antenna is not an array -> it is definitely a single radiator -> return unity
+                return 1uz;
+            });
     }
 
 } // namespace antenna

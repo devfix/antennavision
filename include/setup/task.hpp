@@ -15,6 +15,7 @@ namespace setup::task
         static constexpr std::string_view name = "DirectivityOverPolar@Azimuth";
         std::string path_output;
         std::string antenna_id;
+        double wavelength;
         std::string sweep_id;
 
         [[nodiscard]] std::string id() const { return std::format("{}.{}.{}", name, antenna_id, sweep_id); }

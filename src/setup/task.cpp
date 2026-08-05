@@ -20,6 +20,7 @@ namespace setup::task
                     {"path_output", json::value_t::string},
                     {"type", json::value_t::string},
                     {"tx", json::value_t::string},
+                    {"wavelength", json::value_t::number_float},
                     {"sweep", json::value_t::string},
                 },
                 {});
@@ -27,6 +28,7 @@ namespace setup::task
                 DirectivityOverPolarAtAzimuth{
                     .path_output = js.at("path_output").template get<std::string>(),
                     .antenna_id = js.at("tx").template get<std::string>(),
+                    .wavelength = js.at("wavelength").template get<double>(),
                     .sweep_id = js.at("sweep").template get<std::string>(), //
                 });
         }
@@ -75,6 +77,7 @@ namespace setup::task
                 {"type", DirectivityOverPolarAtAzimuth::name},
                 {"path_output", directivity_over_polar_sweep_azimuth->path_output},
                 {"tx", directivity_over_polar_sweep_azimuth->antenna_id},
+                {"wavelength", directivity_over_polar_sweep_azimuth->wavelength},
                 {"sweep", directivity_over_polar_sweep_azimuth->sweep_id} //
             };
         }

@@ -36,6 +36,7 @@ namespace eval::output
     void directivity_over_polar( //
         std::filesystem::path const& path_output,
         antenna::Antenna const& antenna,
+        double wavelength,
         sweep::Sweep const& sweep_azimuth,
         setup::NumParams const& num_params //
     )
@@ -61,7 +62,7 @@ namespace eval::output
                 directivities.begin(),
                 [&](double polar)
                 {
-                    return radiator.calc_directivity_from_spherical(polar, azimuth, num_params);
+                    return radiator.calc_directivity_from_spherical(polar, azimuth, wavelength, num_params);
                 } //
             );
             js_entry["azimuth"] = azimuth;

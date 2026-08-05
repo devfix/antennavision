@@ -154,7 +154,7 @@ namespace setup
                 auto& t = std::get<task::DirectivityOverPolarAtAzimuth>(task);
                 auto& ant = antenna::get(antennas_, t.antenna_id);
                 auto& sweep = sweep::get(sweeps_, t.sweep_id);
-                eval::output::directivity_over_polar(t.path_output, ant, sweep, num_params_);
+                eval::output::directivity_over_polar(t.path_output, ant, t.wavelength, sweep, num_params_);
             }
             else if (std::holds_alternative<task::RxVoltageFieldAtWavelength>(task))
             {

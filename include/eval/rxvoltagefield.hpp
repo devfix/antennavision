@@ -56,7 +56,9 @@ namespace eval
             std::span<Complex const> rx_coeffs,
             setup::NumParams const& num_params //
             ) : ScalarField(num_params), tx_(tx), rx_(rx), tx_coeffs_(tx_coeffs | std::ranges::to<decltype(tx_coeffs_)>()), rx_coeffs_(rx_coeffs | std::ranges::to<decltype(rx_coeffs_)>())
-        {}
+        {
+            num_params.check();
+        }
 
     private:
         antenna::Antenna const& tx_;
