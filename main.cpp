@@ -18,7 +18,7 @@ namespace
 
 void print_exception_chain(const std::exception& e, int level = 0)
 {
-    std::println("{}- {}", std::string(level * 2, ' '), e.what());
+    std::println(stderr, "{}- {}", std::string(level * 2, ' '), e.what());
 
     try
     {
@@ -103,13 +103,15 @@ int main(int argc, char* argv[])
     }
     catch (const std::exception& e)
     {
-        // Route to stderr using stderr as the first argument
+        // Route exception trace to stderr
+        std::cout << std::endl;  // 'end' stdout: create new line and flush output
         std::println(stderr, "Error Stack Trace:");
         print_exception_chain(e);
     }
     catch (...)
     {
         // Catch-all non-standard or third-party strange exceptions
+        std::cout << std::endl;  // 'end' stdout: create new line and flush output
         std::println(stderr, "Error Stack Trace:\n- [Unknown Critical Exception Caught]");
     }
     return EXIT_FAILURE;

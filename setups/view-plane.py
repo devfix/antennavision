@@ -16,9 +16,11 @@ with open(file_path, "r") as f:
 
 num_params = data["num_params"]
 
+task = data["task"]
+
 # Extract structural boundaries from the metadata
-n_points_1 = num_params["n_linear1"]
-n_points_2 = num_params["n_linear2"]
+n_points_1 = task["n_dim1"]
+n_points_2 = task["n_dim2"]
 
 # 2. Function to dynamically detect active axes
 def detect_axes_from_positions(positions_array):
@@ -46,7 +48,7 @@ def detect_axes_from_positions(positions_array):
     return axis1_name, axis2_name
 
 # 3. Load raw positions matrix
-positions_raw = np.array(data["positions"])
+positions_raw = np.array(data["positions"]["cartesian"])
 # If positions is flat/2D, reshape it to the 3D grid layout (N1, N2, 3 coordinates)
 if positions_raw.ndim == 2:
     positions = positions_raw.reshape(n_points_1, n_points_2, 3)
@@ -80,7 +82,7 @@ except ValueError:
 
 # --- SET PHYSICAL & VISUAL LIMITS SIMULTANEOUSLY ---
 min_gain = -120  # Set your desired lower bound
-max_gain = -20   # Set your desired upper bound
+max_gain = -60   # Set your desired upper bound
 
 # Clip/Clamp the data arrays to your bounds
 gain_magnitudes = np.clip(gain_magnitudes, min_gain, max_gain)

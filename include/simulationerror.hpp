@@ -6,7 +6,6 @@
 
 #include <ansi_color.hpp>
 #include <format>
-#include <iostream>
 #include <stdexcept>
 
 struct SimulationError : std::runtime_error
@@ -14,7 +13,5 @@ struct SimulationError : std::runtime_error
     template <typename... Args>
     explicit SimulationError(std::format_string<Args...> fmt, Args&&... args) :
         std::runtime_error(std::format("{}{}{}", ansi_color::fg4::red, std::vformat(fmt.get(), std::make_format_args(args...)), ansi_color::reset))
-    {
-        std::cout << std::endl;
-    }
+    {}
 };

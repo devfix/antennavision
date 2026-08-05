@@ -1,4 +1,10 @@
 {
+  "n_elements": 64,
+  "oversampling_factor": 2,
+  "n_dim1": 8,
+  "n_dim2": 8,
+  "weights":
+{
   "5": {
     "0": {
       "0": [
@@ -792983,4 +792989,6 @@
       ]
     }
   }
+}
+
 }

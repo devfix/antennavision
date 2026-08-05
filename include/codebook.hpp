@@ -18,6 +18,14 @@ struct Codebook
         std::vector<Complex> weights;
     };
 
+    struct Node;
+    using Element = std::variant<Entry, std::vector<Node>>;
+    struct Node
+    {
+        std::string id{};
+        Element element;
+    };
+
     Codebook(std::string_view id, std::filesystem::path const& p);
 
     [[nodiscard]] std::uint32_t n_elements() const { return n_elements_; }
@@ -33,14 +41,6 @@ struct Codebook
     std::string id;
 
 private:
-    struct Node;
-    using Element = std::variant<Entry, std::vector<Node>>;
-    struct Node
-    {
-        std::string id{};
-        Element element;
-    };
-
     Node root_{.element = std::vector<Node>{}};
     std::uint32_t n_elements_{};
     std::uint32_t oversampling_factor_{};

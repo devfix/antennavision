@@ -83,22 +83,13 @@
   "tasks": [
     {
       "type": "RxVoltageField@Wavelength",
+      "path_output": "new-result.json",
       "ref": "",
       "tx": "tx",
       "rx": "rx",
-      "tx_codebook": ["test_codebook", 0, 0, 0],
-      "rx_codebook": ["test_codebook", 0, 0, 0],
+      "tx_codebook": ["test_codebook", "inf", "8", "8"],
+      "rx_codebook": [],
       "geo": "test_rectangle",
-      "n_dim1": 21,
-      "n_dim2": 21,
-      "sweep": "test_sweep"
-    },
-    {
-      "type": "RxVoltageField@Wavelength",
-      "ref": "",
-      "tx": "tx",
-      "rx": "rx",
-      "geo": "test_spherical_rectangle",
       "n_dim1": 21,
       "n_dim2": 21,
       "sweep": "test_sweep"
