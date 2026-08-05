@@ -332,7 +332,7 @@ namespace eval
         nc::NdArray<OutputT> values(positions.shape());
         std::size_t const total_size = positions.size();
 
-#ifndef ANTENNAVISION_SINGLE_THREADED
+#ifdef ANTENNAVISION_SINGLE_THREADED
         auto const ctx = make_context(wavelength);
         auto it = positions.begin();
         auto ot = values.begin();

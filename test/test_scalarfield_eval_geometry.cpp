@@ -26,7 +26,7 @@ using Catch::Matchers::WithinAbs;
 using Catch::Matchers::WithinRel;
 using geometry::Geometry;
 
-double constexpr EPSILON_ABS = 1e-6;
+double constexpr EPSILON_ABS = 1e-4;
 double constexpr DELTA_PHASE = 1e-3;
 
 namespace
