@@ -29,9 +29,10 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
     ojson const js = ojson::parse(R"JSON(
 {
   "metadata": {
-    "setup_name": "test-ula"
+    "setup_name": "test-ula",
+    "version": "1.0.0"
   },
-  "num_params": {
+  "sim_params": {
     "system_wavelength": 0.1,
     "n_polar": 101,
     "n_azimuth": 201
@@ -59,7 +60,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
 }
 )JSON");
     setup::Setup setup(js);
-    auto const& wavelength = setup.num_params().system_wavelength;
+    auto const& wavelength = setup.sim_params().system_wavelength;
     auto const& ula = antenna::cast<UniformLinearArray>(setup.get_antenna("ula1"));
 
     // check ULA element references
@@ -81,9 +82,10 @@ TEST_CASE("ULA gain", "[TestULA]")
     ojson const js = ojson::parse(R"JSON(
 {
   "metadata": {
-    "setup_name": "test-ula"
+    "setup_name": "test-ula",
+    "version": "1.0.0"
   },
-  "num_params": {
+  "sim_params": {
     "system_wavelength": 0.1,
     "n_polar": 101,
     "n_azimuth": 201
@@ -147,7 +149,7 @@ TEST_CASE("ULA gain", "[TestULA]")
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         const_cast<Pos&>(ref_start.pos) = ref_start_initial.pos + pos_delta * f; // TODO user better approach than const_cast
-        gains.at(k) = antenna::calc_voltage_gain(tx, rx, setup.num_params().system_wavelength, uc(tx), uc(rx), setup.num_params());
+        gains.at(k) = antenna::calc_voltage_gain(tx, rx, setup.sim_params().system_wavelength, uc(tx), uc(rx), setup.sim_params());
         distances.at(k) = *distance_ptr;
     }
     const_cast<Pos&>(ref_start.pos) = ref_start_initial.pos; // TODO user better approach than const_cast
@@ -175,9 +177,10 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
     ojson const js = ojson::parse(R"JSON(
 {
   "metadata": {
-    "setup_name": "test-ula"
+    "setup_name": "test-ula",
+    "version": "1.0.0"
   },
-  "num_params": {
+  "sim_params": {
     "system_wavelength": 0.1,
     "n_polar": 101,
     "n_azimuth": 201,
@@ -227,13 +230,13 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
     auto const& tx = setup.get_antenna("ula1");
     auto const& rx = setup.get_antenna("receiver");
     reference::Reference const& ref_stop = setup.get_reference("ref_rx_stop");
-    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), setup.num_params());
+    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), setup.sim_params());
 
     Pos const pos_start = antenna::get_origin(rx)->global_pos();
     Pos const pos_end = ref_stop.global_pos();
 
     geometry::Line line("", pos_start, pos_end);
-    auto result = voltage_field.eval_geometry(line, setup.num_params().system_wavelength, setup.num_params().n_linear1, setup.num_params().n_linear2);
+    auto result = voltage_field.eval_geometry(line, setup.sim_params().system_wavelength, setup.sim_params().n_linear1, setup.sim_params().n_linear2);
     auto &gains = result.values;
     auto const gains_abs = nc::abs(gains);
     auto const idx_max = nc::argmax(gains_abs);

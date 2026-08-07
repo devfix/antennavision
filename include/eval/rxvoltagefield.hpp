@@ -16,7 +16,7 @@ namespace eval
         struct Context : ComplexScalarField<RxVoltageField>::Context<Context>
         {
             [[nodiscard]] explicit Context(RxVoltageField const& field, double wavelength) :
-                field(field), rx_(field.rx_), wavelength_(wavelength), num_params_(field.num_params)
+                field(field), rx_(field.rx_), wavelength_(wavelength), sim_params_(field.sim_params)
             {
                 for (const auto* origin = antenna::get_origin(rx_); origin; origin = origin->origin) references_.push_back(*origin);
                 validate();
@@ -31,7 +31,7 @@ namespace eval
             [[nodiscard]] Complex eval(Pos const& pos) const
             {
                 rx_origin_->pos = pos;
-                return antenna::calc_voltage_gain(field.tx_, rx_, wavelength_, field.tx_coeffs_, field.rx_coeffs_, num_params_);
+                return antenna::calc_voltage_gain(field.tx_, rx_, wavelength_, field.tx_coeffs_, field.rx_coeffs_, sim_params_);
             }
 
         private:
@@ -44,7 +44,7 @@ namespace eval
             RxVoltageField const& field;
             antenna::Antenna rx_; /// copy of the rx antenna
             double const wavelength_;
-            setup::NumParams const& num_params_;
+            setup::SimParams const& sim_params_;
             std::vector<reference::Reference> references_;
             reference::Reference* rx_origin_{};
         };
@@ -54,10 +54,10 @@ namespace eval
             antenna::Antenna const& rx,
             std::span<Complex const> tx_coeffs,
             std::span<Complex const> rx_coeffs,
-            setup::NumParams const& num_params //
-            ) : ScalarField(num_params), tx_(tx), rx_(rx), tx_coeffs_(tx_coeffs | std::ranges::to<decltype(tx_coeffs_)>()), rx_coeffs_(rx_coeffs | std::ranges::to<decltype(rx_coeffs_)>())
+            setup::SimParams const& sim_params //
+            ) : ScalarField(sim_params), tx_(tx), rx_(rx), tx_coeffs_(tx_coeffs | std::ranges::to<decltype(tx_coeffs_)>()), rx_coeffs_(rx_coeffs | std::ranges::to<decltype(rx_coeffs_)>())
         {
-            num_params.check();
+            sim_params.assert_integrity();
         }
 
     private:

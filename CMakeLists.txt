@@ -8,15 +8,15 @@ include(CheckIPOSupported)
 
 # Link-Time-Optimization
 check_ipo_supported(RESULT ipo_supported)
-if(ipo_supported)
+if (ipo_supported)
     message(STATUS "[AntennaVision] IPO detected")
 
     # Enable LTO automatically whenever CMAKE_BUILD_TYPE is "Release" or "RelWithDebInfo"
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
-else()
+else ()
     message(STATUS "[AntennaVision] IPO not found")
-endif()
+endif ()
 
 
 option(BUILD_ALL_SHARED "[AntennaVision] Build all internal libraries as shared and place next to executable" ON)
@@ -34,11 +34,19 @@ if (NOT MSVC)
 
     # Tell the linker to drop any unreferenced sections
     add_link_options(-Wl,--gc-sections)
-endif()
+endif ()
+
+
+# === static libstdc++ & libgcc linkage ===
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_link_options(-static-libstdc++ -static-libgcc)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT MSVC)
+    add_link_options(-static-libstdc++) # Clang on Linux/macOS
+endif ()
 
 
 # === static/shared library linkage ===
-if(BUILD_ALL_SHARED)
+if (BUILD_ALL_SHARED)
     message(STATUS "[AntennaVision] Build with shared linkage")
 
     # Force non-interface targets to build as SHARED
@@ -49,39 +57,44 @@ if(BUILD_ALL_SHARED)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        add_link_options(-static-libstdc++ -static-libgcc)
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT MSVC)
-        add_link_options(-static-libstdc++) # Clang on Linux/macOS
-    endif()
-
     #  Configure RPATH so the linker finds .so files next to the binary at runtime
-    if(NOT WIN32)
+    if (NOT WIN32)
         set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
         set(CMAKE_INSTALL_RPATH "$ORIGIN")
-    endif()
-else()
+    endif ()
+else ()
     message(STATUS "[AntennaVision] Build with static linkage")
 
-    if(NOT MSVC)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
-    endif()
+    #    if(NOT MSVC)
+    #        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
+    #    endif()
 
     # static dependency linkage
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-endif()
+endif ()
 
 
 ######### Enable CCache if available
 find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
+if (CCACHE_PROGRAM)
     message(STATUS "[AntennaVision] CCache found: ${CCACHE_PROGRAM}")
-    set(CMAKE_C_COMPILER_LAUNCHER   ${CCACHE_PROGRAM})
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
     set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
-else()
+else ()
     message(STATUS "[AntennaVision] CCache not found. Proceeding with standard compilation.")
-endif()
+endif ()
 #########
+
+
+######### CLI11
+FetchContent_Declare(
+        CLI11
+        GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+        GIT_TAG v2.7.2
+        GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(CLI11)
+######### NumCpp
 
 
 ######### NumCpp
@@ -89,8 +102,8 @@ set(NUMCPP_NO_USE_BOOST ON CACHE BOOL "Don't use the boost libraries" FORCE)
 FetchContent_Declare(
         NumCpp
         GIT_REPOSITORY https://github.com/dpilger26/NumCpp.git
-        GIT_TAG        Version_2.16.1
-        GIT_SHALLOW    TRUE
+        GIT_TAG Version_2.16.1
+        GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(NumCpp)
 #########
@@ -100,8 +113,8 @@ FetchContent_MakeAvailable(NumCpp)
 FetchContent_Declare(
         magic_enum
         GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
-        GIT_TAG        v0.9.8
-        GIT_SHALLOW    TRUE
+        GIT_TAG v0.9.8
+        GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(magic_enum)
 #########
@@ -115,8 +128,8 @@ set(NLOPT_TESTS OFF CACHE INTERNAL "")
 FetchContent_Declare(
         nlopt
         GIT_REPOSITORY https://github.com/stevengj/nlopt.git
-        GIT_TAG        v2.11.0
-        GIT_SHALLOW    TRUE
+        GIT_TAG v2.11.0
+        GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(nlopt)
 #########
@@ -126,8 +139,8 @@ FetchContent_MakeAvailable(nlopt)
 FetchContent_Declare(
         Cephes
         GIT_REPOSITORY https://github.com/jeremybarnes/cephes.git
-        GIT_TAG        master
-        GIT_SHALLOW    TRUE
+        GIT_TAG master
+        GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(Cephes)
 add_library(CephesSiCi STATIC
@@ -139,18 +152,18 @@ add_library(CephesSiCi STATIC
 #target_include_directories(CephesSiCi PUBLIC ${cephes_SOURCE_DIR}/misc)
 
 # Disable old compiler warnings for Cephes (since it's legacy C code)
-if(MSVC)
+if (MSVC)
     target_compile_options(CephesSiCi PRIVATE /w)
-else()
+else ()
     target_compile_options(CephesSiCi PRIVATE -w)
-endif()
+endif ()
 #########
 
 
 ######### ansi_color
 FetchContent_Declare(
         ansi_color
-        URL      https://github.com/devfix/ansi_color/archive/refs/heads/main.zip
+        URL https://github.com/devfix/ansi_color/archive/refs/heads/main.zip
         URL_HASH SHA256=cdebb0f9e5f48d7e61599247acb8dbf6210bf55e39a19e77446fdde50d1dd7f7
 )
 FetchContent_MakeAvailable(ansi_color)
@@ -166,17 +179,17 @@ set(JSON_CompiledMode ON CACHE BOOL "" FORCE) # <--- This forces it to compile
 FetchContent_Declare(
         json
         GIT_REPOSITORY https://github.com/nlohmann/json.git
-        GIT_TAG        v3.12.0
-        GIT_SHALLOW    TRUE
+        GIT_TAG v3.12.0
+        GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(json)
 
 # Apply SYSTEM to the REAL target name (without ::)
-if(TARGET nlohmann_json)
+if (TARGET nlohmann_json)
     set_target_properties(nlohmann_json PROPERTIES
             INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
     )
-endif()
+endif ()
 #########
 
 
@@ -184,14 +197,14 @@ endif()
 FetchContent_Declare(
         exprtk
         GIT_REPOSITORY https://github.com/ArashPartow/exprtk.git
-        GIT_TAG        66883f0ddb034371ef38f2799f772c05bc904571
-        GIT_SHALLOW    TRUE
+        GIT_TAG 66883f0ddb034371ef38f2799f772c05bc904571
+        GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(exprtk)
-if(NOT TARGET exprtk)
+if (NOT TARGET exprtk)
     add_library(exprtk INTERFACE)
     target_include_directories(exprtk INTERFACE ${exprtk_SOURCE_DIR})
-endif()
+endif ()
 #########
 
 
@@ -199,12 +212,11 @@ endif()
 FetchContent_Declare(
         Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG        v3.15.2
-        GIT_SHALLOW    TRUE
+        GIT_TAG v3.15.2
+        GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(Catch2)
 #########
-
 
 
 file(GLOB_RECURSE SOURCE_FILES
@@ -231,6 +243,7 @@ target_link_libraries(antennavision PRIVATE
         ansi_color
         nlohmann_json::nlohmann_json
         exprtk
+        CLI11::CLI11
 )
 target_compile_definitions(antennavision PRIVATE JSON_DIAGNOSTICS=0)
 #########

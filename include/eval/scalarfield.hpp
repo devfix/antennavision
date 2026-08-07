@@ -7,8 +7,8 @@
 #include <utility>
 
 #include "opt.hpp"
+#include "setup/simparams.hpp"
 #include "setup/geometry.hpp"
-#include "setup/numparams.hpp"
 #include "setup/sweep.hpp"
 #include "types/math.hpp"
 
@@ -141,7 +141,7 @@ namespace eval
         [[nodiscard]] std::vector<nc::NdArray<double>> eval_sweep_abs(Vec3Array const& positions, sweep::Sweep const& sweep) const;
 
         /**
-         * Evaluates the field over a geometry. The number of points for the dimensions is determined form num_params.
+         * Evaluates the field over a geometry. The number of points for the dimensions is determined form sim_params.
          * @param geo geometry to be evaluated
          * @param wavelength wave propagation wavelength
          * @return [array of positions in space, vector of arrays with field values for each position]
@@ -151,7 +151,7 @@ namespace eval
         [[nodiscard]] result::EvalResult<double> eval_geometry_abs(geometry::Geometry const& geo, double wavelength, std::size_t n1, std::size_t n2) const;
 
         // /**
-        //  * Evaluates the field over a geometry. The number of points for the dimensions is determined form num_params.
+        //  * Evaluates the field over a geometry. The number of points for the dimensions is determined form sim_params.
         //  * @param geo geometry to be evaluated
         //  * @param sweep sweep of wave propagation wavelengths
         //  * @return [array of positions in space, vector of arrays with field values for each position]
@@ -173,7 +173,7 @@ namespace eval
         [[nodiscard]] std::vector<result::Isoline>
         trace_isolines(geometry::Surface const& surf, double wavelength, double ratio, std::size_t n1, std::size_t n2) const;
 
-        setup::NumParams num_params;
+        setup::SimParams sim_params;
 
     protected:
         // Prevent direct deletion through base pointer without virtual destructor

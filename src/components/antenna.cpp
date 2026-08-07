@@ -17,11 +17,11 @@ namespace antenna
 
     namespace
     {
-        Complex calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, double wavelength, setup::NumParams const& num_params)
+        Complex calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, double wavelength, setup::SimParams const& sim_params)
         {
             if (tx.origin == nullptr) { throw SimulationError("TX Radiator '{}' has unresolved origin '{}'", tx.id, tx.origin_id); }
             if (rx.origin == nullptr) { throw SimulationError("RX Radiator '{}' has unresolved origin '{}'", rx.id, rx.origin_id); }
-            num_params.check();
+            sim_params.assert_integrity();
 
             double const r = (tx.origin->global_from_local_pos(POS_ZERO) - rx.origin->global_from_local_pos(POS_ZERO)).norm();
             if (r < wavelength / 10)
@@ -40,12 +40,12 @@ namespace antenna
             auto const elv_global_tx = tx.origin->global_from_local_vec(elv_cartesian_tx);
             auto const elv_global_rx = rx.origin->global_from_local_vec(elv_cartesian_rx);
             auto const g = elv_global_tx.dot(elv_global_rx).item();
-            auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * wavelength / (4.0 * pi * r);
+            auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * (sim_params.enable_path_loss ? 1.0/r : 1.0);
             auto const mean_squared_elv_tx =
-                tx.mean_squared_elv ? tx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(tx.elv_spherical, wavelength, num_params);
+                tx.mean_squared_elv ? tx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(tx.elv_spherical, wavelength, sim_params);
             auto const mean_squared_elv_rx =
-                rx.mean_squared_elv ? rx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(rx.elv_spherical, wavelength, num_params);
-            return -j * g / std::sqrt(mean_squared_elv_tx * mean_squared_elv_rx) * propagation;
+                rx.mean_squared_elv ? rx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(rx.elv_spherical, wavelength, sim_params);
+            return (-j * g * wavelength) / (4.0 * pi * std::sqrt(mean_squared_elv_tx * mean_squared_elv_rx)) * propagation;
         }
 
         void resolve_origin_impl(Radiator& rad, std::span<Reference*> refs)
@@ -86,7 +86,7 @@ namespace antenna
         double wavelength,
         std::span<Complex const> tx_coeffs,
         std::span<Complex const> rx_coeffs,
-        setup::NumParams const& num_params //
+        setup::SimParams const& sim_params //
     )
     {
         std::size_t constexpr Key_TxArr_RxArr = 0b00;
@@ -120,7 +120,7 @@ namespace antenna
                             for (std::size_t k_rx = 0; k_rx < rx_arr.elements.size(); k_rx++)
                                 for (std::size_t k_tx = 0; k_tx < tx_arr.elements.size(); k_tx++)
                                     gain += tx_coeffs[k_tx] //
-                                        * calc_voltage_gain_direct(tx_arr.elements[k_tx], rx_arr.elements[k_rx], wavelength, num_params) //
+                                        * calc_voltage_gain_direct(tx_arr.elements[k_tx], rx_arr.elements[k_rx], wavelength, sim_params) //
                                         * rx_coeffs[k_rx];
                         }
                         else
@@ -149,7 +149,7 @@ namespace antenna
                             // core computation loop
                             for (std::size_t k = 0; k < tx_arr.elements.size(); k++)
                                 gain += tx_coeffs[k] //
-                                    * calc_voltage_gain_direct(tx_arr.elements[k], rx_rad, wavelength, num_params);
+                                    * calc_voltage_gain_direct(tx_arr.elements[k], rx_rad, wavelength, sim_params);
                         }
                         else
                             std::unreachable();
@@ -174,7 +174,7 @@ namespace antenna
 
                             // core computation loop
                             for (std::size_t k = 0; k < rx_arr.elements.size(); k++)
-                                gain += calc_voltage_gain_direct(tx_rad, rx_arr.elements[k], wavelength, num_params) //
+                                gain += calc_voltage_gain_direct(tx_rad, rx_arr.elements[k], wavelength, sim_params) //
                                     * rx_coeffs[k];
                         }
                         else
@@ -184,7 +184,7 @@ namespace antenna
                 ;
             case Key_TxRad_RxRad: //
                 // no computation loop, only direct forward
-                return calc_voltage_gain_direct(std::get<Radiator>(tx), std::get<Radiator>(rx), wavelength, num_params);
+                return calc_voltage_gain_direct(std::get<Radiator>(tx), std::get<Radiator>(rx), wavelength, sim_params);
             default: std::unreachable();
         }
     }
@@ -195,9 +195,9 @@ namespace antenna
         double wavelength,
         std::span<Complex const> tx_coeffs,
         std::span<Complex const> rx_coeffs,
-        setup::NumParams const& num_params //
+        setup::SimParams const& sim_params //
     )
-    { return math::square(std::abs(calc_voltage_gain(tx, rx, wavelength, tx_coeffs, rx_coeffs, num_params))); }
+    { return math::square(std::abs(calc_voltage_gain(tx, rx, wavelength, tx_coeffs, rx_coeffs, sim_params))); }
 
     void resolve_origins(std::span<Antenna> antennas, std::span<Reference> references)
     {

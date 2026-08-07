@@ -34,7 +34,7 @@ namespace eval::opt
             typename MultiOpt<N>::AnyFn const& fn,
             double* args,
             double* f_min,
-            setup::NumParams const& num_params)
+            setup::SimParams const& sim_params)
         {
             auto opt_deleter = [](nlopt_opt opt)
             {
@@ -45,15 +45,15 @@ namespace eval::opt
             nlopt_set_min_objective(opt.get(), multi_opt ? obj_fn_multi_opt<N> : obj_fn_single_opt, const_cast<MultiOpt<N>::AnyFn*>(&fn));
             nlopt_set_lower_bounds(opt.get(), bounds_lower);
             nlopt_set_upper_bounds(opt.get(), bounds_upper);
-            nlopt_set_xtol_rel(opt.get(), num_params.xtol_rel);
-            nlopt_set_ftol_rel(opt.get(), num_params.ftol_rel);
+            nlopt_set_xtol_rel(opt.get(), sim_params.xtol_rel);
+            nlopt_set_ftol_rel(opt.get(), sim_params.ftol_rel);
 
             return nlopt_optimize(opt.get(), args, f_min);
         }
     } // namespace
 
     template <std::size_t N>
-    MultiOpt<N>::Result MultiOpt<N>::run(Params const& params, setup::NumParams const& num_params)
+    MultiOpt<N>::Result MultiOpt<N>::run(Params const& params, setup::SimParams const& sim_params)
     {
         using std::ranges::to;
         using std::ranges::transform;
@@ -74,8 +74,8 @@ namespace eval::opt
         nlopt_set_min_objective(opt.get(), obj_fn_multi_opt<N>, const_cast<decltype(Params::fn)*>(&params.fn));
         nlopt_set_lower_bounds(opt.get(), bounds_lower.data());
         nlopt_set_upper_bounds(opt.get(), bounds_upper.data());
-        nlopt_set_xtol_rel(opt.get(), num_params.xtol_rel);
-        nlopt_set_ftol_rel(opt.get(), num_params.ftol_rel);
+        nlopt_set_xtol_rel(opt.get(), sim_params.xtol_rel);
+        nlopt_set_ftol_rel(opt.get(), sim_params.ftol_rel);
 
         // we create the result object and initialize the arguments of the minimum with the initial guess, it will be updated by nlopt
         Result result{};
@@ -90,7 +90,7 @@ namespace eval::opt
         return result;
     }
 
-    SingleOpt::Result SingleOpt::run(Params const& params, setup::NumParams const& num_params)
+    SingleOpt::Result SingleOpt::run(Params const& params, setup::SimParams const& sim_params)
     {
         double const bound_lower = std::min(params.bound_a, params.bound_b);
         double const bound_upper = std::max(params.bound_a, params.bound_b);
@@ -104,8 +104,8 @@ namespace eval::opt
         nlopt_set_min_objective(opt.get(), obj_fn_single_opt, const_cast<decltype(Params::fn)*>(&params.fn));
         nlopt_set_lower_bounds(opt.get(), &bound_lower);
         nlopt_set_upper_bounds(opt.get(), &bound_upper);
-        nlopt_set_xtol_rel(opt.get(), num_params.xtol_rel);
-        nlopt_set_ftol_rel(opt.get(), num_params.ftol_rel);
+        nlopt_set_xtol_rel(opt.get(), sim_params.xtol_rel);
+        nlopt_set_ftol_rel(opt.get(), sim_params.ftol_rel);
 
         // we create the result object and initialize the argument of the minimum with the initial guess, it will be updated by nlopt
         Result result{.arg_min = params.arg_initial};

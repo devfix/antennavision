@@ -1,0 +1,91 @@
+{
+  "metadata": {
+    "setup_name": "2a1",
+    "version": "1.0.0"
+  },
+  "codebooks": [
+    {
+      "id": "test_codebook",
+      "path": "../codebooks/upa_dft_codebook.json"
+    }
+  ],
+  "variables": {
+    "system_frequency": 60e9,
+    "system_wavelength": "c0/system_frequency",
+    "number_of_elements:int": 16,
+    "rayleigh_distance": "(number_of_elements-1)^2*system_wavelength/2",
+    "wavelength": "system_wavelength",
+    "distance": "1000*wavelength",
+    "dipole_length": "0.5*wavelength"
+  },
+  "num_params": {
+    "system_wavelength": "system_wavelength"
+  },
+  "references": [
+    {
+      "id": "ref_tx",
+      "origin": "",
+      "pos": [0, 0, 0],
+      "rot": {"yaw": 0, "pitch": 0, "roll": 0}
+    },
+    {
+      "id": "ref_rx",
+      "origin": "",
+      "pos": [0, 0, "2*wavelength"],
+      "rot": {"yaw": 0, "pitch": "pi/2", "roll": 0}
+    }
+  ],
+  "antennas": [
+    {
+      "id": "tx",
+      "type": "ULA",
+      "ref": "ref_tx",
+      "spacing": "wavelength * 0.5",
+      "size": "number_of_elements",
+      "rot": {"yaw": 0, "pitch": 0, "roll": 0},
+      "radiator": {
+        "type": "StandingWaveDipole",
+        "dipole_length": "dipole_length"
+      }
+    },
+    {
+      "id": "rx",
+      "ref": "ref_rx",
+      "type": "StandingWaveDipole",
+      "dipole_length": "dipole_length"
+    }
+  ],
+  "geometries": [
+    {
+      "id": "rectangle",
+      "type": "Rectangle",
+      "center": [0, "rayleigh_distance/2", 0],
+      "normal": [0, 0, 1],
+      "e1": [1, 0, 0],
+      "width": "rayleigh_distance*2",
+      "height": "rayleigh_distance"
+    }
+  ],
+  "sweeps": [
+    {
+      "id": "sweep",
+      "type": "ListSweep",
+      "values": ["wavelength"]
+    }
+  ],
+  "tasks": [
+    {
+      "type": "RxVoltageField@Wavelength",
+      "path_output": "new-result.json",
+      "ref": "",
+      "tx": "tx",
+      "rx": "rx",
+      "tx_codebook": [],
+      "rx_codebook": [],
+      "geo": "rectangle",
+      "n_dim1": 21,
+      "n_dim2": 21,
+      "sweep": "sweep"
+    }
+  ]
+}

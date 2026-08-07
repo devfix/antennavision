@@ -15,7 +15,7 @@ namespace eval::output
         antenna::Antenna const& antenna,
         double wavelength,
         sweep::Sweep const& sweep_azimuth,
-        setup::NumParams const& num_params //
+        setup::SimParams const& sim_params //
     );
 
     template <typename T>

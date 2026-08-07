@@ -12,7 +12,7 @@ TEST_CASE("SingleOpt finds correct minimum", "[eval::opt][SingleOpt]")
     using namespace eval::opt;
     using Catch::Matchers::WithinAbs;
 
-    auto const num_params = setup::NumParams::create({});
+    setup::SimParams const sim_params{};
 
     SECTION("Find minimum of exp((x-1)^2)")
     {
@@ -27,7 +27,7 @@ TEST_CASE("SingleOpt finds correct minimum", "[eval::opt][SingleOpt]")
             .arg_initial = 0 //
         };
         {
-            auto const result = SingleOpt::run(params, num_params);
+            auto const result = SingleOpt::run(params, sim_params);
             CHECK_THAT(result.arg_min, WithinAbs(1, 1e-9));
             CHECK_THAT(result.f_min, WithinAbs(1, 1e-9));
         }
@@ -35,7 +35,7 @@ TEST_CASE("SingleOpt finds correct minimum", "[eval::opt][SingleOpt]")
         // swap the bounds and run again
         std::swap(params.bound_a, params.bound_b);
         {
-            auto const result = SingleOpt::run(params, num_params);
+            auto const result = SingleOpt::run(params, sim_params);
             CHECK_THAT(result.arg_min, WithinAbs(1, 1e-9));
             CHECK_THAT(result.f_min, WithinAbs(1, 1e-9));
         }
@@ -47,7 +47,7 @@ TEST_CASE("DualOpt finds correct minimum", "[eval::opt][DualOpt]")
     using namespace eval::opt;
     using Catch::Matchers::WithinAbs;
 
-    auto const num_params = setup::NumParams::create({});
+    setup::SimParams const sim_params{};
     SECTION("Find minimum of sqrt( (x-1)^2 + (y+1)^2 )")
     {
         DualOpt::Params params{
@@ -57,7 +57,7 @@ TEST_CASE("DualOpt finds correct minimum", "[eval::opt][DualOpt]")
             .args_initial = {2, 2} //
         };
         {
-            auto const result = DualOpt::run(params, num_params);
+            auto const result = DualOpt::run(params, sim_params);
             CHECK_THAT(result.args_min[0], WithinAbs(1, 1e-6));
             CHECK_THAT(result.args_min[1], WithinAbs(-1, 1e-6));
             CHECK_THAT(result.f_min, WithinAbs(0, 1e-6));
@@ -66,7 +66,7 @@ TEST_CASE("DualOpt finds correct minimum", "[eval::opt][DualOpt]")
         // swap the bounds and run again
         std::swap(params.bounds_a, params.bounds_b);
         {
-            auto const result = DualOpt::run(params, num_params);
+            auto const result = DualOpt::run(params, sim_params);
             CHECK_THAT(result.args_min[0], WithinAbs(1, 1e-6));
             CHECK_THAT(result.args_min[1], WithinAbs(-1, 1e-6));
             CHECK_THAT(result.f_min, WithinAbs(0, 1e-6));

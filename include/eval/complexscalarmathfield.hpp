@@ -25,8 +25,8 @@ namespace eval
             double const wavelength_;
         };
 
-        [[nodiscard]] ComplexScalarMathField(std::function<Complex(Pos const& pos, double wavelength)> fn, setup::NumParams const& num_params) :
-            ScalarField(num_params), fn_(std::move(fn))
+        [[nodiscard]] ComplexScalarMathField(std::function<Complex(Pos const& pos, double wavelength)> fn, setup::SimParams const& sim_params) :
+            ScalarField(sim_params), fn_(std::move(fn))
         {}
 
     private:

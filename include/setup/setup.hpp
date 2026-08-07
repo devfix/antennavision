@@ -14,7 +14,7 @@
 
 namespace setup
 {
-    struct Setup
+    struct Setup final
     {
         using VarMap = std::map<std::string, Var>;
 
@@ -22,12 +22,12 @@ namespace setup
         [[nodiscard]] Setup(ojson const& js_in);
 
         Setup(const Setup& other) :
-            timestamp_{other.timestamp_}, name_{other.name_}, variables_{other.variables_}, num_params_{other.num_params_}, references_{other.references_},
+            timestamp_{other.timestamp_}, name_{other.name_}, variables_{other.variables_}, sim_params_{other.sim_params_}, references_{other.references_},
             antennas_{other.antennas_}, geometries_{other.geometries_}, sweeps_{other.sweeps_}, tasks_{other.tasks_}
         { validate(); }
 
         Setup(Setup&& other) :
-            timestamp_{other.timestamp_}, name_{std::move(other.name_)}, variables_{std::move(other.variables_)}, num_params_{std::move(other.num_params_)},
+            timestamp_{other.timestamp_}, name_{std::move(other.name_)}, variables_{std::move(other.variables_)}, sim_params_{std::move(other.sim_params_)},
             references_{std::move(other.references_)}, antennas_{std::move(other.antennas_)}, geometries_{std::move(other.geometries_)},
             sweeps_{std::move(other.sweeps_)}, tasks_{std::move(other.tasks_)}
         { validate(); }
@@ -44,7 +44,7 @@ namespace setup
             swap(lhs.timestamp_, rhs.timestamp_);
             swap(lhs.name_, rhs.name_);
             swap(lhs.variables_, rhs.variables_);
-            swap(lhs.num_params_, rhs.num_params_);
+            swap(lhs.sim_params_, rhs.sim_params_);
             swap(lhs.references_, rhs.references_);
             swap(lhs.antennas_, rhs.antennas_);
             swap(lhs.geometries_, rhs.geometries_);
@@ -62,7 +62,7 @@ namespace setup
 
         [[nodiscard]] VarMap const& variables() const { return variables_; }
 
-        [[nodiscard]] setup::NumParams const& num_params() const { return num_params_; }
+        [[nodiscard]] setup::SimParams const& sim_params() const { return sim_params_; }
 
         [[nodiscard]] std::span<const reference::Reference> references() const { return references_; }
 
@@ -90,7 +90,7 @@ namespace setup
     private:
         void extract_meta(ojson& js);
         void extract_codebooks(ojson& js);
-        void extract_num_params(ojson& js);
+        void extract_sim_params(ojson& js);
         void extract_variables(ojson& js);
         void extract_references(ojson& js);
         void extract_antennas(ojson& js);
@@ -100,8 +100,9 @@ namespace setup
 
         timeutil::timestamp_t timestamp_{};
         std::string name_;
+        std::array<int, 3> version_;
         std::vector<Codebook> codebooks_;
-        NumParams num_params_;
+        SimParams sim_params_;
         VarMap variables_;
         std::vector<reference::Reference> references_;
         std::vector<antenna::Antenna> antennas_;

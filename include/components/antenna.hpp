@@ -73,7 +73,7 @@ namespace antenna
         double wavelength,
         std::span<Complex const> tx_coeffs,
         std::span<Complex const> rx_coeffs,
-        setup::NumParams const& num_params //
+        setup::SimParams const& sim_params //
     );
 
     [[nodiscard]] double calc_power_gain( //
@@ -82,17 +82,17 @@ namespace antenna
         double wavelength,
         std::span<Complex const> tx_coeffs,
         std::span<Complex const> rx_coeffs,
-        setup::NumParams const& num_params //
+        setup::SimParams const& sim_params //
     );
 
     /**
      * Creates new scalar field that is the power field if the tx is fixed in space and the rx is moved around
      * @param tx transmitter antenna
      * @param rx receiver antenna
-     * @param num_params numerical parameters
+     * @param sim_params numerical parameters
      * @return power field between tx and rx
      */
-    // [[nodiscard]] ScalarField<double> get_power_field(Antenna const& tx, Antenna& rx, setup::NumParams const& num_params);
+    // [[nodiscard]] ScalarField<double> get_power_field(Antenna const& tx, Antenna& rx, setup::NumParams const& sim_params);
 
     /**
      * Interconnect all antennas to their reference, i.d., resolving the origins ".origin_id" ids to their actual pointer ".origin".

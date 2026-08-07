@@ -38,7 +38,7 @@ namespace eval::output
         antenna::Antenna const& antenna,
         double wavelength,
         sweep::Sweep const& sweep_azimuth,
-        setup::NumParams const& num_params //
+        setup::SimParams const& sim_params //
     )
     {
         // at the moment, we only support to calculate the directivity of single radiators
@@ -47,7 +47,7 @@ namespace eval::output
         std::ofstream ofs(path_output); // first, acquire file to lock it to our process
         ojson js;
         js["sweep"] = sweep_azimuth;
-        js["num_params"] = num_params;
+        js["sim_params"] = sim_params;
 
         auto const polar_angles = nc::linspace(0.0, nc::constants::pi, 51);
         auto const azimuths = sweep::get_values(sweep_azimuth);
@@ -62,7 +62,7 @@ namespace eval::output
                 directivities.begin(),
                 [&](double polar)
                 {
-                    return radiator.calc_directivity_from_spherical(polar, azimuth, wavelength, num_params);
+                    return radiator.calc_directivity_from_spherical(polar, azimuth, wavelength, sim_params);
                 } //
             );
             js_entry["azimuth"] = azimuth;
@@ -86,7 +86,7 @@ namespace eval::output
     {
         std::ofstream ofs(path_output); // first, acquire file to lock it to our process
         ojson js;
-        js["num_params"] = scalar_field.num_params;
+        js["sim_params"] = scalar_field.sim_params;
         js["geo"] = geo;
         js["sweep"] = sweep_wavelength;
         js["task"] = task;

@@ -8,6 +8,8 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <print>
+
+#include "convert.hpp"
 #include "eval/output.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
@@ -51,8 +53,8 @@ namespace setup
         ojson js = js_in; // create a copy of the json object in order to decompose it
         extract_meta(js);
         extract_codebooks(js);
-        extract_num_params(js);
         extract_variables(js);
+        extract_sim_params(js);
         extract_references(js);
         extract_antennas(js);
         extract_geometries(js);
@@ -93,7 +95,7 @@ namespace setup
     {
         std::filesystem::path const p = directory / std::format("{}.objects.js", objects_name);
 
-        double const system_wavelength = num_params_.system_wavelength;
+        auto const& system_wavelength = sim_params_.system_wavelength;
 
         three::Container container;
         for (auto const& reference : references_)
@@ -154,7 +156,7 @@ namespace setup
                 auto& t = std::get<task::DirectivityOverPolarAtAzimuth>(task);
                 auto& ant = antenna::get(antennas_, t.antenna_id);
                 auto& sweep = sweep::get(sweeps_, t.sweep_id);
-                eval::output::directivity_over_polar(t.path_output, ant, t.wavelength, sweep, num_params_);
+                eval::output::directivity_over_polar(t.path_output, ant, t.wavelength, sweep, sim_params_);
             }
             else if (std::holds_alternative<task::RxVoltageFieldAtWavelength>(task))
             {
@@ -172,7 +174,7 @@ namespace setup
                     : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
 
                 auto const& ref = reference::get(const_cast<decltype(references_) const&>(references_), t.ref_id);
-                auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, num_params_);
+                auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_);
                 auto const& geo = geometry::get(geometries_, t.geo_id);
                 auto const& sweep = sweep::get(sweeps_, t.sweep_wavelength_id);
 
@@ -212,9 +214,24 @@ namespace setup
 
     void Setup::extract_meta(ojson& js)
     {
+        using namespace std::ranges;
+        using namespace std::views;
         auto& metadata = js.at("metadata");
+
         name_ = factory::get_string(metadata, "setup_name");
         std::println("Setup name: {}", name_);
+
+        auto const version_str = factory::get_string(metadata, "version");
+        try
+        {
+            std::ranges::transform(version_str | split('.'), version_.begin(), convert::int_from_string, [](auto&& r) { return std::string_view(r); });
+        }
+        catch (...)
+        {
+            std::throw_with_nested(SimulationError("Malformed version string: '{}'", version_str));
+        }
+        std::println("Setup version: {}", convert::string_from_version(version_));
+
         factory::assert_empty(metadata);
         js.erase("metadata");
     }
@@ -241,27 +258,34 @@ namespace setup
         }
     }
 
-    void Setup::extract_num_params(ojson& js)
+    void Setup::extract_sim_params(ojson& js)
     {
-        if (js.contains("num_params"))
+        if (js.contains("sim_params"))
         {
-            auto const& desc = js.at("num_params");
+            auto& desc = js.at("sim_params");
             try
             {
-                desc.get_to(num_params_);
-                js.erase("num_params");
+                factory::try_resolve_double_expressions(desc, variables_, "system_wavelength");
+                desc.get_to(sim_params_);
+                js.erase("sim_params");
             }
             catch (...)
             {
                 std::throw_with_nested(SimulationError("Failed to parse numerical parameters:\n{}'", desc.dump(2)));
             }
+
+            // add the system wavelength to the variables if it not exists
+            if (not variables_.contains("system_wavelength")) variables_["system_wavelength"] = sim_params_.system_wavelength;
+
+            std::println("Define system wavelength λ={:.06f}m", sim_params_.system_wavelength);
         }
     }
 
     void Setup::extract_variables(ojson& js)
     {
-        // we always provide the system wavelength as a variable for convenience
-        variables_["system_wavelength"] = num_params_.system_wavelength;
+        variables_["c0"] = 299'792'458; // speed of light in vacuum
+        variables_["epsilon0"] = 8.854'187'818'8e-12; // permittivity of vacuum (free space) / electric constant
+        variables_["mu0"] = 1.256'637'061'27e-6; // permeability of vacuum (free space) / magnetic constant
 
         if (!js.contains("variables")) { return; }
         for (auto& variables = js.at("variables"); const auto& [raw_key, val] : variables.items())
@@ -270,7 +294,7 @@ namespace setup
             {
                 auto const colon_pos = raw_key.find(':');
                 auto const stripped_key = std::string_view(raw_key).substr(0, colon_pos);
-                auto const type = colon_pos == std::string_view::npos ? std::string_view() : stripped_key.substr(colon_pos + 1);
+                auto const type = colon_pos == std::string_view::npos ? std::string_view() : std::string_view(raw_key).substr(colon_pos + 1);
                 bool is_double = type.empty() or type == "double";
                 if (!is_double and type != "int") { throw SimulationError("Variable '{}' has invalid type specifier '{}'", stripped_key, type); }
                 std::string key(stripped_key);

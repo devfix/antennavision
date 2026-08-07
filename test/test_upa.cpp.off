@@ -16,7 +16,8 @@ TEST_CASE("UPA position and rotation", "[TestUPA]")
     ojson const js = ojson::parse(R"JSON(
 {
   "metadata": {
-    "setup_name": "test-upa"
+    "setup_name": "test-upa",
+    "version": "1.0.0"
   },
   "variables": {
     "wavelength": 0.1
@@ -268,8 +269,8 @@ TEST_CASE("UPA gain using ScalarField", "[TestUPA]")
     auto const& tx = setup->get_antenna("upa1");
     auto & rx = setup->get_antenna("receiver");
     Reference const& ref_stop = setup->get_reference("ref_rx_stop");
-    math::NumParams num_params;
-    auto voltage_field = setup->get_voltage_field(tx, rx, num_params);
+    math::NumParams sim_params;
+    auto voltage_field = setup->get_voltage_field(tx, rx, sim_params);
 
     constexpr std::size_t n_points = 11;
     pos_t const pos_delta = ref_stop.pos - antenna::get_origin(rx).pos;

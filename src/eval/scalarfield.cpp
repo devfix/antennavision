@@ -74,7 +74,7 @@ namespace eval
 
         template <typename ContextT>
 
-        Vec2 trace_isoline_iteration(geometry::Surface const& surf, ContextT const& ctx, Vec2 ts, double thres, setup::NumParams const& num_params)
+        Vec2 trace_isoline_iteration(geometry::Surface const& surf, ContextT const& ctx, Vec2 ts, double thres, setup::SimParams const& sim_params)
         {
             using namespace eval::opt;
             using geometry::surface::get_pos_at;
@@ -101,7 +101,7 @@ namespace eval
                     },
                     .arg_initial = -1, //
                 };
-                auto const result = SingleOpt::run(params, num_params);
+                auto const result = SingleOpt::run(params, sim_params);
                 return predictor.lerp(pred_high, result.arg_min);
             }
             else
@@ -116,7 +116,7 @@ namespace eval
                     },
                     .arg_initial = -1, //
                 };
-                auto const result = SingleOpt::run(params, num_params);
+                auto const result = SingleOpt::run(params, sim_params);
                 return predictor.lerp(pred_low, result.arg_min);
             }
         }
@@ -248,7 +248,7 @@ namespace eval
             .fn = [&curve, &ctx](double const t) -> double { return -std::abs(ctx(geometry::curve::get_pos_at(curve, t))); },
             .arg_initial = math::nidx(k_max, n),
         };
-        auto const opt_peak = SingleOpt::run(params_peak, num_params);
+        auto const opt_peak = SingleOpt::run(params_peak, sim_params);
         double const thres = ratio * (-opt_peak.f_min);
 
         // step 2: find left cutoff search bound
@@ -268,7 +268,7 @@ namespace eval
             .fn = [&curve, thres, &ctx](double t) -> double { return std::abs(std::abs(ctx(geometry::curve::get_pos_at(curve, t))) - thres); },
             .arg_initial = -1 // will be set to midpoint during initialization of optimization
         };
-        auto const opt_left = SingleOpt::run(params_left, num_params);
+        auto const opt_left = SingleOpt::run(params_left, sim_params);
 
         // step 5: find right cutoff
         SingleOpt::Params const params_right{
@@ -277,7 +277,7 @@ namespace eval
             .fn = [&curve, thres, &ctx](double const t) -> double { return std::abs(std::abs(ctx(geometry::curve::get_pos_at(curve, t))) - thres); },
             .arg_initial = -1 // will be set to midpoint during initialization of optimization
         };
-        auto const opt_right = SingleOpt::run(params_right, num_params);
+        auto const opt_right = SingleOpt::run(params_right, sim_params);
 
         return {
             opt_left.arg_min,
@@ -320,7 +320,7 @@ namespace eval
             .fn = [&surf, thres, &ctx, t2](double const t) -> double { return std::abs(std::abs(ctx(get_pos_at(surf, t, t2))) - thres); },
             .arg_initial = -1 // will be set to midpoint during initialization of optimization
         };
-        auto const opt_init = SingleOpt::run(params_init, num_params);
+        auto const opt_init = SingleOpt::run(params_init, sim_params);
         auto isoline = trace_isoline(surf, wavelength, Vec2(opt_init.arg_min, t2), thres);
         return {isoline};
     }
@@ -344,7 +344,7 @@ namespace eval
             if (k % N_BATCH_PROGRESS_REPORT == 0)
             {
                 double const p = static_cast<double>(k) / static_cast<double>(total_size);
-                std::print("\033[2K\rScalarField::eval @ λ={:.04f}m : {: 5.1f}%", wavelength, p * 100.0);
+                std::print("\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, p * 100.0);
                 std::cout << std::flush;
             }
             *ot = cast_op(ctx(*it));
@@ -390,7 +390,7 @@ namespace eval
 
                             std::lock_guard lock(print_mutex);
                             double const p = static_cast<double>(current_total) / static_cast<double>(total_size);
-                            std::print("\033[2K\rScalarField::eval @ λ={:.04f}m : {: 5.1f}%", wavelength, std::min(100.0, p * 100.0));
+                            std::print("\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, std::min(100.0, p * 100.0));
                             std::cout << std::flush;
                         }
                     }
@@ -405,7 +405,7 @@ namespace eval
 #endif
 
         // Print final 100% completion cleanup
-        std::println("\033[2K\rScalarField::eval @ λ={:.04f}m : done", wavelength);
+        std::println("\033[2K\rScalarField::eval @ λ={:.06f}m : done", wavelength);
 
         return values;
     }
@@ -440,7 +440,7 @@ namespace eval
             .fn = [&curve, &ctx](double const t) -> double { return -std::abs(ctx(geometry::curve::get_pos_at(curve, t))); },
             .arg_initial = math::nidx(k_max, n),
         };
-        auto const opt_result = SingleOpt::run(params, num_params);
+        auto const opt_result = SingleOpt::run(params, sim_params);
         return {scan_result, opt_result};
     }
 
@@ -461,7 +461,7 @@ namespace eval
             .fn = [&surf, &ctx](std::span<double const> ts) -> double { return -std::abs(ctx(geometry::surface::get_pos_at(surf, ts[0], ts[1]))); },
             .args_initial = {math::nidx(k1_max, n1), math::nidx(k2_max, n2)},
         };
-        auto const opt_result = DualOpt::run(params, num_params);
+        auto const opt_result = DualOpt::run(params, sim_params);
         return {scan_result, opt_result};
     }
 
@@ -476,7 +476,7 @@ namespace eval
         isoline.surf_points.push_back(ts);
         while (isoline.surf_points.size() < 50)
         {
-            ts = trace_isoline_iteration(surf, ctx, ts, thres, num_params);
+            ts = trace_isoline_iteration(surf, ctx, ts, thres, sim_params);
             if (isoline.surf_points.size() >= 3)
             {
                 auto intersection =

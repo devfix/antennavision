@@ -1,6 +1,10 @@
-# Agenda
+# AntennaVision
 
-## Software
+Antenna Simulation Tool
+
+## Agenda
+
+### Features for v1.0.0
 - [x] look for setup files in a directory, loop over all setups
 - [x] implement plot_gain_over_straight
 - [x] implement ULA
@@ -24,8 +28,13 @@
 - [x] CRTP instead of lambdas for the field
 - [x] dplot
 - [x] multi-threaded computation
-- [ ] low resolution phase shifters
+- [ ] add Isotropic Radiator
+- [ ] add disable-attenuation-flag to num_params
+- [ ] implement directivity task for arrays (at the moment only supported for radiators)
+
+### Future Features
 - [ ] find beam areas
+- [ ] find beam area distance
 - [ ] add spdlog
 
 ## Writing

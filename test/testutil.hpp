@@ -10,6 +10,10 @@
 
 static constexpr double TEST_MARGIN = 1e-6;
 
+static double constexpr EPSILON_MAG = 1e-4;
+static double constexpr DELTA_PHASE = 1e-3;
+static double constexpr DELTA_DISTANCE = 1e-4;
+
 template <typename T>
 bool isclose(T a, T b)
 { return nc::isclose(nc::NdArray<T>{a}, nc::NdArray<T>{b})[0]; }

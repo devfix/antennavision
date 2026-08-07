@@ -9,7 +9,7 @@
 #include <functional>
 #include <span>
 
-#include "setup/numparams.hpp"
+#include "setup/simparams.hpp"
 
 namespace eval::opt
 {
@@ -30,7 +30,7 @@ namespace eval::opt
             double f_min;
         };
 
-        static Result run(Params const& params, setup::NumParams const& num_params);
+        static Result run(Params const& params, setup::SimParams const& sim_params);
     };
 
     template <std::size_t N>
@@ -52,7 +52,7 @@ namespace eval::opt
             double f_min;
         };
 
-        static Result run(Params const& params, setup::NumParams const& num_params);
+        static Result run(Params const& params, setup::SimParams const& sim_params);
     };
 
     using DualOpt = MultiOpt<2>;
