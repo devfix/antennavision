@@ -1,17 +1,25 @@
-#include <NumCpp.hpp>
-#include <ansi_color.hpp>
 #include <print>
 #include <ranges>
+#include <CLI/CLI.hpp>
+#include <NumCpp.hpp>
+#include <ansi_color.hpp>
 #include "bitmap.hpp"
-#include "builtin.hpp"
-#include "cmake-build-release-local/_deps/cli11-src/include/CLI/App.hpp"
 #include "convert.hpp"
-#include "include/setup/setup.hpp"
+#include "setup/setup.hpp"
 #include "manifest.hpp"
+#include "parameters.hpp"
 
 using ansi_color::fg4;
 using ansi_color::reset;
 
+/**
+ *  TODO
+ *  - add export three option
+ *  - implement print variable/radiators etc logic
+ *  - implement isotropical radiator
+ *  - implement directivity task for arrays (at the moment only supported for radiators)
+ *  - finally compile and tag the version :)
+ */
 namespace
 {
 #ifndef NDEBUG
@@ -19,11 +27,6 @@ namespace
 #else
     constexpr bool DEBUG_MODE = false;
 #endif
-
-    struct Parameters
-    {
-        bool debug_mode;
-    };
 
     void print_exception_chain(const std::exception& e, int level = 0)
     {
@@ -44,11 +47,23 @@ namespace
     int parse_params(int argc, char* argv[], Parameters& params)
     {
         CLI::App app{"Electromagnetic Wave Propagation Simulator", std::string(APPLICATION_NAME)};
-        bool debug_mode = false;
-        app.add_flag("-d,--debug", debug_mode, "Enable verbose debug output");
+        app.add_flag("-d,--debug", params.debug_mode, "Enable verbose debug output");
+        app.add_flag("-v,--variables", params.print_variables, "Print evaluated variables");
+        app.add_flag("-r,--radiators", params.print_radiators, "Print constructed radiators");
+        app.add_option("-s,--setups", params.path_setups, "Set path to setups");
         CLI11_PARSE(app, argc, argv);
 
-        if (debug_mode) { std::println("{}debug mode enabled{}", fg4::bright_black, reset); }
+        if (params.debug_mode) params.print_variables = true;
+
+        if (params.debug_mode)
+        {
+            std::println("{}debug mode:      {}{}", fg4::bright_black, params.debug_mode, reset);
+            std::println("{}print variables: {}{}", fg4::bright_black, params.print_variables, reset);
+            std::println("{}print radiators: {}{}", fg4::bright_black, params.print_radiators, reset);
+            std::println("{}path to setups:  {}{}", fg4::bright_black, params.path_setups, reset);
+        }
+
+        return EXIT_SUCCESS;
     }
 
     int run(int argc, char* argv[])
@@ -61,17 +76,10 @@ namespace
         Parameters params{};
         if (int rc = parse_params(argc, argv, params); rc != EXIT_SUCCESS) return rc;
 
-        std::println("{}{}{} v.{}{}\n", fg4::cyan, BANNER, APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION), reset);
-
+        if (params.print_banner) std::println("{}{}{} v.{}{}\n", fg4::cyan, BANNER, APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION), reset);
         if (DEBUG_MODE) { std::println("{}Warning: Compiled in debug mode. This will severely increase the computation time!{}\n", fg4::bright_yellow, reset); }
 
-        if (argc == 1)
-        {
-            std::println("Usage: {} <setup_dir>", argv[0]);
-            return 0;
-        }
-
-        path const path_setups_dir(std::filesystem::weakly_canonical(path(argv[1])));
+        path const path_setups_dir(std::filesystem::weakly_canonical(path(params.path_setups)));
         std::filesystem::create_directories(path_setups_dir);
         std::filesystem::current_path(path_setups_dir);
         std::println("Working directory: {}", std::filesystem::current_path().string());

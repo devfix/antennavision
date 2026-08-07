@@ -29,13 +29,13 @@ Antenna Simulation Tool
 - [x] dplot
 - [x] multi-threaded computation
 - [ ] add Isotropic Radiator
-- [ ] add disable-attenuation-flag to num_params
+- [x] add disable-attenuation-flag to num_params
 - [ ] implement directivity task for arrays (at the moment only supported for radiators)
 
 ### Future Features
 - [ ] find beam areas
 - [ ] find beam area distance
-- [ ] add spdlog
+- [x] add output verbosity control
 
 ## Writing
 - [ ] derive magnetic vector potential using Lorenz Equation

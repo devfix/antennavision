@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+import os
+import re
+import sys
+from pathlib import Path
+
+
+def main():
+    # 1. Prompt the user for the version string
+    version_str = input("Enter version string: ").strip()
+
+    # Validate version against regex [0-9]+\.[0-9]+\.[0-9]+
+    pattern = r"^[0-9]+\.[0-9]+\.[0-9]+$"
+    if not re.match(pattern, version_str):
+        print(f"Error: Invalid version format '{version_str}'. Must match X.Y.Z (e.g., 1.0.0).", file=sys.stderr)
+        sys.exit(1)
+
+    # Split into major, minor, patch components
+    major, minor, patch = version_str.split(".")
+
+    # 2. Update manifest.cpp
+    script_dir = Path(__file__).resolve().parent
+    manifest_path = script_dir / '..' / 'include' / 'manifest.hpp'
+    if manifest_path.is_file():
+        try:
+            content = manifest_path.read_text(encoding="utf-8")
+
+            # Regex pattern to match APPLICATION_VERSION array assignment
+            cpp_version_pattern = r"static constexpr std::array<int, 3> APPLICATION_VERSION\s*=\s*\{[0-9,\s]*\};"
+            replacement = f"static constexpr std::array<int, 3> APPLICATION_VERSION = {{{major}, {minor}, {patch}}};"
+
+            if re.search(cpp_version_pattern, content):
+                updated_content = re.sub(cpp_version_pattern, replacement, content)
+                manifest_path.write_text(updated_content, encoding="utf-8")
+                print(f"[+] Successfully updated manifest.cpp -> APPLICATION_VERSION = {{{major}, {minor}, {patch}}};")
+            else:
+                print("[-] Error: APPLICATION_VERSION declaration not found in manifest.hpp.")
+                sys.exit(1)
+        except Exception as e:
+            print(f"[-] Error reading/writing manifest.cpp: {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        print("[-] Error: manifest.cpp not found")
+        sys.exit(1)
+
+    # 3. Recursively update "version": "X.Y.Z" across all text files in CWD
+    json_version_pattern = r'"version":\s*"[0-9]+\.[0-9]+\.[0-9]+"'
+    json_replacement = f'"version": "{version_str}"'
+
+    test_dir = script_dir / '..' / 'test'
+    updated_files_count = 0
+
+    # Directories to skip (optional optimizations)
+    ignored_dirs = {".git", "build", "cmake-build-debug", "cmake-build-release", ".idea", ".vscode", "node_modules"}
+    for root, dirs, files in os.walk(test_dir):
+        # Skip ignored directories in-place
+        dirs[:] = [d for d in dirs if d not in ignored_dirs]
+
+        for file in files:
+            file_path = Path(root) / file
+
+            # Skip the script itself if placed in the same directory
+            if file_path.resolve() == Path(__file__).resolve():
+                continue
+
+            try:
+                # Read file content safely
+                text = file_path.read_text(encoding="utf-8")
+
+                if re.search(json_version_pattern, text):
+                    new_text = re.sub(json_version_pattern, json_replacement, text)
+                    file_path.write_text(new_text, encoding="utf-8")
+                    print(f"[+] Updated version in: {file_path.relative_to(test_dir)}")
+                    updated_files_count += 1
+
+            except (UnicodeDecodeError, PermissionError):
+                # Ignore binary files or files without read/write access
+                continue
+            except Exception as e:
+                print(f"[-] Error processing {file_path}: {e}", file=sys.stderr)
+                sys.exit(1)
+
+
+    print(f"\nDone! Updated {updated_files_count} file(s) across the project.")
+
+
+if __name__ == "__main__":
+    main()
+
