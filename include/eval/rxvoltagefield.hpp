@@ -19,7 +19,7 @@ namespace eval
                 field(field), rx_(field.rx_), wavelength_(wavelength), sim_params_(field.sim_params)
             {
                 for (const auto* origin = antenna::get_origin(rx_); origin; origin = origin->origin) references_.push_back(*origin);
-                validate();
+                reconcile();
                 rx_origin_ = antenna::get_origin(rx_);
             }
 
@@ -35,10 +35,10 @@ namespace eval
             }
 
         private:
-            void validate()
+            void reconcile()
             {
                 reference::resolve_origins(references_);
-                antenna::resolve_origins(std::span(&rx_, 1), references_);
+                antenna::rebind_origin_pointers(std::span(&rx_, 1), references_);
             }
 
             RxVoltageField const& field;

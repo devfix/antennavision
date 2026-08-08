@@ -1,21 +1,19 @@
-#include <print>
-#include <ranges>
 #include <CLI/CLI.hpp>
 #include <NumCpp.hpp>
 #include <ansi_color.hpp>
+#include <optional>
+#include <ranges>
 #include "bitmap.hpp"
 #include "convert.hpp"
-#include "setup/setup.hpp"
+#include "lg.hpp"
 #include "manifest.hpp"
 #include "parameters.hpp"
+#include "setup/setup.hpp"
 
 using ansi_color::fg4;
 using ansi_color::reset;
 
 /**
- *  TODO
- *  - add export three option
- *  - implement print variable/radiators etc logic
  *  - implement isotropical radiator
  *  - implement directivity task for arrays (at the moment only supported for radiators)
  *  - finally compile and tag the version :)
@@ -28,9 +26,18 @@ namespace
     constexpr bool DEBUG_MODE = false;
 #endif
 
+    void print_fatal_error()
+    {
+        // Route exception trace to stderr
+        std::cout.flush(); // 'end' stdout: create new line and flush output
+        std::cout.rdbuf(nullptr); // Disables std::cout
+        lg::println(lg::error, "-------------------------------- FATAL ERROR  --------------------------------");
+        lg::println(lg::error, "Error Stack Trace:");
+    }
+
     void print_exception_chain(const std::exception& e, int level = 0)
     {
-        std::println(std::cerr, "{}- {}", std::string(level * 2, ' '), e.what());
+        lg::println(lg::error, "{}- {}", std::string(level * 2, ' '), e.what());
 
         try
         {
@@ -44,26 +51,39 @@ namespace
         {}
     }
 
-    int parse_params(int argc, char* argv[], Parameters& params)
+    std::optional<Parameters> parse_params(int argc, char* argv[])
     {
+        Parameters params{};
         CLI::App app{"Electromagnetic Wave Propagation Simulator", std::string(APPLICATION_NAME)};
+        app.add_flag("-v,--version", params.print_version, "Print version and exit");
         app.add_flag("-d,--debug", params.debug_mode, "Enable verbose debug output");
-        app.add_flag("-v,--variables", params.print_variables, "Print evaluated variables");
-        app.add_flag("-r,--radiators", params.print_radiators, "Print constructed radiators");
-        app.add_option("-s,--setups", params.path_setups, "Set path to setups");
-        CLI11_PARSE(app, argc, argv);
+        app.add_flag("-n,--hide-banner", params.hide_banner, "Hide ascii art application banner");
+        app.add_flag("-b,--variables", params.print_variables, "Print evaluated variables");
+        app.add_flag("-c,--references", params.print_references, "Print constructed references");
+        app.add_flag("-a,--antennas", params.print_antennas, "Print constructed antennas");
+        app.add_flag("-r,--run-tasks", params.run_tasks, "Run setup tasks");
+        app.add_flag("-f,--force", params.force_recomputation, "Force recomputation of all tasks");
+        app.add_option("-s,--setup", params.path_setup, "Set path to setups");
+        app.add_option("-o,--objects", params.path_objects, "Set path to objects (three) export");
 
-        if (params.debug_mode) params.print_variables = true;
+        try
+        {
+            app.parse(argc, argv);
+        }
+        catch (const CLI::ParseError& e)
+        {
+            app.exit(e);
+            return {};
+        }
 
         if (params.debug_mode)
         {
-            std::println("{}debug mode:      {}{}", fg4::bright_black, params.debug_mode, reset);
-            std::println("{}print variables: {}{}", fg4::bright_black, params.print_variables, reset);
-            std::println("{}print radiators: {}{}", fg4::bright_black, params.print_radiators, reset);
-            std::println("{}path to setups:  {}{}", fg4::bright_black, params.path_setups, reset);
+            params.print_variables = true;
+            params.print_references = true;
+            params.print_antennas = true;
         }
 
-        return EXIT_SUCCESS;
+        return params;
     }
 
     int run(int argc, char* argv[])
@@ -73,48 +93,52 @@ namespace
 
         ansi_color::enable_windows_ansi();
 
-        Parameters params{};
-        if (int rc = parse_params(argc, argv, params); rc != EXIT_SUCCESS) return rc;
+        auto const params_opt = parse_params(argc, argv);
+        if (not params_opt) return EXIT_FAILURE;
+        auto const params = params_opt.value();
 
-        if (params.print_banner) std::println("{}{}{} v.{}{}\n", fg4::cyan, BANNER, APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION), reset);
-        if (DEBUG_MODE) { std::println("{}Warning: Compiled in debug mode. This will severely increase the computation time!{}\n", fg4::bright_yellow, reset); }
-
-        path const path_setups_dir(std::filesystem::weakly_canonical(path(params.path_setups)));
-        std::filesystem::create_directories(path_setups_dir);
-        std::filesystem::current_path(path_setups_dir);
-        std::println("Working directory: {}", std::filesystem::current_path().string());
-
-        std::vector<std::pair<path, setup::Setup>> setups;
-        for (const auto& entry : recursive_directory_iterator(path_setups_dir))
+        if (params.print_version)
         {
-            if (entry.path().filename() == "setup.json")
-            {
-                std::filesystem::current_path(entry.path().parent_path());
-                setups.emplace_back(entry.path(), entry.path());
-            }
+            lg::println(lg::info, "{} v.{}", APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION));
+            return EXIT_SUCCESS;
         }
 
-        for (auto& [path, setup] : setups)
-        {
-            std::filesystem::current_path(path.parent_path());
-            setup.export_to_three(".");
-            setup.run_tasks(path.parent_path());
+        if (not params.hide_banner) lg::println(lg::alert, "{}{} v.{}\n", BANNER, APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION));
+        if (DEBUG_MODE) { lg::println(lg::warning, "Warning: Compiled in debug mode. This will severely increase the computation time!"); }
 
-            // std::filesystem::path const path_timestamp = "timestamp";
-            // if (setup.isUpToDate(path_timestamp))
-            // {
-            //     std::println(
-            //         "{}Setup '{}' is unchanged since {}, skipping{}", fg4::cyan, setup.name, timeutil::format(setup.timestamp), reset);
-            // }
-            // else
-            // {
-            //     std::println("{}Setup '{}' is new or updated, running{}", fg4::cyan, setup.name, reset);
-            //     setup.export_to_three(".");
-            //     setup.run_tasks([&setup](std::string_view const key) { builtin::FunctionRegistry::instance().call(std::string(key), *setup); });
-            //     timeutil::store_to_file(path_timestamp, setup.timestamp);
-            //     std::println("{}All tasks completed.{}", fg4::cyan, reset);
-            // }
+        if (params.debug_mode)
+        {
+            lg::println(lg::note, "print version:       {}", params.print_version);
+            lg::println(lg::note, "debug mode:          {}", params.debug_mode);
+            lg::println(lg::note, "print variables:     {}", params.print_variables);
+            lg::println(lg::note, "print references:    {}", params.print_references);
+            lg::println(lg::note, "print antennas:      {}", params.print_antennas);
+            lg::println(lg::note, "run tasks:           {}", params.run_tasks);
+            lg::println(lg::note, "force recomputation: {}", params.force_recomputation);
+            lg::println(lg::note, "path setup file:     {}", params.path_setup);
+            lg::println(lg::note, "path objects file:   {}", params.path_objects);
         }
+
+        if (params.path_setup.empty())
+        {
+            lg::println(lg::error, "Missing path to setup file");
+            return EXIT_SUCCESS;
+        }
+
+        path const path_setup = std::filesystem::weakly_canonical(params.path_setup);
+        if (not std::filesystem::exists(path_setup) or not std::filesystem::is_regular_file(path_setup))
+        {
+            lg::println(lg::error, "Could not find setup file: {}", path_setup.string());
+            return EXIT_FAILURE;
+        }
+
+        setup::Setup su(path_setup);
+        su.print_meta();
+        if (params.print_variables) su.print_variables();
+        if (params.print_references) su.print_references();
+        if (params.print_antennas) su.print_antennas();
+        if (not params.path_objects.empty()) su.export_to_three(params.path_objects);
+        if (params.run_tasks) su.run_tasks(params.force_recomputation);
 
         return EXIT_SUCCESS;
     }
@@ -129,20 +153,13 @@ int main(int argc, char* argv[])
     }
     catch (const std::exception& e)
     {
-        // Route exception trace to stderr
-        std::cout.flush(); // 'end' stdout: create new line and flush output
-        std::cout.rdbuf(nullptr); // Disables std::cout
-        std::println(std::cerr, "{}-------------------------------- FATAL ERROR  --------------------------------{}", fg4::red, reset);
-        std::println(std::cerr, "{}Error Stack Trace:{}", fg4::red, reset);
+        print_fatal_error();
         print_exception_chain(e);
     }
     catch (...)
     {
-        // Catch-all non-standard or third-party strange exceptions
-        std::cout << std::endl; // 'end' stdout: create new line and flush output
-        std::cout.rdbuf(nullptr); // Disables std::cout
-        std::println(std::cerr, "{}-------------------------------- FATAL ERROR  --------------------------------{}", fg4::red, reset);
-        std::println(std::cerr, "{}Error Stack Trace:\n- [Unknown Critical Exception Caught]{}", fg4::red, reset);
+        print_fatal_error();
+        lg::println(lg::error, "- [Unknown Critical Exception Caught]");
     }
     return EXIT_FAILURE;
 }

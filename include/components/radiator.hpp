@@ -42,6 +42,14 @@
  */
 struct Radiator
 {
+    enum struct Type
+    {
+        CustomRadiator = 0,
+        IsotropicRadiator = 1,
+        HertzianDipole = 2,
+        StandingWaveDipole = 3
+    };
+
     using elv_spherical_t =
         std::function<Vec(double polar, double azimuth, double wavelength)>; /// effective length vector in spherical coordinates from spherical position
     using ms_elv_t = std::function<double(double wavelength)>; /// mean-squared effective length
@@ -72,16 +80,15 @@ struct Radiator
         [[nodiscard]] static double ms_elv(double wavelength, double dipole_length);
     };
 
-    // [[nodiscard]] static Vec get_elv_spherical_standing_wave(double dipole_length, double wavelength, double polar);
     [[nodiscard]] static double calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, double wavelength, setup::SimParams const& sim_params);
-
     [[nodiscard]] Vec get_elv_spherical_from_cartesian(Pos const& pos_local, double wavelength) const;
 
     [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, double wavelength, setup::SimParams const& sim_params) const;
     [[nodiscard]] double calc_directivity_from_cartesian(Pos const& pos_local, double wavelength, setup::SimParams const& sim_params) const;
 
-    std::string id; /// identifier name
-    std::string origin_id; /// name of the origin reference
+    Type type = Type::CustomRadiator; /// type of the radiator
+    std::string id{}; /// identifier name
+    std::string origin_id{}; /// name of the origin reference
     elv_spherical_t elv_spherical{}; /// callback for effective length vector in spherical coordinates, mandatory
     ms_elv_t mean_squared_elv{}; /// callback for mean-squared effective length. Optional, can be nullptr
 

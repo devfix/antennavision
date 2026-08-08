@@ -4,11 +4,18 @@
 
 #pragma once
 
+#include <string>
+
 struct Parameters
 {
+    bool print_version = false;
     bool debug_mode = false;
-    bool print_banner = true;
+    bool hide_banner = false;
     bool print_variables = false;
-    bool print_radiators = false;
-    std::string path_setups;
+    bool print_references = false;
+    bool print_antennas = false;
+    bool run_tasks = false;
+    bool force_recomputation = false;
+    std::string path_setup{};
+    std::string path_objects{};
 };

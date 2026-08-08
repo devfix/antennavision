@@ -7,6 +7,13 @@
 #include "codebook.hpp"
 #include "components/radiator.hpp"
 
+enum struct RadiatorArrayType
+{
+    CustomArray = 0,
+    UniformLinearArray = 1,
+    UniformPlanarArray = 2,
+};
+
 /**
  * @brief Base class implementing the Curiously Recurring Template Pattern (CRTP). The derived classes are of Aggregate Type.
  * @tparam Derived The derived class extending this CRTP base.
@@ -18,9 +25,10 @@ struct RadiatorArray
     //     id(id), origin_id(origin_id), size(elements.size()), elements(std::move(elements)), coefficients(std::move(coefficients))
     // {}
 
-    std::string id;
-    std::string origin_id;
-    std::vector<reference::Reference> references;
-    std::vector<Radiator> elements;
+    RadiatorArrayType type = RadiatorArrayType::CustomArray;
+    std::string id{};
+    std::string origin_id{};
+    std::vector<reference::Reference> references{};
+    std::vector<Radiator> elements{};
     reference::Reference* origin{};
 };

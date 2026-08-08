@@ -103,7 +103,7 @@ namespace antenna
      * @param antennas std::span of antennas that get interconnected
      * @param references std::span of references that are provided for the antennas and looked through
      */
-    void resolve_origins(std::span<Antenna> antennas, std::span<reference::Reference> references);
+    void rebind_origin_pointers(std::span<Antenna> antennas, std::span<reference::Reference> references);
 
     /**
      * Interconnect all radiators to their reference, i.d., resolving the origins ".origin_id" ids to their actual pointer ".origin".
@@ -113,7 +113,7 @@ namespace antenna
      * @param radiators std::span of radiators that get interconnected
      * @param references std::span of references that are provided for the antennas and looked through
      */
-    void resolve_origins(std::span<Radiator> radiators, std::span<reference::Reference> references);
+    void rebind_origin_pointers(std::span<Radiator> radiators, std::span<reference::Reference> references);
 
     /**
      * Interconnect all antennas to their reference, i.d., resolving the origins ".origin_id" ids to their actual pointer ".origin".
@@ -124,7 +124,7 @@ namespace antenna
      * @param antennas std::initializer_list of antennas that get interconnected
      * @param references std::initializer_list of references that are provided for the antennas and looked through
      */
-    void resolve_origins(std::initializer_list<std::reference_wrapper<Antenna>> antennas,
+    void rebind_origin_pointers(std::initializer_list<std::reference_wrapper<Antenna>> antennas,
         std::initializer_list<std::reference_wrapper<reference::Reference>> references);
 
     /**
@@ -135,7 +135,7 @@ namespace antenna
      * @param radiators std::initializer_list of radiators that get interconnected
      * @param references std::initializer_list of references that are provided for the antennas and looked through
      */
-    void resolve_origins(std::initializer_list<std::reference_wrapper<Radiator>> radiators,
+    void rebind_origin_pointers(std::initializer_list<std::reference_wrapper<Radiator>> radiators,
         std::initializer_list<std::reference_wrapper<reference::Reference>> references);
 
     [[nodiscard]] Antenna const& get_const(std::span<Antenna const> antennas, std::string const& id);

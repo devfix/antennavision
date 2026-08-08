@@ -6,9 +6,11 @@
 #include <future>
 #include <print>
 #include <thread>
+
 #include "eval/complexscalarmathfield.hpp"
 #include "eval/opt.hpp"
 #include "eval/rxvoltagefield.hpp"
+#include "lg.hpp"
 #include "manifest.hpp"
 #include "math/functions.hpp"
 
@@ -81,7 +83,7 @@ namespace eval
             double const diff_delta = 1e-3;
             double const step_delta = 1e-2;
 
-            std::println("ts: ({:.04f},{:.04f}) --> {:.04f}", ts.x, ts.y, ctx.abs(get_pos_at(surf, ts.x, ts.y)));
+            lg::println("ts: ({:.04f},{:.04f}) --> {:.04f}", ts.x, ts.y, ctx.abs(get_pos_at(surf, ts.x, ts.y)));
             Vec2 gradient = ctx.surf_grad(surf, ts, diff_delta).normalize();
             Vec2 tangent = ctx.surf_tang(surf, ts, diff_delta).normalize();
             auto predictor = ts + step_delta * tangent;
@@ -344,7 +346,7 @@ namespace eval
             if (k % N_BATCH_PROGRESS_REPORT == 0)
             {
                 double const p = static_cast<double>(k) / static_cast<double>(total_size);
-                std::print("\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, p * 100.0);
+                lg::print(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, p * 100.0);
                 std::cout << std::flush;
             }
             *ot = cast_op(ctx(*it));
@@ -390,7 +392,7 @@ namespace eval
 
                             std::lock_guard lock(print_mutex);
                             double const p = static_cast<double>(current_total) / static_cast<double>(total_size);
-                            std::print("\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, std::min(100.0, p * 100.0));
+                            lg::print(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, std::min(100.0, p * 100.0));
                             std::cout << std::flush;
                         }
                     }
@@ -405,7 +407,7 @@ namespace eval
 #endif
 
         // Print final 100% completion cleanup
-        std::println("\033[2K\rScalarField::eval @ λ={:.06f}m : done", wavelength);
+        lg::println(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : done", wavelength);
 
         return values;
     }
@@ -479,11 +481,10 @@ namespace eval
             ts = trace_isoline_iteration(surf, ctx, ts, thres, sim_params);
             if (isoline.surf_points.size() >= 3)
             {
-                auto intersection =
-                    check_segment_intersection(isoline.surf_points[0], isoline.surf_points[1], isoline.surf_points.back(), ts);
+                auto intersection = check_segment_intersection(isoline.surf_points[0], isoline.surf_points[1], isoline.surf_points.back(), ts);
                 if (intersection)
                 {
-                    std::println("isoline closed!");
+                    lg::println(lg::info, "isoline closed!");
                     break;
                 }
             }

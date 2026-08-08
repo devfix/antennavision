@@ -18,19 +18,19 @@ namespace setup
     {
         using VarMap = std::map<std::string, Var>;
 
-        [[nodiscard]] Setup(std::filesystem::path const& path_json, bool override_timestamp = false);
-        [[nodiscard]] Setup(ojson const& js_in);
+        [[nodiscard]] explicit Setup(std::filesystem::path const& path_json);
+        [[nodiscard]] explicit Setup(ojson const& js_in, std::filesystem::path path_cwd = ".");
 
         Setup(const Setup& other) :
             timestamp_{other.timestamp_}, name_{other.name_}, variables_{other.variables_}, sim_params_{other.sim_params_}, references_{other.references_},
             antennas_{other.antennas_}, geometries_{other.geometries_}, sweeps_{other.sweeps_}, tasks_{other.tasks_}
-        { validate(); }
+        { reconcile(); }
 
         Setup(Setup&& other) :
             timestamp_{other.timestamp_}, name_{std::move(other.name_)}, variables_{std::move(other.variables_)}, sim_params_{std::move(other.sim_params_)},
             references_{std::move(other.references_)}, antennas_{std::move(other.antennas_)}, geometries_{std::move(other.geometries_)},
             sweeps_{std::move(other.sweeps_)}, tasks_{std::move(other.tasks_)}
-        { validate(); }
+        { reconcile(); }
 
         Setup& operator=(Setup other)
         {
@@ -50,8 +50,8 @@ namespace setup
             swap(lhs.geometries_, rhs.geometries_);
             swap(lhs.sweeps_, rhs.sweeps_);
             swap(lhs.tasks_, rhs.tasks_);
-            lhs.validate();
-            rhs.validate();
+            lhs.reconcile();
+            rhs.reconcile();
         }
 
         // --------------------------------------------
@@ -70,19 +70,20 @@ namespace setup
 
         // --------------------------------------------
 
-        void validate();
+        void reconcile();
+        void print_meta() const;
+        void print_variables() const;
+        void print_references() const;
+        void print_antennas() const;
+        void export_to_three(std::filesystem::path const& path_objects) const;
+        void run_tasks(bool force_recomputation);
 
-        void export_to_three(std::filesystem::path const& directory, std::string_view objects_name = "setup") const;
-        void run_tasks(std::filesystem::path const& path_cwd);
+        [[nodiscard]] reference::Reference const& get_reference(std::string_view id) const;
+        [[nodiscard]] antenna::Antenna const& get_antenna(std::string const& id) const;
 
-        [[nodiscard]] reference::Reference const& get_reference(std::string_view id);
-        [[nodiscard]] antenna::Antenna const& get_antenna(std::string const& id);
+        [[nodiscard]] std::span<reference::Reference const> get_references() const { return references_; }
 
-        [[nodiscard]] std::span<reference::Reference const> get_references() { return references_; }
-
-        [[nodiscard]] std::span<antenna::Antenna const> get_antennas() { return antennas_; }
-
-        [[nodiscard]] bool isUpToDate(std::filesystem::path const& path_timestamp) const;
+        [[nodiscard]] std::span<antenna::Antenna const> get_antennas() const { return antennas_; }
 
         [[nodiscard]] double get_double(std::string const& variable_name) const;
         [[nodiscard]] std::int64_t get_int(std::string const& variable_name) const;
@@ -98,6 +99,7 @@ namespace setup
         void extract_sweeps(ojson& js);
         void extract_tasks(ojson& js);
 
+        std::filesystem::path path_cwd_{};
         timeutil::timestamp_t timestamp_{};
         std::string name_;
         std::array<int, 3> version_;

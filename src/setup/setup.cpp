@@ -8,27 +8,26 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <print>
-
+#include <variant>
 #include "convert.hpp"
 #include "eval/output.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/make.hpp"
 #include "factory/parse.hpp"
+#include "lg.hpp"
+#include "manifest.hpp"
 #include "simulationerror.hpp"
 #include "three.hpp"
 
 namespace setup
 {
-    using ansi_color::fg4;
-    using ansi_color::reset;
     using reference::Reference;
 
     namespace
     {
         ojson load_json(std::filesystem::path const& path_json)
         {
-            std::println("{}Loading setup file '{}'{}", fg4::cyan, path_json.string(), reset);
             std::ifstream file(path_json);
             if (!file.is_open()) { throw SimulationError("Could not open setup file '{}'", path_json.string()); }
             auto const js = nlohmann::ordered_json::parse(file);
@@ -45,10 +44,10 @@ namespace setup
         }
     } // namespace
 
-    Setup::Setup(std::filesystem::path const& path_json, bool override_timestamp) : Setup(load_json(path_json))
+    Setup::Setup(std::filesystem::path const& path_json) : Setup(load_json(path_json), path_json.parent_path())
     { timestamp_ = timeutil::get_of_file(path_json); }
 
-    Setup::Setup(ojson const& js_in)
+    Setup::Setup(ojson const& js_in, std::filesystem::path path_cwd) : path_cwd_(std::move(path_cwd))
     {
         ojson js = js_in; // create a copy of the json object in order to decompose it
         extract_meta(js);
@@ -64,14 +63,14 @@ namespace setup
         // check that the json contains no invalid (unknown) fields
         factory::assert_empty(js);
 
-        validate();
+        reconcile();
     }
 
-    void Setup::validate()
+    void Setup::reconcile()
     {
         // crucial: trace all origins by their id and connect the pointers
         reference::resolve_origins(references_);
-        antenna::resolve_origins(antennas_, references_);
+        antenna::rebind_origin_pointers(antennas_, references_);
 
         // check that objects exists
         for (auto const& task : tasks_)
@@ -91,10 +90,101 @@ namespace setup
         }
     }
 
-    void Setup::export_to_three(std::filesystem::path const& directory, std::string_view const objects_name) const
+    void Setup::print_meta() const
     {
-        std::filesystem::path const p = directory / std::format("{}.objects.js", objects_name);
+        lg::println("Setup name: {}", name_);
+        lg::println("Setup version: {}", convert::string_from_version(version_));
+    }
 
+    void Setup::print_variables() const
+    {
+        using std::ranges::to;
+        using std::views::elements;
+        using std::views::transform;
+
+        lg::println("Variables:");
+        if (variables_.empty())
+        {
+            lg::println("  No variables defined.");
+            return;
+        }
+
+        auto const rendered_map = variables_ |
+            transform(
+                [](const auto& entry)
+                {
+                    Var const& var = std::get<1>(entry);
+                    auto const is_double = std::holds_alternative<double>(var);
+                    auto const val = is_double ? std::format("{:.15g}", std::get<double>(var)) : std::to_string(std::get<std::int64_t>(var));
+                    return std::tuple{std::get<0>(entry), std::string(is_double ? "double" : "int"), std::move(val)};
+                }) |
+            to<std::vector<std::tuple<std::string, std::string, std::string>>>();
+
+        std::size_t const max_len_name = std::ranges::max(rendered_map | elements<0>, {}, &std::string::length).length();
+        std::size_t const max_len_type = std::ranges::max(rendered_map | elements<1>, {}, &std::string::length).length();
+        std::size_t const max_len_value = std::ranges::max(rendered_map | elements<2>, {}, &std::string::length).length();
+
+        lg::println("  X-{:-<{}}---{:-<{}}---{:-<{}}-X", "", max_len_name, "", max_len_type, "", max_len_value);
+        for (auto const& [name, type, value] : rendered_map)
+        {
+            lg::println("  | {:<{}} | {:<{}} | {:<{}} |", name, max_len_name, type, max_len_type, value, max_len_value);
+        }
+        lg::println("  X-{:-<{}}---{:-<{}}---{:-<{}}-X", "", max_len_name, "", max_len_type, "", max_len_value);
+    }
+
+    void Setup::print_references() const
+    {
+        lg::println("References:");
+        if (antennas_.empty())
+        {
+            lg::println("  No references defined.");
+            return;
+        }
+        for (Reference const& ref : references_)
+        {
+            if (not ref.id.empty())
+            {
+                auto const origin_id = ref.origin_id.empty() ? std::string("<global origin>") : std::format("'{}'", ref.origin_id);
+                lg::println("  * Reference '{}' placed at {}", ref.id, origin_id);
+            }
+        }
+    }
+
+    void Setup::print_antennas() const
+    {
+        lg::println("Antennas:");
+        if (antennas_.empty())
+        {
+            lg::println("  No antennas defined.");
+            return;
+        }
+
+        for (auto const& ant : antennas_)
+        {
+            ant.visit(
+                [](const auto& a)
+                {
+                    using Type = std::decay_t<decltype(a)>;
+                    if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
+                    {
+                        lg::println("  * Array '{}' of type {} placed at '{}'", a.id, magic_enum::enum_name(a.type), a.origin_id);
+                        for (Reference const& ref : a.references) //
+                            std::println("    ~ Reference '{}' placed at '{}'", ref.id, ref.origin_id);
+                        for (Radiator const& el : a.elements) //
+                            std::println("    ~ Element '{}' of type {} placed at '{}'", el.id, magic_enum::enum_name(el.type), el.origin_id);
+                    }
+                    else if constexpr (std::is_same_v<Radiator, Type>)
+                    {
+                        lg::println("  * Radiator '{}' of type {} placed at '{}'", a.id, magic_enum::enum_name(a.type), a.origin_id);
+                    }
+                    else
+                        std::unreachable();
+                });
+        }
+    }
+
+    void Setup::export_to_three(std::filesystem::path const& path_objects) const
+    {
         auto const& system_wavelength = sim_params_.system_wavelength;
 
         three::Container container;
@@ -121,9 +211,9 @@ namespace setup
             double const radius = 0.1 * radiator_length;
             container.add(three::make_cylinder(pos_start, pos_end, radius, radius));
         };
-        for (auto const& antenna : antennas_)
+        for (auto const& ant : antennas_)
         {
-            std::visit(
+            ant.visit(
                 [&](auto const& ant)
                 {
                     using Type = std::decay_t<decltype(ant)>;
@@ -136,27 +226,45 @@ namespace setup
                     {
                         throw SimulationError("Invalid antenna type");
                     }
-                },
-                antenna);
+                });
         }
 
         for (auto const& geo : geometries_) container.add(three::export_geometry(geo));
-        container.export_to_javascript(p);
+        container.export_to_javascript(path_objects);
     }
 
-    void Setup::run_tasks(std::filesystem::path const& path_cwd)
+    void Setup::run_tasks(bool force_recomputation)
     {
+        if (timestamp_ == 0) force_recomputation = true;
+
         for (auto const& task : tasks_)
         {
             auto const id = setup::task::get_id(task);
-            std::filesystem::path const path_json = path_cwd / (id + ".result.json");
-            std::println("{}Running task: {}{}", fg4::cyan, id, reset);
+            std::filesystem::path const path_output = std::filesystem::weakly_canonical(path_cwd_ / setup::task::get_output_path(task));
+
+            lg::println("Next task:");
+            lg::println("  * name:         {}", setup::task::get_name(task));
+            lg::println("  * id:           {}", id);
+            lg::println("  * path output:  {}", path_output.string());
+
+            timeutil::timestamp_t const timestamp_result = std::filesystem::exists(path_output) ? timeutil::get_of_file(path_output) : 0;
+            bool const up_to_date = timestamp_result > timestamp_;
+            if (up_to_date and not force_recomputation)
+            {
+                lg::println("Skipping computation: Output file (modified {}) is newer than configuration file (modified {}).",
+                    timeutil::format(timestamp_result),
+                    timeutil::format(timestamp_));
+                continue;
+            }
+
+            lg::println("Running task...");
+
             if (std::holds_alternative<task::DirectivityOverPolarAtAzimuth>(task))
             {
                 auto& t = std::get<task::DirectivityOverPolarAtAzimuth>(task);
                 auto& ant = antenna::get(antennas_, t.antenna_id);
                 auto& sweep = sweep::get(sweeps_, t.sweep_id);
-                eval::output::directivity_over_polar(t.path_output, ant, t.wavelength, sweep, sim_params_);
+                eval::output::directivity_over_polar(path_output, ant, t.wavelength, sweep, sim_params_);
             }
             else if (std::holds_alternative<task::RxVoltageFieldAtWavelength>(task))
             {
@@ -178,23 +286,14 @@ namespace setup
                 auto const& geo = geometry::get(geometries_, t.geo_id);
                 auto const& sweep = sweep::get(sweeps_, t.sweep_wavelength_id);
 
-                eval::output::complex_scalarfield_at_wavelength(t.path_output, t, ref, field, geo, sweep);
+                eval::output::complex_scalarfield_at_wavelength(path_output, t, ref, field, geo, sweep);
             }
         }
     }
 
-    Reference const& Setup::get_reference(std::string_view const id) { return factory::find_reference_by_id(references_, id); }
+    Reference const& Setup::get_reference(std::string_view const id) const { return factory::find_reference_by_id(references_, id); }
 
-    antenna::Antenna const& Setup::get_antenna(std::string const& id) { return antenna::get(std::span(antennas_), id); }
-
-    bool Setup::isUpToDate(std::filesystem::path const& path_timestamp) const
-    {
-        timeutil::timestamp_t const saved_timestamp = std::filesystem::exists(path_timestamp) ? timeutil::load_from_file(path_timestamp) : 0;
-
-        // we skip if the timestamps match and are non-zero
-        // zero timestamps are used by the testing framework to force setup's tasks execution
-        return saved_timestamp && saved_timestamp == timestamp_;
-    }
+    antenna::Antenna const& Setup::get_antenna(std::string const& id) const { return antenna::get_const(std::span(antennas_), id); }
 
     double Setup::get_double(std::string const& variable_name) const
     {
@@ -219,7 +318,6 @@ namespace setup
         auto& metadata = js.at("metadata");
 
         name_ = factory::get_string(metadata, "setup_name");
-        std::println("Setup name: {}", name_);
 
         auto const version_str = factory::get_string(metadata, "version");
         try
@@ -230,7 +328,17 @@ namespace setup
         {
             std::throw_with_nested(SimulationError("Malformed version string: '{}'", version_str));
         }
-        std::println("Setup version: {}", convert::string_from_version(version_));
+
+        if (version_[0] != APPLICATION_VERSION[0]) //
+            throw SimulationError("Incompatible setup version: setup is v{}, but application expects major version {}.x.x",
+                convert::string_from_version(version_),
+                APPLICATION_VERSION[0]);
+        if (version_[1] != APPLICATION_VERSION[1]) //
+            lg::println(lg::warning,
+                "Warning: Potentially incompatible setup version: setup is v{}, but application expects version {}.{}.x",
+                convert::string_from_version(version_),
+                APPLICATION_VERSION[0],
+                APPLICATION_VERSION[1]);
 
         factory::assert_empty(metadata);
         js.erase("metadata");
@@ -246,7 +354,7 @@ namespace setup
                 for (auto& cb_desc : desc)
                 {
                     auto id = cb_desc.at("id").get<std::string>();
-                    auto path = cb_desc.at("path").get<std::string>();
+                    auto path = path_cwd_ / cb_desc.at("path").get<std::string>();
                     codebooks_.emplace_back(id, path);
                 }
                 js.erase("codebooks");
@@ -276,8 +384,6 @@ namespace setup
 
             // add the system wavelength to the variables if it not exists
             if (not variables_.contains("system_wavelength")) variables_["system_wavelength"] = sim_params_.system_wavelength;
-
-            std::println("Define system wavelength λ={:.06f}m", sim_params_.system_wavelength);
         }
     }
 
@@ -321,15 +427,6 @@ namespace setup
                 {
                     throw SimulationError("Invalid type '{}' of variable '{}'", val.type_name(), stripped_key);
                 }
-                std::visit(
-                    [&key](const auto& var)
-                    {
-                        if constexpr (std::is_same_v<std::decay_t<decltype(var)>, std::int64_t>)
-                            std::println("Define integer variable {}={}", key, var);
-                        else
-                            std::println("Define floating-point variable {}={:.15g}", key, var);
-                    },
-                    variables_.at(key));
             }
             catch (...)
             {

@@ -17,10 +17,11 @@
 Radiator Radiator::IsotropicRadiator::create(std::string const& id, std::string const& origin_id)
 {
     return {
+        .type = Type::IsotropicRadiator,
         .id = id,
         .origin_id = origin_id,
         .elv_spherical = elv_spherical,
-        .mean_squared_elv = ms_elv//
+        .mean_squared_elv = ms_elv //
     };
 }
 
@@ -37,7 +38,15 @@ double Radiator::IsotropicRadiator::ms_elv(double wavelength)
 }
 
 Radiator Radiator::HertzianDipole::create(std::string const& id, std::string const& origin_id)
-{ return {.id = id, .origin_id = origin_id, .elv_spherical = elv_spherical, .mean_squared_elv = ms_elv}; }
+{
+    return {
+        .type = Type::HertzianDipole,
+        .id = id,
+        .origin_id = origin_id,
+        .elv_spherical = elv_spherical,
+        .mean_squared_elv = ms_elv //
+    };
+}
 
 Radiator::elv_spherical_t::result_type Radiator::HertzianDipole::elv_spherical(double polar, double, double)
 { return math::vec<Complex>(0, -HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0); }
@@ -47,6 +56,7 @@ Radiator::ms_elv_t::result_type Radiator::HertzianDipole::ms_elv(double) { retur
 Radiator Radiator::StandingWaveDipole::create(std::string const& id, std::string const& origin_id, double dipole_length)
 {
     return {
+        .type = Type::StandingWaveDipole,
         .id = id,
         .origin_id = origin_id,
         .elv_spherical = [dipole_length](double polar, [[maybe_unused]] double azimuth, double wavelength) -> elv_spherical_t::result_type

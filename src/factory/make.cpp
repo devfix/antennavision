@@ -7,10 +7,12 @@
 #include <locale>
 #include <nlohmann/json.hpp>
 #include <print>
+
 #include "NumCpp/Functions/var.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/parse.hpp"
+#include "lg.hpp"
 #include "math/coords.hpp"
 #include "math/functions.hpp"
 
@@ -35,72 +37,12 @@ namespace factory
             return true;
         }
 
-        std::vector<std::complex<double>>
-        load_upa_codebook(const std::filesystem::path& filepath, const std::string& ratio_key, const std::string& row, const std::string& col)
-        {
-            // 1. Open and parse the JSON file
-            std::ifstream file(filepath);
-            if (!file.is_open()) { throw std::runtime_error("Failed to open codebook file: " + filepath.string()); }
-
-            nlohmann::json root;
-            file >> root;
-
-            std::vector<Complex> coeffs;
-            auto& arr = root.at(ratio_key).at(row).at(col);
-            for (std::size_t k = 0; k < arr.size(); k++) { coeffs.push_back(math::complex_from_polar(arr[k][0], arr[k][1])); }
-            return coeffs;
-
-            if (!root.contains(ratio_key)) { throw std::invalid_argument("Distance ratio '" + ratio_key + "' not found in the codebook."); }
-
-            const auto& ratio_data = root[ratio_key];
-
-            // 2. Query the sizes of the beam grid (N_grid and M_grid) dynamically
-            int n_grid = 0;
-            for (const auto& [key, val] : ratio_data.items()) { n_grid = std::max(n_grid, std::stoi(key) + 1); }
-
-            if (n_grid == 0) { throw std::runtime_error("Empty grid configuration for ratio: " + ratio_key); }
-
-            int m_grid = 0;
-            const auto& first_row = ratio_data["0"];
-            for (const auto& [key, val] : first_row.items()) { m_grid = std::max(m_grid, std::stoi(key) + 1); }
-
-            // 3. Determine the number of physical antenna elements (N * M)
-            const auto& sample_beam = first_row["0"];
-            const size_t num_elements = sample_beam.size();
-            const size_t num_beams = static_cast<size_t>(n_grid) * static_cast<size_t>(m_grid);
-
-            // 4. Initialize NumCpp 2D array of size (num_beams, num_elements)
-            auto codebook_matrix = nc::NdArray<std::complex<double>>(num_beams, num_elements);
-
-            // 5. Populate the matrix
-            for (int r = 0; r < n_grid; ++r)
-            {
-                const auto& row_data = ratio_data[std::to_string(r)];
-
-                for (int c = 0; c < m_grid; ++c)
-                {
-                    const auto& polar_weights = row_data[std::to_string(c)];
-                    const size_t beam_idx = r * m_grid + c; // Flattened beam index
-
-                    for (size_t elem_idx = 0; elem_idx < num_elements; ++elem_idx)
-                    {
-                        // Extract magnitude and phase angle [abs, angle]
-                        const double magnitude = polar_weights[elem_idx][0].get<double>();
-                        const double angle = polar_weights[elem_idx][1].get<double>();
-
-                        // Reconstruct complex weight using Euler's relation: mag * e^(i * angle)
-                        codebook_matrix(beam_idx, elem_idx) = std::polar(magnitude, angle);
-                    }
-                }
-            }
-        }
-
         Radiator make_radiator(ojson& desc, VarMap const& variables)
         {
             auto const id = get_string(desc, "id");
             auto const origin_id = get_string(desc, "ref", true, true);
             auto const type = get_string(desc, "type");
-            // std::println("{}Creating radiator [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
+            // lg::println(lg::note, "{}Creating radiator [id: '{}', origin: '{}', type: '{}']{}", id, origin_id, type);
             if (type == "HertzianDipole") { return Radiator::HertzianDipole::create(id, origin_id); }
             if (type == "StandingWaveDipole")
             {
@@ -119,7 +61,7 @@ namespace factory
                         effective_length_parts[1](polar, azimuth, wavelength),
                         effective_length_parts[2](polar, azimuth, wavelength)};
                 };
-                return {id, origin_id, std::move(effective_length)};
+                return {.type = Radiator::Type::CustomRadiator, .id = id, .origin_id = origin_id, .elv_spherical = std::move(effective_length)};
             }
             throw SimulationError("Unknown radiator type '{}'", type);
         }
@@ -167,6 +109,7 @@ namespace factory
             }
 
             return UniformLinearArray{{
+                .type = RadiatorArrayType::UniformLinearArray,
                 .id = id,
                 .origin_id = origin_id,
                 .references = references,
@@ -226,6 +169,7 @@ namespace factory
 
             return UniformPlanarArray{
                 {
+                    .type = RadiatorArrayType::UniformPlanarArray,
                     .id = id,
                     .origin_id = origin_id,
                     .references = std::move(references),
@@ -262,7 +206,6 @@ namespace factory
             assert_valid_id(id);
             auto const type = get_string(desc, "type", false);
             auto const origin_id = get_string(desc, "ref", false, true);
-            std::println("{}Creating antenna [id: '{}', origin: '{}', type: '{}']{}", fg4::bright_black, id, origin_id, type, reset);
 
             // depending on the type make a ULA, UPA or single radiator as the antenna
             if (type == "ULA") { return make_ula(desc, variables); }

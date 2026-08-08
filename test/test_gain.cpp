@@ -36,7 +36,7 @@ TEST_CASE("Power Gain of auto With X-Translation", "[Gain]")
 
     reference::Reference ref2{.id = "ref2", .pos = {1000, 0, 0}};
     antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
-    antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
+    antenna::rebind_origin_pointers({antenna1, antenna2}, {ref1, ref2});
     std::get<Radiator>(antenna2).mean_squared_elv = nullptr; // disable pre-calculated mean-squared elv to test numerical computation
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -59,7 +59,7 @@ TEST_CASE("Power Gain of auto With Y-Translation", "[Gain]")
 
     reference::Reference ref2{.id = "ref2", .pos = {0, 1000, 0}};
     antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
-    antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
+    antenna::rebind_origin_pointers({antenna1, antenna2}, {ref1, ref2});
     std::get<Radiator>(antenna2).mean_squared_elv = nullptr; // disable pre-calculated mean-squared elv to test numerical computation
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -82,7 +82,7 @@ TEST_CASE("Power Gain of auto With Z-Translation", "[Gain]")
 
     reference::Reference ref2{.id = "ref2", .pos = {0, 0, 1000}};
     antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
-    antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
+    antenna::rebind_origin_pointers({antenna1, antenna2}, {ref1, ref2});
     std::get<Radiator>(antenna2).mean_squared_elv = nullptr; // disable pre-calculated mean-squared elv to test numerical computation
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -105,7 +105,7 @@ TEST_CASE("Power Gain of auto With X-Rotation", "[Gain]")
 
     reference::Reference ref2{.id = "ref2", .pos = {0, 1000, 0}, .rot = {pi / 6.0, 0.0, 0.0}};
     antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
-    antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
+    antenna::rebind_origin_pointers({antenna1, antenna2}, {ref1, ref2});
     std::get<Radiator>(antenna2).mean_squared_elv = nullptr; // disable pre-calculated mean-squared elv to test numerical computation
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -128,7 +128,7 @@ TEST_CASE("Power Gain of auto With Y-Rotation", "[Gain]")
 
     reference::Reference ref2{.id = "ref2", .pos = {0, 1000, 0}, .rot = {0.0, pi / 6.0, 0.0}};
     antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
-    antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
+    antenna::rebind_origin_pointers({antenna1, antenna2}, {ref1, ref2});
     std::get<Radiator>(antenna2).mean_squared_elv = nullptr; // disable pre-calculated mean-squared elv to test numerical computation
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -151,7 +151,7 @@ TEST_CASE("Power Gain of auto With Z-Rotation", "[Gain]")
 
     reference::Reference ref2{.id = "ref2", .pos = {0, 1000, 0}, .rot = {0.0, 0.0, pi / 6.0}};
     antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
-    antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
+    antenna::rebind_origin_pointers({antenna1, antenna2}, {ref1, ref2});
     std::get<Radiator>(antenna2).mean_squared_elv = nullptr; // disable pre-calculated mean-squared elv to test numerical computation
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -174,7 +174,7 @@ TEST_CASE("Power Gain of auto Complicated 1", "[Gain]")
 
     reference::Reference ref2{.id = "ref2", .pos = {0, 1000, 0}, .rot = math::quaternion_from_directions({0, 0, 1}, {1, 1, 1})};
     antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
-    antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
+    antenna::rebind_origin_pointers({antenna1, antenna2}, {ref1, ref2});
     std::get<Radiator>(antenna2).mean_squared_elv = nullptr; // disable pre-calculated mean-squared elv to test numerical computation
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();
@@ -197,7 +197,7 @@ TEST_CASE("Power Gain of auto Complicated 2", "[Gain]")
 
     reference::Reference ref2{.id = "ref2", .pos = {0, 1000, 500}, .rot = math::quaternion_from_directions({0, 0, 1}, {1, 1, 1})};
     antenna::Antenna antenna2 = Radiator::HertzianDipole::create("auto2", "ref2");
-    antenna::resolve_origins({antenna1, antenna2}, {ref1, ref2});
+    antenna::rebind_origin_pointers({antenna1, antenna2}, {ref1, ref2});
     std::get<Radiator>(antenna2).mean_squared_elv = nullptr; // disable pre-calculated mean-squared elv to test numerical computation
 
     double const r = (ref1.global_from_local_pos(POS_ZERO) - ref2.global_from_local_pos(POS_ZERO)).norm();

@@ -6,6 +6,8 @@
 #include <functional>
 #include <print>
 #include <ranges>
+
+#include "lg.hpp"
 #include "math/coords.hpp"
 #include "math/functions.hpp"
 
@@ -26,7 +28,7 @@ namespace antenna
             double const r = (tx.origin->global_from_local_pos(POS_ZERO) - rx.origin->global_from_local_pos(POS_ZERO)).norm();
             if (r < wavelength / 10)
             {
-                std::println("Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength);
+                lg::println(lg::warning, "Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength);
             }
 
             auto const pos_local_tx = tx.origin->localize(*rx.origin); // position of rx radiator in tx coordinate
@@ -73,7 +75,7 @@ namespace antenna
                         std::ranges::transform(a.references, std::back_insert_iterator(refs_merged), [](Reference& ref) { return std::addressof(ref); });
 
                         reference::resolve_origins(refs_merged); // resolve all references origins
-                        resolve_origins(a.elements, a.references); // resolve element origins within the AntennaArray
+                        rebind_origin_pointers(a.elements, a.references); // resolve element origins within the AntennaArray
                     };
                 },
                 ant);
@@ -199,25 +201,25 @@ namespace antenna
     )
     { return math::square(std::abs(calc_voltage_gain(tx, rx, wavelength, tx_coeffs, rx_coeffs, sim_params))); }
 
-    void resolve_origins(std::span<Antenna> antennas, std::span<Reference> references)
+    void rebind_origin_pointers(std::span<Antenna> antennas, std::span<Reference> references)
     {
         std::vector<Reference*> ref_vec = references | transform([](Reference& ref) { return std::addressof(ref); }) | to<std::vector>();
         for (Antenna& ant : antennas) { resolve_origin_impl(ant, ref_vec); }
     }
 
-    void resolve_origins(std::span<Radiator> radiators, std::span<Reference> references)
+    void rebind_origin_pointers(std::span<Radiator> radiators, std::span<Reference> references)
     {
         std::vector<Reference*> ref_vec = references | transform([](Reference& ref) { return std::addressof(ref); }) | to<std::vector>();
         for (Radiator& rad : radiators) { resolve_origin_impl(rad, ref_vec); }
     }
 
-    void resolve_origins(std::initializer_list<std::reference_wrapper<Antenna>> antennas, std::initializer_list<std::reference_wrapper<Reference>> references)
+    void rebind_origin_pointers(std::initializer_list<std::reference_wrapper<Antenna>> antennas, std::initializer_list<std::reference_wrapper<Reference>> references)
     {
         std::vector<Reference*> ref_vec = references | transform([](Reference& ref) { return std::addressof(ref); }) | to<std::vector>();
         for (auto const& ant : antennas) { resolve_origin_impl(ant, ref_vec); }
     }
 
-    void resolve_origins(std::initializer_list<std::reference_wrapper<Radiator>> radiators, std::initializer_list<std::reference_wrapper<Reference>> references)
+    void rebind_origin_pointers(std::initializer_list<std::reference_wrapper<Radiator>> radiators, std::initializer_list<std::reference_wrapper<Reference>> references)
     {
         std::vector<Reference*> ref_vec = references | transform([](Reference& ref) { return std::addressof(ref); }) | to<std::vector>();
         for (auto const& rad : radiators) { resolve_origin_impl(rad, ref_vec); }

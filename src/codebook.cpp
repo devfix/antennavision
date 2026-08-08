@@ -5,6 +5,8 @@
 #include "codebook.hpp"
 #include <nlohmann/json.hpp>
 #include <print>
+
+#include "lg.hpp"
 #include "math/coords.hpp"
 #include "simulationerror.hpp"
 
@@ -38,7 +40,7 @@ Codebook::Codebook(std::string_view id, std::filesystem::path const& p) : id(id)
 {
     try
     {
-        std::println("Loading codebook file '{}'", p.string());
+        lg::println("Loading codebook file '{}'", std::filesystem::weakly_canonical(p).string());
         std::ifstream file(p);
         if (!file.is_open()) { throw SimulationError("Could not open codebook. Does the file exist?"); }
         auto const js = nlohmann::json::parse(file);

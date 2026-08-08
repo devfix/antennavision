@@ -44,7 +44,7 @@
   },
   "task": {
     "type": "RxVoltageField@Wavelength",
-    "path_output": "new-result.json",
+    "path_output": "result.json",
     "ref": "",
     "tx": "tx",
     "rx": "rx",

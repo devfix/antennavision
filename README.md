@@ -29,7 +29,9 @@ Antenna Simulation Tool
 - [x] dplot
 - [x] multi-threaded computation
 - [ ] add Isotropic Radiator
+- [x] Version check for setup files
 - [x] add disable-attenuation-flag to num_params
+- [x] commandline parameters for output control
 - [ ] implement directivity task for arrays (at the moment only supported for radiators)
 
 ### Future Features
