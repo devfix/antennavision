@@ -28,16 +28,21 @@ Antenna Simulation Tool
 - [x] CRTP instead of lambdas for the field
 - [x] dplot
 - [x] multi-threaded computation
-- [ ] add Isotropic Radiator
+- [x] add Isotropic Radiator
 - [x] Version check for setup files
 - [x] add disable-attenuation-flag to num_params
 - [x] commandline parameters for output control
 - [ ] implement directivity task for arrays (at the moment only supported for radiators)
+- [ ] if debug run: print sim params
+- [ ] Check result file size > 0 OR create result.json as the last step in the eval functions
+- [ ] print actual coordinates (pos, rot, ex ey ez) for antennas and references
+
 
 ### Future Features
+- [x] add output verbosity control
+- [ ] implement UCA
 - [ ] find beam areas
 - [ ] find beam area distance
-- [x] add output verbosity control
 
 ## Writing
 - [ ] derive magnetic vector potential using Lorenz Equation

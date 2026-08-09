@@ -4,51 +4,55 @@
 
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include "../cmake-build-debug-local-static/_deps/catch2-src/src/catch2/matchers/catch_matchers.hpp"
+#include "../cmake-build-release-local/_deps/catch2-src/src/catch2/matchers/catch_matchers_floating_point.hpp"
 #include "reference.hpp"
 #include "testutil.hpp"
+
+using Catch::Matchers::WithinAbs;
 
 TEST_CASE("reference with default orientation", "[Reference]")
 {
     reference::Reference const reference("ref1", "", Pos{1, 2, 3}, Quaternion{0, 0, 0});
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos), POS_ZERO); // this should always be the case
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos + Pos{1, 0, 0}), Pos(1, 0, 0));
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos + Pos{0, 1, 0}), Pos(0, 1, 0));
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos + Pos{0, 0, 1}), Pos(0, 0, 1));
+    CHECK_THAT((reference.local_from_global_pos(reference.pos) - POS_ZERO).norm(), WithinAbs(0, DELTA_DISTANCE)); // this should always be the case
+    CHECK_THAT((reference.local_from_global_pos(reference.pos + Pos{1, 0, 0}) - Pos(1, 0, 0)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((reference.local_from_global_pos(reference.pos + Pos{0, 1, 0}) - Pos(0, 1, 0)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((reference.local_from_global_pos(reference.pos + Pos{0, 0, 1}) - Pos(0, 0, 1)).norm(), WithinAbs(0, DELTA_DISTANCE));
 }
 
 TEST_CASE("reference with simple yaw", "[Reference]")
 {
     reference::Reference const reference("ref1", "", Pos{0, 0, 0}, Quaternion{0, 0, pi / 2});
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos), POS_ZERO); // this should always be the case
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos + Pos{1, 0, 0}), Pos(0, -1, 0));
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos + Pos{0, 1, 0}), Pos(1, 0, 0));
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos + Pos{0, 0, 1}), Pos(0, 0, 1));
+    CHECK_THAT((reference.local_from_global_pos(reference.pos) - POS_ZERO).norm(), WithinAbs(0, DELTA_DISTANCE)); // this should always be the case
+    CHECK_THAT((reference.local_from_global_pos(reference.pos + Pos{1, 0, 0}) - Pos(0, -1, 0)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((reference.local_from_global_pos(reference.pos + Pos{0, 1, 0}) - Pos(1, 0, 0)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((reference.local_from_global_pos(reference.pos + Pos{0, 0, 1}) - Pos(0, 0, 1)).norm(), WithinAbs(0, DELTA_DISTANCE));
 }
 
 TEST_CASE("reference with simple pitch", "[Reference]")
 {
     reference::Reference const reference("ref1", "", Pos{0, 0, 0}, Quaternion{0, pi / 2, 0});
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos), POS_ZERO); // this should always be the case
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(Pos{-1, 0, 0}), Pos(0, 0, -1));
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(Pos{-1, -1, 0}), Pos(0, -1, -1));
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(Pos{-1, 0, -1}), Pos(1, 0, -1));
+    CHECK_THAT((reference.local_from_global_pos(reference.pos) - POS_ZERO).norm(), WithinAbs(0, DELTA_DISTANCE)); // this should always be the case
+    CHECK_THAT((reference.local_from_global_pos(Pos{-1, 0, 0}) - Pos(0, 0, -1)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((reference.local_from_global_pos(Pos{-1, -1, 0}) - Pos(0, -1, -1)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((reference.local_from_global_pos(Pos{-1, 0, -1}) - Pos(1, 0, -1)).norm(), WithinAbs(0, DELTA_DISTANCE));
 }
 
 TEST_CASE("reference with simple roll", "[Reference]")
 {
     reference::Reference const reference("ref1", "", Pos{0, 0, 0}, Quaternion{pi / 4, 0, 0});
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos), POS_ZERO); // this should always be the case
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(Pos{0, 0, -1}), Pos(0, -sqrt2_2, -sqrt2_2));
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(Pos{2, 0, -1}), Pos(2, -sqrt2_2, -sqrt2_2));
+    CHECK_THAT((reference.local_from_global_pos(reference.pos) - POS_ZERO).norm(), WithinAbs(0, DELTA_DISTANCE)); // this should always be the case
+    CHECK_THAT((reference.local_from_global_pos(Pos{0, 0, -1}) - Pos(0, -sqrt2_2, -sqrt2_2)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((reference.local_from_global_pos(Pos{2, 0, -1}) - Pos(2, -sqrt2_2, -sqrt2_2)).norm(), WithinAbs(0, DELTA_DISTANCE));
 }
 
 TEST_CASE("reference with yaw and pitch", "[Reference]")
 {
     reference::Reference const reference("ref1", "", Pos{0, 0, 0}, Quaternion{0, pi / 4, pi / 2});
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos), POS_ZERO); // this should always be the case
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(Pos{-1, 0, 0}), Pos(0, 1, 0));
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(Pos{0, -1, 0}), Pos(-sqrt2_2, 0, -sqrt2_2));
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(Pos{0, 0, -1}), Pos(sqrt2_2, 0, -sqrt2_2));
+    CHECK_THAT((reference.local_from_global_pos(reference.pos) - POS_ZERO).norm(), WithinAbs(0, DELTA_DISTANCE)); // this should always be the case
+    CHECK_THAT((reference.local_from_global_pos(Pos{-1, 0, 0}) - Pos(0, 1, 0)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((reference.local_from_global_pos(Pos{0, -1, 0}) - Pos(-sqrt2_2, 0, -sqrt2_2)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((reference.local_from_global_pos(Pos{0, 0, -1}) - Pos(sqrt2_2, 0, -sqrt2_2)).norm(), WithinAbs(0, DELTA_DISTANCE));
 }
 
 TEST_CASE("cascaded references without rotation", "[CascadedReferences]")
@@ -60,8 +64,8 @@ TEST_CASE("cascaded references without rotation", "[CascadedReferences]")
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{1, 2, 3}), Pos(2, 3, 4));
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{-1, -1, -1}), POS_ZERO);
+    CHECK_THAT((ref3.global_from_local_pos(Pos{1, 2, 3}) - Pos(2, 3, 4)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((ref3.global_from_local_pos(Pos{-1, -1, -1}) - POS_ZERO).norm(), WithinAbs(0, DELTA_DISTANCE));
 }
 
 TEST_CASE("cascaded references with rotation", "[CascadedReferences]")
@@ -73,6 +77,6 @@ TEST_CASE("cascaded references with rotation", "[CascadedReferences]")
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{1, 2, 3}), Pos(2, 3, 4));
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{-1, -1, -1}), POS_ZERO);
+    CHECK_THAT((ref3.global_from_local_pos(Pos{1, 2, 3}) - Pos(2, 3, 4)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((ref3.global_from_local_pos(Pos{-1, -1, -1}) - POS_ZERO).norm(), WithinAbs(0, DELTA_DISTANCE));
 }

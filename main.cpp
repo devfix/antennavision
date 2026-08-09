@@ -13,11 +13,7 @@
 using ansi_color::fg4;
 using ansi_color::reset;
 
-/**
- *  - implement isotropical radiator
- *  - implement directivity task for arrays (at the moment only supported for radiators)
- *  - finally compile and tag the version :)
- */
+
 namespace
 {
 #ifndef NDEBUG

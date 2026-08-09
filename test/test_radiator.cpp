@@ -21,7 +21,7 @@ double constexpr WAVELENGTH = 0.1;
 TEST_CASE("Mean squared effective length", "[Radiator]")
 {
     auto sim_params = setup::SimParams{.system_wavelength = WAVELENGTH, .n_polar = 101, .n_azimuth = 201};
-    // Hertzian Dipole
+    SECTION("Hertzian Dipole")
     {
         double const leffmean_expected = 2.0 / 3.0 * math::square(Radiator::HERTZIAN_DIPOLE_LENGTH);
 
@@ -32,11 +32,11 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
         {
             return {0, -Radiator::HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0};
         };
-        double leffmean_numerical = Radiator::calc_mean_squared_effective_length(elv_sherical, WAVELENGTH, sim_params);
+        double leffmean_numerical = Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
         CHECK_THAT(leffmean_numerical, WithinRel(leffmean_expected, 1e-3));
     }
 
-    // Half-Wave Dipole
+    SECTION("Half-Wave Dipole")
     {
         double constexpr dipole_length = 0.5 * WAVELENGTH;
         double const leffmean_expected = 0.5 * math::square(WAVELENGTH / pi) * math::q_function(pi);
@@ -48,11 +48,11 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
         {
             return Radiator::StandingWaveDipole::elv_spherical(polar, azimuth, WAVELENGTH, dipole_length);
         };
-        double leffmean_numerical = Radiator::calc_mean_squared_effective_length(elv_sherical, WAVELENGTH, sim_params);
+        double leffmean_numerical = Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
         CHECK_THAT(leffmean_numerical, WithinRel(leffmean_expected, 1e-3));
     }
 
-    // Full-Wave Dipole
+    SECTION("Full-Wave Dipole")
     {
         double constexpr dipole_length = WAVELENGTH;
         double const leffmean_expected = 0.5 * math::square(WAVELENGTH / pi) * math::q_function(2 * pi);
@@ -64,11 +64,11 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
         {
             return Radiator::StandingWaveDipole::elv_spherical(polar, azimuth, WAVELENGTH, dipole_length);
         };
-        double leffmean_numerical = Radiator::calc_mean_squared_effective_length(elv_sherical, WAVELENGTH, sim_params);
+        double leffmean_numerical = Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
         CHECK_THAT(leffmean_numerical, WithinRel(leffmean_expected, 1e-3));
     }
 
-    // 3/2-wavelength Dipole
+    SECTION("3/2-Wavelength Dipole")
     {
         double constexpr dipole_length = 1.5 * WAVELENGTH;
         double const leffmean_expected = 0.5 * math::square(WAVELENGTH / pi) * math::q_function(3 * pi);
@@ -80,13 +80,14 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
         {
             return Radiator::StandingWaveDipole::elv_spherical(polar, azimuth, WAVELENGTH, dipole_length);
         };
-        double leffmean_numerical = Radiator::calc_mean_squared_effective_length(elv_sherical, WAVELENGTH, sim_params);
+        double leffmean_numerical = Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
         CHECK_THAT(leffmean_numerical, WithinRel(leffmean_expected, 1e-3));
     }
 }
 
 TEST_CASE("HertzianDipole", "[Radiator]")
 {
+    using std::ranges::transform;
     auto sim_params = setup::SimParams{.system_wavelength = 0.1, .n_polar = 101, .n_azimuth = 201};
     reference::Reference reference;
     auto radiator = Radiator::HertzianDipole::create("HertzianDipole", "");
@@ -96,13 +97,13 @@ TEST_CASE("HertzianDipole", "[Radiator]")
     RealArray directivities_actual_phi0(thetas.shape());
     RealArray directivities_actual_phi1(thetas.shape());
     RealArray directivities_expected(thetas.shape());
-    std::ranges::transform(thetas,
+    transform(thetas,
         directivities_actual_phi0.begin(),
         [&](double theta_) { return radiator.calc_directivity_from_spherical(theta_, 0.0, WAVELENGTH, sim_params); });
-    std::ranges::transform(thetas,
+    transform(thetas,
         directivities_actual_phi1.begin(),
         [&](double theta_) { return radiator.calc_directivity_from_spherical(theta_, 1.0, WAVELENGTH, sim_params); });
-    std::ranges::transform(thetas, directivities_expected.begin(), [](double theta_) { return 1.5 * math::square(std::sin(theta_)); });
+    transform(thetas, directivities_expected.begin(), [](double theta_) { return 1.5 * math::square(std::sin(theta_)); });
     REQUIRE_CLOSE_ARRAY(directivities_actual_phi0, directivities_expected);
     REQUIRE_CLOSE_ARRAY(directivities_actual_phi1, directivities_expected);
 }

@@ -19,35 +19,67 @@ namespace antenna
 
     namespace
     {
+        Vec calc_global_elv(Radiator const& rad, Radiator const& other, double wavelength)
+        {
+            // position of other radiator in local coordinate of rad
+            auto const pos_local_cartesian = rad.origin->localize(*other.origin);
+
+            // get spherical vector at local coordinate
+            auto const elv_spherical = rad.get_elv_spherical_from_cartesian(pos_local_cartesian, wavelength);
+
+            // get rotation matrix of local spherical vector and convert it to local cartesian vector
+            auto const rot_mat = math::get_rot_mat_from_cartesian(pos_local_cartesian);
+            auto const elv_cartesian = nc::dot(rot_mat, elv_spherical);
+
+            // convert local cartesian vector to global cartesian vector
+            return rad.origin->global_from_local_vec(elv_cartesian);
+        }
+
         Complex calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, double wavelength, setup::SimParams const& sim_params)
         {
             if (tx.origin == nullptr) { throw SimulationError("TX Radiator '{}' has unresolved origin '{}'", tx.id, tx.origin_id); }
             if (rx.origin == nullptr) { throw SimulationError("RX Radiator '{}' has unresolved origin '{}'", rx.id, rx.origin_id); }
             sim_params.assert_integrity();
 
-            double const r = (tx.origin->global_from_local_pos(POS_ZERO) - rx.origin->global_from_local_pos(POS_ZERO)).norm();
-            if (r < wavelength / 10)
+            double r = (tx.origin->global_from_local_pos(POS_ZERO) - rx.origin->global_from_local_pos(POS_ZERO)).norm();
+            if (r <= wavelength / 100)
             {
                 lg::println(lg::warning, "Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength);
+                r = std::max(r, NUMERICAL_MARGIN); // sanity
             }
 
-            auto const pos_local_tx = tx.origin->localize(*rx.origin); // position of rx radiator in tx coordinate
-            auto const pos_local_rx = rx.origin->localize(*tx.origin); // position of tx radiator in rx coordinate
-            auto const rot_mat_tx = math::get_rot_mat_from_cartesian(pos_local_tx);
-            auto const rot_mat_rx = math::get_rot_mat_from_cartesian(pos_local_rx);
-            auto const elv_spherical_tx = tx.get_elv_spherical_from_cartesian(pos_local_tx, wavelength);
-            auto const elv_spherical_rx = rx.get_elv_spherical_from_cartesian(pos_local_rx, wavelength);
-            auto const elv_cartesian_tx = nc::dot(rot_mat_tx, elv_spherical_tx);
-            auto const elv_cartesian_rx = nc::dot(rot_mat_rx, elv_spherical_rx);
-            auto const elv_global_tx = tx.origin->global_from_local_vec(elv_cartesian_tx);
-            auto const elv_global_rx = rx.origin->global_from_local_vec(elv_cartesian_rx);
-            auto const g = elv_global_tx.dot(elv_global_rx).item();
-            auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * (sim_params.enable_path_loss ? 1.0/r : 1.0);
-            auto const mean_squared_elv_tx =
-                tx.mean_squared_elv ? tx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(tx.elv_spherical, wavelength, sim_params);
-            auto const mean_squared_elv_rx =
-                rx.mean_squared_elv ? rx.mean_squared_elv(wavelength) : Radiator::calc_mean_squared_effective_length(rx.elv_spherical, wavelength, sim_params);
-            return (-j * g * wavelength) / (4.0 * pi * std::sqrt(mean_squared_elv_tx * mean_squared_elv_rx)) * propagation;
+            auto const phase = std::exp(-j * 2.0 * pi * r / wavelength);
+            auto const propagation = wavelength / (4.0 * pi * (sim_params.enable_path_loss ? r : 1.0));
+
+            auto const tx_iso = static_cast<std::size_t>(tx.type == Radiator::Type::IsotropicRadiator);
+            auto const rx_iso = static_cast<std::size_t>(rx.type == Radiator::Type::IsotropicRadiator);
+            switch (tx_iso << 1u | rx_iso)
+            {
+                case 0b00:
+                {
+                    Vec const elv_tx = calc_global_elv(tx, rx, wavelength);
+                    Vec const elv_rx = calc_global_elv(rx, tx, wavelength);
+                    auto const ms_elv_tx = tx.ms_elv ? tx.ms_elv(wavelength) : Radiator::calc_ms_elv(tx.elv_spherical, wavelength, sim_params);
+                    auto const ms_elv_rx = rx.ms_elv ? rx.ms_elv(wavelength) : Radiator::calc_ms_elv(rx.elv_spherical, wavelength, sim_params);
+                    Complex const gain = -j * elv_tx.dot(elv_rx).item() / std::sqrt(ms_elv_tx * ms_elv_rx);
+                    return gain * phase * propagation;
+                }
+                case 0b01:
+                {
+                    auto const ms_elv_tx = tx.ms_elv ? tx.ms_elv(wavelength) : Radiator::calc_ms_elv(tx.elv_spherical, wavelength, sim_params);
+                    Complex const gain = -j * nc::norm(calc_global_elv(tx, rx, wavelength)).item() / std::sqrt(ms_elv_tx);
+                    return gain * phase * propagation;
+                }
+                case 0b10:
+                {
+                    auto const ms_elv_rx = rx.ms_elv ? rx.ms_elv(wavelength) : Radiator::calc_ms_elv(rx.elv_spherical, wavelength, sim_params);
+                    Complex const gain = -j * nc::norm(calc_global_elv(rx, tx, wavelength)).item() / std::sqrt(ms_elv_rx);
+                    return gain * phase * propagation;
+                }
+                case 0b11: return -j * phase * propagation;
+                default: break;
+            }
+            std::unreachable();
         }
 
         void resolve_origin_impl(Radiator& rad, std::span<Reference*> refs)
@@ -213,13 +245,15 @@ namespace antenna
         for (Radiator& rad : radiators) { resolve_origin_impl(rad, ref_vec); }
     }
 
-    void rebind_origin_pointers(std::initializer_list<std::reference_wrapper<Antenna>> antennas, std::initializer_list<std::reference_wrapper<Reference>> references)
+    void rebind_origin_pointers(std::initializer_list<std::reference_wrapper<Antenna>> antennas,
+        std::initializer_list<std::reference_wrapper<Reference>> references)
     {
         std::vector<Reference*> ref_vec = references | transform([](Reference& ref) { return std::addressof(ref); }) | to<std::vector>();
         for (auto const& ant : antennas) { resolve_origin_impl(ant, ref_vec); }
     }
 
-    void rebind_origin_pointers(std::initializer_list<std::reference_wrapper<Radiator>> radiators, std::initializer_list<std::reference_wrapper<Reference>> references)
+    void rebind_origin_pointers(std::initializer_list<std::reference_wrapper<Radiator>> radiators,
+        std::initializer_list<std::reference_wrapper<Reference>> references)
     {
         std::vector<Reference*> ref_vec = references | transform([](Reference& ref) { return std::addressof(ref); }) | to<std::vector>();
         for (auto const& rad : radiators) { resolve_origin_impl(rad, ref_vec); }

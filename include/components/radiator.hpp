@@ -54,14 +54,11 @@ struct Radiator
         std::function<Vec(double polar, double azimuth, double wavelength)>; /// effective length vector in spherical coordinates from spherical position
     using ms_elv_t = std::function<double(double wavelength)>; /// mean-squared effective length
     static double constexpr HERTZIAN_DIPOLE_LENGTH = 1e-6; /// ideally infinitely small, we use 1um that is less than any reasonable wavelength
-    static double constexpr ISOTROPIC_RADIATOR_LENGTH = 1.0; /// arbitrary reference length (simulation artefact), will cancel-out in the gain calculation
 
     /// Provide the ELV and mean-squared ELV functions for the isotropic radiator
     struct IsotropicRadiator
     {
         [[nodiscard]] static Radiator create(std::string const& id, std::string const& origin_id);
-        [[nodiscard]] static Vec elv_spherical(double polar, double azimuth, double wavelength);
-        [[nodiscard]] static double ms_elv(double wavelength);
     };
 
     /// Provide the ELV and mean-squared ELV functions for the Hertzian dipole
@@ -80,7 +77,7 @@ struct Radiator
         [[nodiscard]] static double ms_elv(double wavelength, double dipole_length);
     };
 
-    [[nodiscard]] static double calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, double wavelength, setup::SimParams const& sim_params);
+    [[nodiscard]] static double calc_ms_elv(elv_spherical_t const& elv_spherical, double wavelength, setup::SimParams const& sim_params);
     [[nodiscard]] Vec get_elv_spherical_from_cartesian(Pos const& pos_local, double wavelength) const;
 
     [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, double wavelength, setup::SimParams const& sim_params) const;
@@ -89,8 +86,8 @@ struct Radiator
     Type type = Type::CustomRadiator; /// type of the radiator
     std::string id{}; /// identifier name
     std::string origin_id{}; /// name of the origin reference
-    elv_spherical_t elv_spherical{}; /// callback for effective length vector in spherical coordinates, mandatory
-    ms_elv_t mean_squared_elv{}; /// callback for mean-squared effective length. Optional, can be nullptr
+    elv_spherical_t elv_spherical{}; /// callback for effective length vector in spherical coordinates, mandatory, except for IsotropicRadiator
+    ms_elv_t ms_elv{}; /// callback for mean-squared effective length. Optional, can be nullptr
 
     // last argument since optional for brace-initializer list
     reference::Reference* origin{};

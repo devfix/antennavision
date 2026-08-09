@@ -3,11 +3,13 @@
 //
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <nlohmann/json.hpp>
-
-#include "../include/setup/setup.hpp"
-#include "catch2/catch_approx.hpp"
+#include "setup/setup.hpp"
 #include "testutil.hpp"
+
+using Catch::Matchers::WithinAbs;
+using Catch::Matchers::WithinRel;
 
 TEST_CASE("setup without rotation", "[Setup]")
 {
@@ -43,8 +45,8 @@ TEST_CASE("setup without rotation", "[Setup]")
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{1, 2, 3}), Pos(2, 3, 4));
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{-1, -1, -1}), POS_ZERO);
+    CHECK_THAT((ref3.global_from_local_pos(Pos{1, 2, 3}) - Pos(2, 3, 4)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((ref3.global_from_local_pos(Pos{-1, -1, -1}) - POS_ZERO).norm(), WithinAbs(0, DELTA_DISTANCE));
 }
 
 TEST_CASE("setup with rotation", "[Setup]")
@@ -78,14 +80,14 @@ TEST_CASE("setup with rotation", "[Setup]")
 }
 )");
     setup::Setup su(js);
-    auto const &ref1 = su.get_reference("ref1");
-    auto const &ref2 = su.get_reference("ref2");
-    auto const &ref3 = su.get_reference("ref3");
+    auto const& ref1 = su.get_reference("ref1");
+    auto const& ref2 = su.get_reference("ref2");
+    auto const& ref3 = su.get_reference("ref3");
     test_basic_transformations(ref1);
     test_basic_transformations(ref2);
     test_basic_transformations(ref3);
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{1, 2, 3}), Pos(2, 3, 4));
-    REQUIRE_CLOSE_POSITION(ref3.global_from_local_pos(Pos{-1, -1, -1}), POS_ZERO);
+    CHECK_THAT((ref3.global_from_local_pos(Pos{1, 2, 3}) - Pos(2, 3, 4)).norm(), WithinAbs(0, DELTA_DISTANCE));
+    CHECK_THAT((ref3.global_from_local_pos(Pos{-1, -1, -1}) - POS_ZERO).norm(), WithinAbs(0, DELTA_DISTANCE));
 }
 
 TEST_CASE("setup context only variables", "[Setup]")
@@ -108,13 +110,13 @@ TEST_CASE("setup context only variables", "[Setup]")
 }
 )JSON");
     setup::Setup const su(js);
-    REQUIRE(su.get_double("x") == Catch::Approx(2.0));
-    REQUIRE(su.get_double("y") == Catch::Approx(6.0));
-    REQUIRE(su.get_double("z") == Catch::Approx(8.0));
-    REQUIRE(su.get_double("phi") == Catch::Approx(2 * pi));
-    REQUIRE(su.get_double("a") == Catch::Approx(1.0));
-    REQUIRE(su.get_double("b") == Catch::Approx(3.0));
-    REQUIRE(su.get_double("c") == Catch::Approx(-1.0));
+    CHECK_THAT(su.get_double("x"), WithinAbs(2.0, DELTA_DISTANCE));
+    CHECK_THAT(su.get_double("y"), WithinAbs(6.0, DELTA_DISTANCE));
+    CHECK_THAT(su.get_double("z"), WithinAbs(8.0, DELTA_DISTANCE));
+    CHECK_THAT(su.get_double("phi"), WithinAbs(2 * pi, DELTA_PHASE));
+    CHECK_THAT(su.get_double("a"), WithinAbs(1.0, DELTA_DISTANCE));
+    CHECK_THAT(su.get_double("b"), WithinAbs(3.0, DELTA_DISTANCE));
+    CHECK_THAT(su.get_double("c"), WithinAbs(-1.0, DELTA_DISTANCE));
 }
 
 TEST_CASE("setup context with references", "[Setup]")
@@ -144,10 +146,10 @@ TEST_CASE("setup context with references", "[Setup]")
 }
 )JSON");
     setup::Setup su(js);
-    REQUIRE(su.get_reference("ref1").pos.x == Catch::Approx(1.0));
-    REQUIRE(su.get_reference("ref1").pos.y == Catch::Approx(2.0));
-    REQUIRE(su.get_reference("ref1").pos.z == Catch::Approx(3.0));
-    REQUIRE(su.get_reference("ref1").rot.yaw() == Catch::Approx(0.1 * pi));
-    REQUIRE(su.get_reference("ref1").rot.pitch() == Catch::Approx(0.2 * pi));
-    REQUIRE(su.get_reference("ref1").rot.roll() == Catch::Approx(0.3 * pi));
+    CHECK_THAT(su.get_reference("ref1").pos.x, WithinAbs(1.0, DELTA_DISTANCE));
+    CHECK_THAT(su.get_reference("ref1").pos.y, WithinAbs(2.0, DELTA_DISTANCE));
+    CHECK_THAT(su.get_reference("ref1").pos.z, WithinAbs(3.0, DELTA_DISTANCE));
+    CHECK_THAT(su.get_reference("ref1").rot.yaw(), WithinAbs(0.1 * pi, DELTA_PHASE));
+    CHECK_THAT(su.get_reference("ref1").rot.pitch(), WithinAbs(0.2 * pi, DELTA_PHASE));
+    CHECK_THAT(su.get_reference("ref1").rot.roll(), WithinAbs(0.3 * pi, DELTA_DISTANCE));
 }

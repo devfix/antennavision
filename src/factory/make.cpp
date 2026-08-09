@@ -42,8 +42,9 @@ namespace factory
             auto const id = get_string(desc, "id");
             auto const origin_id = get_string(desc, "ref", true, true);
             auto const type = get_string(desc, "type");
-            // lg::println(lg::note, "{}Creating radiator [id: '{}', origin: '{}', type: '{}']{}", id, origin_id, type);
-            if (type == "HertzianDipole") { return Radiator::HertzianDipole::create(id, origin_id); }
+
+            if (type == "IsotropicRadiator") return Radiator::IsotropicRadiator::create(id, origin_id);
+            if (type == "HertzianDipole") return Radiator::HertzianDipole::create(id, origin_id);
             if (type == "StandingWaveDipole")
             {
                 try_resolve_double_expressions(desc, variables, "dipole_length");

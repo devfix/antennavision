@@ -20,21 +20,9 @@ Radiator Radiator::IsotropicRadiator::create(std::string const& id, std::string 
         .type = Type::IsotropicRadiator,
         .id = id,
         .origin_id = origin_id,
-        .elv_spherical = elv_spherical,
-        .mean_squared_elv = ms_elv //
+        .elv_spherical = nullptr,
+        .ms_elv = nullptr //
     };
-}
-
-Vec Radiator::IsotropicRadiator::elv_spherical(double polar, double azimuth, double wavelength)
-{
-    // Constant magnitude in theta direction (or aligned with desired polarization axis)
-    return {0, ISOTROPIC_RADIATOR_LENGTH, 0};
-}
-
-double Radiator::IsotropicRadiator::ms_elv(double wavelength)
-{
-    // Constant mean-squared length
-    return math::square(ISOTROPIC_RADIATOR_LENGTH);
 }
 
 Radiator Radiator::HertzianDipole::create(std::string const& id, std::string const& origin_id)
@@ -44,7 +32,7 @@ Radiator Radiator::HertzianDipole::create(std::string const& id, std::string con
         .id = id,
         .origin_id = origin_id,
         .elv_spherical = elv_spherical,
-        .mean_squared_elv = ms_elv //
+        .ms_elv = ms_elv //
     };
 }
 
@@ -61,7 +49,7 @@ Radiator Radiator::StandingWaveDipole::create(std::string const& id, std::string
         .origin_id = origin_id,
         .elv_spherical = [dipole_length](double polar, [[maybe_unused]] double azimuth, double wavelength) -> elv_spherical_t::result_type
         { return elv_spherical(polar, azimuth, wavelength, dipole_length); },
-        .mean_squared_elv = [dipole_length](double wavelength) -> ms_elv_t::result_type
+        .ms_elv = [dipole_length](double wavelength) -> ms_elv_t::result_type
         {
             return ms_elv(wavelength, dipole_length);
         } //
@@ -82,7 +70,7 @@ double Radiator::StandingWaveDipole::ms_elv(double wavelength, double dipole_len
     return 0.5 * math::square(wavelength / pi) * math::q_function(n * pi);
 }
 
-double Radiator::calc_mean_squared_effective_length(elv_spherical_t const& elv_spherical, double wavelength, setup::SimParams const& sim_params)
+double Radiator::calc_ms_elv(elv_spherical_t const& elv_spherical, double wavelength, setup::SimParams const& sim_params)
 {
     sim_params.assert_integrity();
     auto const n_polar = static_cast<std::int32_t>(sim_params.n_polar);
@@ -124,7 +112,7 @@ Vec Radiator::get_elv_spherical_from_cartesian(Pos const& pos_local, double wave
 }
 
 double Radiator::calc_directivity_from_spherical(double polar, double azimuth, double wavelength, setup::SimParams const& sim_params) const
-{ return math::square(math::norm(elv_spherical(polar, azimuth, wavelength))) / calc_mean_squared_effective_length(elv_spherical, wavelength, sim_params); }
+{ return math::square(math::norm(elv_spherical(polar, azimuth, wavelength))) / calc_ms_elv(elv_spherical, wavelength, sim_params); }
 
 double Radiator::calc_directivity_from_cartesian(Pos const& pos_local, double wavelength, setup::SimParams const& sim_params) const
 {

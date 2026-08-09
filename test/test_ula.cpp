@@ -70,10 +70,10 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
         double const x = (static_cast<double>(i) - 3.5) * 0.5 * wavelength;
         double const y = 2.0 * wavelength;
         double const z = 2.0 * wavelength;
-        REQUIRE_CLOSE_POSITION(ref_element.global_from_local_pos(POS_ZERO), Pos(x, y, z));
-        REQUIRE_CLOSE_POSITION(ref_element.global_from_local_pos(Pos(wavelength, 0.0, 0.0)), Pos(x, y + wavelength, z));
-        REQUIRE_CLOSE_POSITION(ref_element.global_from_local_pos(Pos(0.0, wavelength, 0.0)), Pos(x, y, z + wavelength));
-        REQUIRE_CLOSE_POSITION(ref_element.global_from_local_pos(Pos(0.0, 0.0, wavelength)), Pos(x + wavelength, y, z));
+        CHECK_CLOSE_POSITION(ref_element.global_from_local_pos(POS_ZERO), Pos(x, y, z));
+        CHECK_CLOSE_POSITION(ref_element.global_from_local_pos(Pos(wavelength, 0.0, 0.0)), Pos(x, y + wavelength, z));
+        CHECK_CLOSE_POSITION(ref_element.global_from_local_pos(Pos(0.0, wavelength, 0.0)), Pos(x, y, z + wavelength));
+        CHECK_CLOSE_POSITION(ref_element.global_from_local_pos(Pos(0.0, 0.0, wavelength)), Pos(x + wavelength, y, z));
     }
 }
 

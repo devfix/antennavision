@@ -71,8 +71,8 @@ CATCH_TRANSLATE_EXCEPTION(std::exception const& ex) {
 
 void test_inverse_transformation(reference::Reference const &reference, Pos const &pos)
 {
-    REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.global_from_local_pos(pos)), pos);
-    REQUIRE_CLOSE_POSITION(reference.global_from_local_pos(reference.local_from_global_pos(pos)), pos);
+    CHECK_CLOSE_POSITION(reference.local_from_global_pos(reference.global_from_local_pos(pos)), pos);
+    CHECK_CLOSE_POSITION(reference.global_from_local_pos(reference.local_from_global_pos(pos)), pos);
 }
 
 void test_basic_transformations(reference::Reference const &reference)
@@ -81,12 +81,12 @@ void test_basic_transformations(reference::Reference const &reference)
     test_inverse_transformation(reference, reference.pos);
     if (reference.origin)
     {
-        REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.origin->global_from_local_pos(reference.pos)), POS_ZERO);
-        REQUIRE_CLOSE_POSITION(reference.global_from_local_pos(POS_ZERO), reference.origin->global_from_local_pos(reference.pos));
+        CHECK_CLOSE_POSITION(reference.local_from_global_pos(reference.origin->global_from_local_pos(reference.pos)), POS_ZERO);
+        CHECK_CLOSE_POSITION(reference.global_from_local_pos(POS_ZERO), reference.origin->global_from_local_pos(reference.pos));
     }
     else
     {
-        REQUIRE_CLOSE_POSITION(reference.local_from_global_pos(reference.pos), POS_ZERO);
-        REQUIRE_CLOSE_POSITION(reference.global_from_local_pos(POS_ZERO), reference.pos);
+        CHECK_CLOSE_POSITION(reference.local_from_global_pos(reference.pos), POS_ZERO);
+        CHECK_CLOSE_POSITION(reference.global_from_local_pos(POS_ZERO), reference.pos);
     }
 }
