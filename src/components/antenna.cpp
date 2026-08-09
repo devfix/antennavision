@@ -259,7 +259,7 @@ namespace antenna
         for (auto const& rad : radiators) { resolve_origin_impl(rad, ref_vec); }
     }
 
-    Antenna const& get_const(std::span<Antenna const> antennas, std::string const& id)
+    Antenna const& get(std::span<Antenna const> antennas, std::string const& id)
     {
         auto const it = std::ranges::find(antennas, id, [](auto& ant) { return std::visit([](auto& a) { return a.id; }, ant); });
         if (it == antennas.end()) { throw SimulationError("Could not find antenna with id '{}'", id); }
@@ -268,9 +268,9 @@ namespace antenna
 
     Antenna& get(std::span<Antenna> antennas, std::string const& id)
     {
-        // std::as_const converts std::span<Antenna> -> std::span<Antenna const>
-        // const_cast safe here because the original span contains non-const elements
-        return const_cast<Antenna&>(get_const(antennas, id));
+        // Safe const_cast: Delegates to the const overload to eliminate duplication.
+        // Safe because the underlying 'antennas' span refers to non-const objects.
+        return const_cast<Antenna&>(get(std::span<Antenna const>{antennas}, id));
     }
 
     std::size_t size(Antenna const& ant)

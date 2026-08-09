@@ -235,11 +235,18 @@ namespace sweep
         return std::visit([](auto const& s) -> double { return s.end_val(); }, sweep);
     }
 
-    Sweep& get(std::span<Sweep> sweeps, std::string const& id)
+    Sweep const& get(std::span<Sweep const> sweeps, std::string const& id)
     {
         auto const it = std::ranges::find(sweeps, id, [](auto& sweep) { return std::visit([](auto& s) { return s.id(); }, sweep); });
         if (it == sweeps.end()) { throw SimulationError("Could not find sweep with id '{}'", id); }
         return *it;
+    }
+
+    Sweep& get(std::span<Sweep> sweeps, std::string const& id)
+    {
+        // Safe const_cast: Delegates to the const overload to eliminate duplication.
+        // Safe because the underlying 'sweeps' span refers to non-const objects.
+        return const_cast<Sweep&>(get(std::span<Sweep const>{sweeps}, id));
     }
 
     // -----------------------------------------------------------------------------

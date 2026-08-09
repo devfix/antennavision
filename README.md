@@ -33,14 +33,18 @@ Antenna Simulation Tool
 - [x] add disable-attenuation-flag to num_params
 - [x] commandline parameters for output control
 - [ ] implement directivity task for arrays (at the moment only supported for radiators)
-- [ ] if debug run: print sim params
-- [ ] Check result file size > 0 OR create result.json as the last step in the eval functions
-- [ ] print actual coordinates (pos, rot, ex ey ez) for antennas and references
+- [x] if debug run: print sim params
+- [x] Check result file size > 0 OR create result.json as the last step in the eval functions
+- [x] print actual coordinates (pos, rot, ex ey ez) for antennas and references
+- [ ] eval electrical field
+- [ ] optional with references
 
 
 ### Future Features
 - [x] add output verbosity control
 - [ ] implement UCA
+- [ ] print references as table instead of list
+- [ ] implement tx voltage field
 - [ ] find beam areas
 - [ ] find beam area distance
 

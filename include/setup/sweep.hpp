@@ -14,7 +14,7 @@ namespace sweep
 {
     struct ListSweep
     {
-        static constexpr  std::string_view name = "ListSweep";
+        static constexpr std::string_view name = "ListSweep";
 
         [[nodiscard]] ListSweep() = default;
 
@@ -38,7 +38,7 @@ namespace sweep
 
     struct LinearSweep
     {
-        static constexpr  std::string_view name = "LinearSweep";
+        static constexpr std::string_view name = "LinearSweep";
 
         [[nodiscard]] LinearSweep() = default;
 
@@ -65,7 +65,7 @@ namespace sweep
 
     struct ExpSweep
     {
-        static constexpr  std::string_view name = "ExpSweep";
+        static constexpr std::string_view name = "ExpSweep";
 
         [[nodiscard]] ExpSweep() = default;
 
@@ -95,7 +95,7 @@ namespace sweep
 
     struct LogSweep
     {
-        static constexpr  std::string_view name = "LogSweep";
+        static constexpr std::string_view name = "LogSweep";
 
         [[nodiscard]] LogSweep() = default;
 
@@ -137,5 +137,6 @@ namespace sweep
     [[nodiscard]] double get_begin_val(Sweep const& sweep);
     [[nodiscard]] double get_end_val(Sweep const& sweep);
 
+    Sweep const& get(std::span<Sweep const> sweeps, std::string const& id);
     Sweep& get(std::span<Sweep> sweeps, std::string const& id);
 } // namespace sweep

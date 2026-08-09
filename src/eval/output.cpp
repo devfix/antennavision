@@ -44,11 +44,6 @@ namespace eval::output
         // at the moment, we only support to calculate the directivity of single radiators
         auto& radiator = antenna::cast<Radiator>(antenna);
 
-        std::ofstream ofs(path_output); // first, acquire file to lock it to our process
-        ojson js;
-        js["sweep"] = sweep_azimuth;
-        js["sim_params"] = sim_params;
-
         auto const polar_angles = nc::linspace(0.0, nc::constants::pi, 51);
         auto const azimuths = sweep::get_values(sweep_azimuth);
 
@@ -70,6 +65,11 @@ namespace eval::output
             js_entry["directivities"] = directivities.toStlVector();
             entries.push_back(std::move(js_entry));
         }
+
+        std::ofstream ofs(path_output);
+        ojson js;
+        js["sweep"] = sweep_azimuth;
+        js["sim_params"] = sim_params;
         js["data"] = entries;
         ofs << js.dump(2) << '\n';
     }
@@ -84,13 +84,14 @@ namespace eval::output
         sweep::Sweep const& sweep_wavelength //
     )
     {
-        std::ofstream ofs(path_output); // first, acquire file to lock it to our process
+        auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(geo, sweep_wavelength, task.n_dim1, task.n_dim2);
+
+        std::ofstream ofs(path_output);
         ojson js;
         js["sim_params"] = scalar_field.sim_params;
         js["geo"] = geo;
         js["sweep"] = sweep_wavelength;
         js["task"] = task;
-        auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(geo, sweep_wavelength, task.n_dim1, task.n_dim2);
         js["positions"] = ojson();
         js["positions"]["cartesian"] = positions_cartesian;
         js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);

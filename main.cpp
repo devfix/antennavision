@@ -111,13 +111,13 @@ namespace
             lg::println(lg::note, "print antennas:      {}", params.print_antennas);
             lg::println(lg::note, "run tasks:           {}", params.run_tasks);
             lg::println(lg::note, "force recomputation: {}", params.force_recomputation);
-            lg::println(lg::note, "path setup file:     {}", params.path_setup);
-            lg::println(lg::note, "path objects file:   {}", params.path_objects);
+            lg::println(lg::note, "path setup file:     {}", params.path_setup.empty() ? "<unset>" : params.path_setup);
+            lg::println(lg::note, "path objects file:   {}", params.path_objects.empty() ? "<unset>" : params.path_objects);
         }
 
         if (params.path_setup.empty())
         {
-            lg::println(lg::error, "Missing path to setup file");
+            lg::println(lg::error, "Missing path to setup file. Pass -h for help.");
             return EXIT_SUCCESS;
         }
 
@@ -134,6 +134,7 @@ namespace
         if (params.print_references) su.print_references();
         if (params.print_antennas) su.print_antennas();
         if (not params.path_objects.empty()) su.export_to_three(params.path_objects);
+        if (params.debug_mode) su.print_sim_params();
         if (params.run_tasks) su.run_tasks(params.force_recomputation);
 
         return EXIT_SUCCESS;

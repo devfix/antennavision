@@ -276,6 +276,7 @@ namespace geometry
         return obj.visit([](auto const& g) -> std::string const& { return g.id(); });
     }
 
+    [[nodiscard]] Geometry const& get(std::span<Geometry const> geometries, std::string const& id);
     [[nodiscard]] Geometry& get(std::span<Geometry> geometries, std::string const& id);
 
     Vec3Array get_positions(Geometry const& geo, std::size_t n1, std::size_t n2);

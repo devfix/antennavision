@@ -47,6 +47,7 @@ namespace timeutil
 
     std::string format(timestamp_t const timestamp)
     {
+        if (timestamp == 0) return "<unset>";
         std::chrono::seconds const duration(timestamp);
         std::chrono::sys_seconds time_point{duration};
         auto const local_zone = std::chrono::current_zone();

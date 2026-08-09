@@ -4,8 +4,8 @@
 
 #include "setup/geometry.hpp"
 #include <nlohmann/json.hpp>
-#include "math/functions.hpp"
 #include "math/coords.hpp"
+#include "math/functions.hpp"
 #include "memory.hpp"
 #include "serialization.hpp"
 #include "simulationerror.hpp"
@@ -256,11 +256,18 @@ namespace geometry
             throw SimulationError("Unknown geometry type '{}'", type);
     }
 
-    Geometry& get(std::span<Geometry> geometries, std::string const& id)
+    Geometry const& get(std::span<Geometry const> geometries, std::string const& id)
     {
         auto const it = std::ranges::find(geometries, id, [](auto& geo) { return geo.visit([](auto& g) { return g.id(); }); });
         if (it == geometries.end()) { throw SimulationError("Could not find geometry with id '{}'", id); }
         return *it;
+    }
+
+    Geometry& get(std::span<Geometry> geometries, std::string const& id)
+    {
+        // Safe const_cast: Delegates to the const overload to eliminate duplication.
+        // Safe because the underlying 'geometries' span refers to non-const objects.
+        return const_cast<Geometry&>(get(std::span<Geometry const>{geometries}, id));
     }
 
     Vec3Array get_positions(Geometry const& geo, std::size_t n1, std::size_t n2)
@@ -272,8 +279,7 @@ namespace geometry
                 if constexpr (is_variant_alternative<T, Curve>)
                 {
                     Vec3Array positions(n1, 1);
-                    for (ComplexArray::index_type k = 0; k < n1; k++)
-                        positions(k, 0) = curve::get_pos_at(shape, math::nidx(k, n1));
+                    for (ComplexArray::index_type k = 0; k < n1; k++) positions(k, 0) = curve::get_pos_at(shape, math::nidx(k, n1));
                     return positions;
                 }
                 else

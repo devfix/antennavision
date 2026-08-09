@@ -138,7 +138,7 @@ namespace antenna
     void rebind_origin_pointers(std::initializer_list<std::reference_wrapper<Radiator>> radiators,
         std::initializer_list<std::reference_wrapper<reference::Reference>> references);
 
-    [[nodiscard]] Antenna const& get_const(std::span<Antenna const> antennas, std::string const& id);
+    [[nodiscard]] Antenna const& get(std::span<Antenna const> antennas, std::string const& id);
     [[nodiscard]] Antenna& get(std::span<Antenna> antennas, std::string const& id);
 
     [[nodiscard]] std::size_t size(Antenna const& ant);

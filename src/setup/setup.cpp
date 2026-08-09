@@ -42,6 +42,34 @@ namespace setup
             if (it == codebooks.end()) throw SimulationError("Could not find codebook with id '{}'", id_cb);
             return (*it)[key.subspan(1)] | std::ranges::to<std::vector<Complex>>();
         }
+
+        void print_reference(Reference const& ref, char const* indent)
+        {
+            auto const origin_id = ref.origin_id.empty() ? std::string("<global origin>") : std::format("'{}'", ref.origin_id);
+            auto const pos = ref.global_from_local_pos(POS_ZERO);
+            auto const ex = ref.global_from_local_pos(Pos(1, 0, 0)) - pos;
+            auto const ey = ref.global_from_local_pos(Pos(0, 1, 0)) - pos;
+            auto const ez = ref.global_from_local_pos(Pos(0, 0, 1)) - pos;
+            lg::println( //
+                "{}Reference '{}' with origin ref {}: pos=({:.06f},{:.06f},{:.06f})"
+                " ex=({:.03f},{:.03f},{:.03f}) ey=({:.03f},{:.03f},{:.03f}) ez=({:.03f},{:.03f},{:.03f})",
+                indent,
+                ref.id,
+                origin_id,
+                pos.x,
+                pos.y,
+                pos.z,
+                ex.x,
+                ex.y,
+                ex.z,
+                ey.x,
+                ey.y,
+                ey.z,
+                ez.x,
+                ez.y,
+                ez.z //
+            );
+        }
     } // namespace
 
     Setup::Setup(std::filesystem::path const& path_json) : Setup(load_json(path_json), path_json.parent_path())
@@ -77,15 +105,15 @@ namespace setup
         {
             if (auto const t = std::get_if<task::DirectivityOverPolarAtAzimuth>(&task))
             {
-                (void)antenna::get(antennas_, t->antenna_id);
-                (void)sweep::get(sweeps_, t->sweep_id);
+                (void)antenna::get(std::span{antennas_}, t->antenna_id);
+                (void)sweep::get(std::span{sweeps_}, t->sweep_id);
             }
             if (auto const t = std::get_if<task::RxVoltageFieldAtWavelength>(&task))
             {
-                (void)antenna::get(antennas_, t->tx_id);
-                (void)antenna::get(antennas_, t->rx_id);
-                (void)geometry::get(geometries_, t->geo_id);
-                (void)sweep::get(sweeps_, t->sweep_wavelength_id);
+                (void)antenna::get(std::span{antennas_}, t->tx_id);
+                (void)antenna::get(std::span{antennas_}, t->rx_id);
+                (void)geometry::get(std::span{geometries_}, t->geo_id);
+                (void)sweep::get(std::span{sweeps_}, t->sweep_wavelength_id);
             }
         }
     }
@@ -102,7 +130,7 @@ namespace setup
         using std::views::elements;
         using std::views::transform;
 
-        lg::println("Variables:");
+        lg::println("Setup variables:");
         if (variables_.empty())
         {
             lg::println("  No variables defined.");
@@ -115,7 +143,7 @@ namespace setup
                 {
                     Var const& var = std::get<1>(entry);
                     auto const is_double = std::holds_alternative<double>(var);
-                    auto const val = is_double ? std::format("{:.15g}", std::get<double>(var)) : std::to_string(std::get<std::int64_t>(var));
+                    auto const val = is_double ? std::format("{:.17g}", std::get<double>(var)) : std::to_string(std::get<std::int64_t>(var));
                     return std::tuple{std::get<0>(entry), std::string(is_double ? "double" : "int"), std::move(val)};
                 }) |
             to<std::vector<std::tuple<std::string, std::string, std::string>>>();
@@ -134,7 +162,7 @@ namespace setup
 
     void Setup::print_references() const
     {
-        lg::println("References:");
+        lg::println("Setup references:");
         if (antennas_.empty())
         {
             lg::println("  No references defined.");
@@ -142,17 +170,13 @@ namespace setup
         }
         for (Reference const& ref : references_)
         {
-            if (not ref.id.empty())
-            {
-                auto const origin_id = ref.origin_id.empty() ? std::string("<global origin>") : std::format("'{}'", ref.origin_id);
-                lg::println("  * Reference '{}' placed at {}", ref.id, origin_id);
-            }
+            if (not ref.id.empty()) print_reference(ref, "  * ");
         }
     }
 
     void Setup::print_antennas() const
     {
-        lg::println("Antennas:");
+        lg::println("Setup antennas:");
         if (antennas_.empty())
         {
             lg::println("  No antennas defined.");
@@ -169,18 +193,31 @@ namespace setup
                     {
                         lg::println("  * Array '{}' of type {} placed at '{}'", a.id, magic_enum::enum_name(a.type), a.origin_id);
                         for (Reference const& ref : a.references) //
-                            std::println("    ~ Reference '{}' placed at '{}'", ref.id, ref.origin_id);
+                            print_reference(ref, "    ~ ");
                         for (Radiator const& el : a.elements) //
                             std::println("    ~ Element '{}' of type {} placed at '{}'", el.id, magic_enum::enum_name(el.type), el.origin_id);
                     }
                     else if constexpr (std::is_same_v<Radiator, Type>)
                     {
-                        lg::println("  * Radiator '{}' of type {} placed at '{}'", a.id, magic_enum::enum_name(a.type), a.origin_id);
+                        lg::println("  * Radiator '{}' of type {} with origin ref '{}'", a.id, magic_enum::enum_name(a.type), a.origin_id);
                     }
                     else
                         std::unreachable();
                 });
         }
+    }
+
+    void Setup::print_sim_params() const
+    {
+        lg::println(lg::note, "Simulation parameters:");
+        lg::println(lg::note, "  * system wavelength: {:.17g}", sim_params_.system_wavelength);
+        lg::println(lg::note, "  * enable path loss:  {}", sim_params_.enable_path_loss);
+        lg::println(lg::note, "  * n polar:           {}", sim_params_.n_polar);
+        lg::println(lg::note, "  * n azimuth:         {}", sim_params_.n_azimuth);
+        lg::println(lg::note, "  * n linear1:         {}", sim_params_.n_linear1);
+        lg::println(lg::note, "  * n linear2:         {}", sim_params_.n_linear2);
+        lg::println(lg::note, "  * xtol rel:          {:.17g}", sim_params_.xtol_rel);
+        lg::println(lg::note, "  * ftol rel:          {:.17g}", sim_params_.ftol_rel);
     }
 
     void Setup::export_to_three(std::filesystem::path const& path_objects) const
@@ -233,7 +270,7 @@ namespace setup
         container.export_to_javascript(path_objects);
     }
 
-    void Setup::run_tasks(bool force_recomputation)
+    void Setup::run_tasks(bool force_recomputation) const
     {
         if (timestamp_ == 0) force_recomputation = true;
 
@@ -247,53 +284,29 @@ namespace setup
             lg::println("  * id:           {}", id);
             lg::println("  * path output:  {}", path_output.string());
 
-            timeutil::timestamp_t const timestamp_result = std::filesystem::exists(path_output) ? timeutil::get_of_file(path_output) : 0;
+            bool const result_found = std::filesystem::is_regular_file(path_output) and std::filesystem::file_size(path_output) > 0;
+            auto const timestamp_result = result_found ? timeutil::get_of_file(path_output) : 0;
             bool const up_to_date = timestamp_result > timestamp_;
             if (up_to_date and not force_recomputation)
             {
-                lg::println("Skipping computation: Output file (modified {}) is newer than configuration file (modified {}).",
+                lg::println("Skipping computation: Output file (modified {}) is newer than setup file (modified {}).",
                     timeutil::format(timestamp_result),
                     timeutil::format(timestamp_));
                 continue;
             }
 
-            lg::println("Running task...");
+            if (up_to_date)
+                lg::println("Running task (forced)...");
+            else
+                lg::println("Running task...");
 
-            if (std::holds_alternative<task::DirectivityOverPolarAtAzimuth>(task))
-            {
-                auto& t = std::get<task::DirectivityOverPolarAtAzimuth>(task);
-                auto& ant = antenna::get(antennas_, t.antenna_id);
-                auto& sweep = sweep::get(sweeps_, t.sweep_id);
-                eval::output::directivity_over_polar(path_output, ant, t.wavelength, sweep, sim_params_);
-            }
-            else if (std::holds_alternative<task::RxVoltageFieldAtWavelength>(task))
-            {
-                auto& t = std::get<task::RxVoltageFieldAtWavelength>(task);
-
-                auto& tx = antenna::get(antennas_, t.tx_id);
-                auto& rx = antenna::get(antennas_, t.rx_id);
-
-                auto const tx_coeffs = t.tx_codebook.empty() //
-                    ? std::vector<Complex>(antenna::size(tx), 1.0)
-                    : get_coeffs_from_codebook(codebooks_, t.tx_codebook);
-
-                auto const rx_coeffs = t.rx_codebook.empty() //
-                    ? std::vector<Complex>(antenna::size(rx), 1.0)
-                    : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
-
-                auto const& ref = reference::get(const_cast<decltype(references_) const&>(references_), t.ref_id);
-                auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_);
-                auto const& geo = geometry::get(geometries_, t.geo_id);
-                auto const& sweep = sweep::get(sweeps_, t.sweep_wavelength_id);
-
-                eval::output::complex_scalarfield_at_wavelength(path_output, t, ref, field, geo, sweep);
-            }
+            run_task(task, path_output);
         }
     }
 
     Reference const& Setup::get_reference(std::string_view const id) const { return factory::find_reference_by_id(references_, id); }
 
-    antenna::Antenna const& Setup::get_antenna(std::string const& id) const { return antenna::get_const(std::span(antennas_), id); }
+    antenna::Antenna const& Setup::get_antenna(std::string const& id) const { return antenna::get(std::span(antennas_), id); }
 
     double Setup::get_double(std::string const& variable_name) const
     {
@@ -471,5 +484,38 @@ namespace setup
         if (!js.contains("tasks")) { return; }
         for (auto& tasks = js.at("tasks"); auto& desc : tasks) tasks_.push_back(factory::make_task(desc, variables_));
         js.erase("tasks");
+    }
+
+    void Setup::run_task(task::Task const& task, std::filesystem::path const& path_output) const
+    {
+        if (std::holds_alternative<task::DirectivityOverPolarAtAzimuth>(task))
+        {
+            auto& t = std::get<task::DirectivityOverPolarAtAzimuth>(task);
+            auto& ant = antenna::get(antennas_, t.antenna_id);
+            auto& sweep = sweep::get(sweeps_, t.sweep_id);
+            eval::output::directivity_over_polar(path_output, ant, t.wavelength, sweep, sim_params_);
+        }
+        else if (std::holds_alternative<task::RxVoltageFieldAtWavelength>(task))
+        {
+            auto& t = std::get<task::RxVoltageFieldAtWavelength>(task);
+
+            auto& tx = antenna::get(antennas_, t.tx_id);
+            auto& rx = antenna::get(antennas_, t.rx_id);
+
+            auto const tx_coeffs = t.tx_codebook.empty() //
+                ? std::vector<Complex>(antenna::size(tx), 1.0)
+                : get_coeffs_from_codebook(codebooks_, t.tx_codebook);
+
+            auto const rx_coeffs = t.rx_codebook.empty() //
+                ? std::vector<Complex>(antenna::size(rx), 1.0)
+                : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
+
+            auto const& ref = reference::get(const_cast<decltype(references_) const&>(references_), t.ref_id);
+            auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_);
+            auto const& geo = geometry::get(geometries_, t.geo_id);
+            auto const& sweep = sweep::get(sweeps_, t.sweep_wavelength_id);
+
+            eval::output::complex_scalarfield_at_wavelength(path_output, t, ref, field, geo, sweep);
+        }
     }
 } // namespace setup
