@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <magic_enum/magic_enum.hpp>
 #include <span>
 #include <variant>
+#include <magic_enum/magic_enum.hpp>
 #include "components/uniformlineararray.hpp"
 #include "components/uniformplanararray.hpp"
 #include "customarray.hpp"
@@ -27,20 +27,13 @@ namespace antenna
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     template <typename T>
-    concept IsAntenna = std::same_as<std::decay_t<T>, Antenna>;
+    concept is_antenna = std::same_as<std::decay_t<T>, Antenna>;
 
     template <typename T>
-    concept IsRadiator = std::same_as<std::decay_t<T>, Radiator>;
+    concept is_radiator = std::same_as<std::decay_t<T>, Radiator>;
 
     template <typename T>
-    concept IsArray = not IsRadiator<T>;
-
-    // template <typename T>
-    // constexpr bool is_array = std::disjunction_v< //
-    //     std::is_same<std::decay_t<T>, CustomArray>,
-    //     std::is_same<std::decay_t<T>, UniformLinearArray>,
-    //     std::is_same<std::decay_t<T>, UniformPlanarArray> //
-    //     >;
+    concept is_array = not is_radiator<T>;
 
     [[nodiscard]] constexpr std::string_view get_type_name(const Antenna& ant)
     {
@@ -50,25 +43,25 @@ namespace antenna
 
     [[nodiscard]] constexpr std::string const& get_id(Antenna const& antenna)
     {
-        return std::visit([](auto& ant) -> std::string const& { return ant.id; }, antenna);
+        return antenna.visit([](auto& ant) -> std::string const& { return ant.id; });
     }
 
     [[nodiscard]] constexpr std::string const& get_origin_id(Antenna const& antenna)
     {
-        return std::visit([](auto& ant) -> std::string const& { return ant.origin_id; }, antenna);
+        return antenna.visit([](auto& ant) -> std::string const& { return ant.origin_id; });
     }
 
     [[nodiscard]] constexpr reference::Reference* const& get_origin(Antenna const& antenna)
     {
-        return std::visit([](auto& ant) -> reference::Reference* const& { return ant.origin; }, antenna);
+        return antenna.visit([](auto& ant) -> reference::Reference* const& { return ant.origin; });
     }
 
     [[nodiscard]] constexpr reference::Reference*& get_origin(Antenna& antenna)
     {
-        return std::visit([](auto& ant) -> reference::Reference*& { return ant.origin; }, antenna);
+        return antenna.visit([](auto& ant) -> reference::Reference*& { return ant.origin; });
     }
 
-    template <typename T, IsAntenna A>
+    template <typename T, is_antenna A>
     [[nodiscard]] constexpr decltype(auto) cast(A& antenna)
     {
         if (auto specified = std::get_if<T>(&antenna); specified) { return *specified; }

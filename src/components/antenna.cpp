@@ -138,7 +138,7 @@ namespace antenna
             ant.visit(
                 [&refs](auto& a)
                 {
-                    if constexpr (antenna::IsArray<decltype(a)>)
+                    if constexpr (antenna::is_array<decltype(a)>)
                     {
                         // create pointer vector of passed references and the references of the AntennaArray
                         std::vector refs_merged(refs.begin(), refs.end());
@@ -363,10 +363,10 @@ namespace antenna
         return ant.visit(
             [](auto const& a)
             {
-                using Type = std::decay_t<decltype(a)>;
-                if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>) return a.elements.size();
-                // the antenna is not an array -> it is definitely a single radiator -> return unity
-                return 1uz;
+                if constexpr (is_radiator<decltype(a)>)
+                    return 1uz;
+                else
+                    return a.elements.size();
             });
     }
 
