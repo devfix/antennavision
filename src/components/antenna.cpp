@@ -19,6 +19,12 @@ namespace antenna
 
     namespace
     {
+#ifndef NDEBUG
+        constexpr bool DEBUG_MODE = true;
+#else
+        constexpr bool DEBUG_MODE = false;
+#endif
+
         Vec calc_global_elv(Radiator const& rad, Radiator const& other, double wavelength)
         {
             // position of other radiator in local coordinate of rad
@@ -37,9 +43,12 @@ namespace antenna
 
         Complex calc_voltage_gain_direct(Radiator const& tx, Radiator const& rx, double wavelength, setup::SimParams const& sim_params)
         {
-            if (tx.origin == nullptr) { throw SimulationError("TX Radiator '{}' has unresolved origin '{}'", tx.id, tx.origin_id); }
-            if (rx.origin == nullptr) { throw SimulationError("RX Radiator '{}' has unresolved origin '{}'", rx.id, rx.origin_id); }
-            sim_params.assert_integrity();
+            if constexpr (DEBUG_MODE)
+            {
+                if (tx.origin == nullptr) throw SimulationError("TX Radiator '{}' has unresolved origin '{}'", tx.id, tx.origin_id);
+                if (rx.origin == nullptr) throw SimulationError("RX Radiator '{}' has unresolved origin '{}'", rx.id, rx.origin_id);
+                sim_params.assert_integrity();
+            }
 
             double r = (tx.origin->global_from_local_pos(POS_ZERO) - rx.origin->global_from_local_pos(POS_ZERO)).norm();
             if (r <= wavelength / 100)
@@ -48,8 +57,7 @@ namespace antenna
                 r = std::max(r, NUMERICAL_MARGIN); // sanity
             }
 
-            auto const phase = std::exp(-j * 2.0 * pi * r / wavelength);
-            auto const propagation = wavelength / (4.0 * pi * (sim_params.enable_path_loss ? r : 1.0));
+            auto const propagation = std::exp(-j * 2.0 * pi * r / wavelength) * (sim_params.enable_path_loss ? 1.0 / r : 1.0);
 
             auto const tx_iso = static_cast<std::size_t>(tx.type == Radiator::Type::IsotropicRadiator);
             auto const rx_iso = static_cast<std::size_t>(rx.type == Radiator::Type::IsotropicRadiator);
@@ -61,22 +69,22 @@ namespace antenna
                     Vec const elv_rx = calc_global_elv(rx, tx, wavelength);
                     auto const ms_elv_tx = tx.ms_elv ? tx.ms_elv(wavelength) : Radiator::calc_ms_elv(tx.elv_spherical, wavelength, sim_params);
                     auto const ms_elv_rx = rx.ms_elv ? rx.ms_elv(wavelength) : Radiator::calc_ms_elv(rx.elv_spherical, wavelength, sim_params);
-                    Complex const gain = -j * elv_tx.dot(elv_rx).item() / std::sqrt(ms_elv_tx * ms_elv_rx);
-                    return gain * phase * propagation;
+                    Complex const coupling = elv_tx.dot(elv_rx).item() / std::sqrt(ms_elv_tx * ms_elv_rx);
+                    return -j * coupling * wavelength / (4.0 * pi) * propagation;
                 }
                 case 0b01:
                 {
                     auto const ms_elv_tx = tx.ms_elv ? tx.ms_elv(wavelength) : Radiator::calc_ms_elv(tx.elv_spherical, wavelength, sim_params);
-                    Complex const gain = -j * nc::norm(calc_global_elv(tx, rx, wavelength)).item() / std::sqrt(ms_elv_tx);
-                    return gain * phase * propagation;
+                    Complex const coupling = nc::norm(calc_global_elv(tx, rx, wavelength)).item() / std::sqrt(ms_elv_tx);
+                    return -j * coupling * wavelength / (4.0 * pi) * propagation;
                 }
                 case 0b10:
                 {
                     auto const ms_elv_rx = rx.ms_elv ? rx.ms_elv(wavelength) : Radiator::calc_ms_elv(rx.elv_spherical, wavelength, sim_params);
-                    Complex const gain = -j * nc::norm(calc_global_elv(rx, tx, wavelength)).item() / std::sqrt(ms_elv_rx);
-                    return gain * phase * propagation;
+                    Complex const coupling = nc::norm(calc_global_elv(rx, tx, wavelength)).item() / std::sqrt(ms_elv_rx);
+                    return -j * coupling * wavelength / (4.0 * pi) * propagation;
                 }
-                case 0b11: return -j * phase * propagation;
+                case 0b11: return -j * wavelength / (4.0 * pi) * propagation;
                 default: break;
             }
             std::unreachable();
@@ -232,6 +240,8 @@ namespace antenna
         setup::SimParams const& sim_params //
     )
     { return math::square(std::abs(calc_voltage_gain(tx, rx, wavelength, tx_coeffs, rx_coeffs, sim_params))); }
+
+    Vec calc_electrical_field(Antenna const& ant, double wavelength, std::span<Complex const> coeffs, setup::SimParams const& sim_params) {}
 
     void rebind_origin_pointers(std::span<Antenna> antennas, std::span<Reference> references)
     {

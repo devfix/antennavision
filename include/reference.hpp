@@ -4,9 +4,10 @@
 
 #pragma once
 
-#include "simulationerror.hpp"
+#include <optional>
 #include "types/json.hpp"
 #include "types/math.hpp"
+#include "simulationerror.hpp"
 
 namespace reference
 {

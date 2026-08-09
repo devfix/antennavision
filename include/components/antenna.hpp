@@ -85,6 +85,13 @@ namespace antenna
         setup::SimParams const& sim_params //
     );
 
+    [[nodiscard]] Vec calc_electrical_field(//
+        Antenna const& ant,
+        double wavelength,
+        std::span<Complex const> coeffs,
+        setup::SimParams const& sim_params //
+    );
+
     /**
      * Creates new scalar field that is the power field if the tx is fixed in space and the rx is moved around
      * @param tx transmitter antenna

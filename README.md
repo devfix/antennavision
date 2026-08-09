@@ -37,7 +37,7 @@ Antenna Simulation Tool
 - [x] Check result file size > 0 OR create result.json as the last step in the eval functions
 - [x] print actual coordinates (pos, rot, ex ey ez) for antennas and references
 - [ ] eval electrical field
-- [ ] optional with references
+- [ ] ~optional with references~ &rarr; not supported by compiler yet
 
 
 ### Future Features

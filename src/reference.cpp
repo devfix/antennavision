@@ -3,9 +3,9 @@
 //
 
 #include "reference.hpp"
-#include <nlohmann/json.hpp>
 #include <ranges>
-#include "../include/math/coords.hpp"
+#include <nlohmann/json.hpp>
+#include "math/coords.hpp"
 #include "serialization.hpp"
 #include "simulationerror.hpp"
 
