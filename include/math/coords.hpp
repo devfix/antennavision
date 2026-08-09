@@ -30,7 +30,6 @@ namespace math
 
     Quaternion quaternion_from_directions(Pos dir_initial, Pos dir_target);
 
-
     /**
      * polar to complex number
      * @param mag magnitude in Euler's plane
@@ -40,7 +39,7 @@ namespace math
     [[nodiscard]] Complex constexpr complex_from_polar(double const mag, double const phi) { return {mag * std::cos(phi), mag * std::sin(phi)}; }
 
     template <typename T>
-    [[nodiscard]] T constexpr spherical_from_cartesian(Pos const& pos)
+    [[nodiscard]] T constexpr spherical_from_cartesian_pos(Pos const& pos)
     {
         double const r = std::hypot(pos.x, pos.y, pos.z);
         if (r < NUMERICAL_MARGIN) { return {0, 0, 0}; }
@@ -49,6 +48,17 @@ namespace math
         double const phi = std::atan2(pos.y, pos.x);
         return {r, theta, phi};
     }
+
+    template <typename T>
+    [[nodiscard]] Pos cartesian_from_spherical_pos(T const& pos)
+    {
+        double const& r = pos[0];
+        double const& theta = pos[1];
+        double const& phi = pos[2];
+        return {r * std::sin(theta) * std::cos(phi), r * std::sin(theta) * std::sin(phi), r * std::cos(theta)};
+    }
+
+    [[nodiscard]] inline Pos cartesian_from_spherical_pos(double r, double theta, double phi) { return cartesian_from_spherical_pos(std::array{r, theta, phi}); }
 
     template <typename T>
     [[nodiscard]] double constexpr norm(nc::NdArray<T> array)
@@ -87,7 +97,7 @@ namespace math
 
     [[nodiscard]] RealArray constexpr get_rot_mat_from_cartesian(Pos const& pos_local)
     {
-        auto const [r, polar, azimuth] = spherical_from_cartesian<std::array<double, 3>>(pos_local);
+        auto const [r, polar, azimuth] = spherical_from_cartesian_pos<std::array<double, 3>>(pos_local);
         return get_rot_mat_from_spherical(polar, azimuth);
     }
 

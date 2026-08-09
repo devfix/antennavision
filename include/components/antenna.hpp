@@ -7,19 +7,20 @@
 #include <magic_enum/magic_enum.hpp>
 #include <span>
 #include <variant>
-
 #include "components/uniformlineararray.hpp"
 #include "components/uniformplanararray.hpp"
+#include "customarray.hpp"
 #include "memory.hpp"
 #include "simulationerror.hpp"
 
 namespace antenna
 {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    using Antenna = std::variant<Radiator, UniformLinearArray, UniformPlanarArray>;
+    using Antenna = std::variant<Radiator, CustomArray, UniformLinearArray, UniformPlanarArray>;
     enum struct AntennaType // must be same order as in Antenna
     {
         Radiator,
+        CustomArray,
         UniformLinearArray,
         UniformPlanarArray
     };
@@ -29,7 +30,17 @@ namespace antenna
     concept IsAntenna = std::same_as<std::decay_t<T>, Antenna>;
 
     template <typename T>
-    constexpr bool is_array = std::disjunction_v<std::is_same<std::decay_t<T>, UniformLinearArray>, std::is_same<std::decay_t<T>, UniformPlanarArray>>;
+    concept IsRadiator = std::same_as<std::decay_t<T>, Radiator>;
+
+    template <typename T>
+    concept IsArray = not IsRadiator<T>;
+
+    // template <typename T>
+    // constexpr bool is_array = std::disjunction_v< //
+    //     std::is_same<std::decay_t<T>, CustomArray>,
+    //     std::is_same<std::decay_t<T>, UniformLinearArray>,
+    //     std::is_same<std::decay_t<T>, UniformPlanarArray> //
+    //     >;
 
     [[nodiscard]] constexpr std::string_view get_type_name(const Antenna& ant)
     {
@@ -85,8 +96,10 @@ namespace antenna
         setup::SimParams const& sim_params //
     );
 
-    [[nodiscard]] Vec calc_electrical_field(//
+    [[nodiscard]] Vec calc_electrical_field( //
         Antenna const& ant,
+        Pos const& pos,
+        Complex i_exc,
         double wavelength,
         std::span<Complex const> coeffs,
         setup::SimParams const& sim_params //

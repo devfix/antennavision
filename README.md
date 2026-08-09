@@ -42,6 +42,7 @@ Antenna Simulation Tool
 
 ### Future Features
 - [x] add output verbosity control
+- [ ] Custom vector class that always has the right shape
 - [ ] implement UCA
 - [ ] print references as table instead of list
 - [ ] implement tx voltage field

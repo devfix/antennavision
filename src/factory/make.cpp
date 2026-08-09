@@ -94,7 +94,7 @@ namespace factory
                 double const t = math::nidx(k, size);
                 Pos const pos = dir * (t - 0.5) * length;
                 references.push_back(Reference{
-                    .id = std::format("{}", k),
+                    .id = std::format("{}:ref:{}", id, k),
                     .origin_id = origin_id,
                     .pos = pos,
                     .rot = rot //
@@ -102,7 +102,7 @@ namespace factory
 
                 // We make a copy of the "backup" description and adapt it for the current element of the ULA
                 ojson ula_element_desc = prototype_desc;
-                ula_element_desc["id"] = std::format("{}", k);
+                ula_element_desc["id"] = std::format("{}:rad:{}", id, k);
                 ula_element_desc["ref"] = references.back().id;
 
                 // call the make function recursively and append the Radiators to array_radiators
@@ -113,7 +113,7 @@ namespace factory
                 .type = RadiatorArrayType::UniformLinearArray,
                 .id = id,
                 .origin_id = origin_id,
-                .references = references,
+                .references = std::move(references),
                 .elements = std::move(elements) //
             }};
         }
@@ -152,7 +152,7 @@ namespace factory
                     double const ty = math::nidx(y, size_y);
                     Pos const pos = Pos(1.0, 0.0, 0.0) * (tx - 0.5) * length_x + Pos(0.0, 1.0, 0.0) * (ty - 0.5) * length_y;
                     references.push_back(Reference{
-                        .id = std::format("ref:{}:{}", x, y),
+                        .id = std::format("{}:ref:{}:{}", id, x, y),
                         .origin_id = origin_id,
                         .pos = pos,
                         .rot = rot //
@@ -160,7 +160,7 @@ namespace factory
 
                     // We make a copy of the "backup" description and adapt it for the current element of the ULA
                     ojson ula_element_desc = prototype_desc;
-                    ula_element_desc["id"] = std::format("{}:radiator:{}:{}", id, x, y);
+                    ula_element_desc["id"] = std::format("{}:rad:{}:{}", id, x, y);
                     ula_element_desc["ref"] = references.back().id;
 
                     // call the make function recursively and append the Radiators to array_radiators

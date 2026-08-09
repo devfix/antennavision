@@ -402,9 +402,10 @@ namespace setup
 
     void Setup::extract_variables(ojson& js)
     {
-        variables_["c0"] = 299'792'458; // speed of light in vacuum
-        variables_["epsilon0"] = 8.854'187'818'8e-12; // permittivity of vacuum (free space) / electric constant
-        variables_["mu0"] = 1.256'637'061'27e-6; // permeability of vacuum (free space) / magnetic constant
+        variables_["c0"] = c0; // speed of light in vacuum
+        variables_["epsilon0"] = epsilon0; // permittivity of vacuum (free space) / electric constant
+        variables_["mu0"] = mu0; // permeability of vacuum (free space) / magnetic constant
+        variables_["Z0"] = Z0; // impedance of free space
 
         if (!js.contains("variables")) { return; }
         for (auto& variables = js.at("variables"); const auto& [raw_key, val] : variables.items())

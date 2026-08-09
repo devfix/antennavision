@@ -117,6 +117,12 @@ TEST_CASE("setup context only variables", "[Setup]")
     CHECK_THAT(su.get_double("a"), WithinAbs(1.0, DELTA_DISTANCE));
     CHECK_THAT(su.get_double("b"), WithinAbs(3.0, DELTA_DISTANCE));
     CHECK_THAT(su.get_double("c"), WithinAbs(-1.0, DELTA_DISTANCE));
+
+    // check mathematical and physical constants
+    CHECK_THAT(su.get_double("c0"), WithinRel(c0, 1e-12));
+    CHECK_THAT(su.get_double("mu0"), WithinRel(mu0, 1e-12));
+    CHECK_THAT(su.get_double("epsilon0"), WithinRel(epsilon0, 1e-12));
+    CHECK_THAT(su.get_double("Z0"), WithinRel(Z0, 1e-12));
 }
 
 TEST_CASE("setup context with references", "[Setup]")
