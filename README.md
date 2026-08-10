@@ -4,7 +4,7 @@ Antenna Simulation Tool
 
 ## Agenda
 
-### Features for v1.0.0
+### Features for v0.1.0
 - [x] look for setup files in a directory, loop over all setups
 - [x] implement plot_gain_over_straight
 - [x] implement ULA
@@ -38,8 +38,7 @@ Antenna Simulation Tool
 - [x] print actual coordinates (pos, rot, ex ey ez) for antennas and references
 - [-] ~optional with references~ &rarr; not supported by compiler yet
 
-
-### Future Features
+### Future features for v0.1.1
 - [x] add output verbosity control
 - [ ] print Banner only when setup file is provided
 - [ ] rename DEBUG_MODE to DEBUG_BUILT to prevent confusion with commandline parameter

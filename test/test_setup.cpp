@@ -17,7 +17,7 @@ TEST_CASE("setup without rotation", "[Setup]")
 {
   "metadata": {
     "setup_name": "test_setup_without_rotation",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "references": [
     {
@@ -55,7 +55,7 @@ TEST_CASE("setup with rotation", "[Setup]")
 {
   "metadata": {
     "setup_name": "test_setup_with_rotation",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "references": [
     {
@@ -96,7 +96,7 @@ TEST_CASE("setup context only variables", "[Setup]")
 {
   "metadata": {
     "setup_name": "test_setup_context",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "variables": {
     "x": 2.0,
@@ -131,7 +131,7 @@ TEST_CASE("setup context with references", "[Setup]")
 {
   "metadata": {
     "setup_name": "test_setup_context",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "variables": {
     "x": 1.0,

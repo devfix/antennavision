@@ -97,7 +97,7 @@ TEST_CASE("HalfWaveDipole via setup", "[Radiator][Directivity]")
 {
   "metadata": {
     "setup_name": "test-radiator",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "sim_params": {
     "system_wavelength": 0.1,
@@ -145,7 +145,7 @@ TEST_CASE("FullWaveDipole via setup", "[Radiator][Directivity]")
 {
   "metadata": {
     "setup_name": "test-radiator",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "sim_params": {
     "system_wavelength": 0.1,
@@ -187,7 +187,7 @@ TEST_CASE("3/2-WaveDipole via setup", "[Radiator][Directivity]")
 {
   "metadata": {
     "setup_name": "test-radiator",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "sim_params": {
     "system_wavelength": 0.1,
@@ -223,7 +223,7 @@ TEST_CASE("Directivity: 8-Element ULA with Isotropic Radiators", "[directivity][
 {
   "metadata": {
     "setup_name": "test-ula",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "sim_params": {
     "system_wavelength": 0.005,
@@ -282,7 +282,7 @@ TEST_CASE("Directivity: 8-Element ULA with Z-Directed Dipoles", "[directivity][u
     {
       "metadata": {
         "setup_name": "test-directivity",
-        "version": "0.1.0"
+        "version": "0.1.1"
       },
       "sim_params": {
         "system_wavelength": 0.005,
