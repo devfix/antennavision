@@ -27,11 +27,12 @@ namespace setup
     void from_json(JsonType const& js, SimParams& sim_params)
     {
         serialization::assert_structure(js,
-            "NumParams",
+            "SimParams",
             {
                 {"system_wavelength", json::value_t::number_float},
             },
             {
+                {"enable_path_loss", json::value_t::boolean},
                 {"n_polar", json::value_t::number_unsigned},
                 {"n_azimuth", json::value_t::number_unsigned},
                 {"n_linear1", json::value_t::number_unsigned},
@@ -52,14 +53,14 @@ namespace setup
 
     void SimParams::assert_integrity() const
     {
-        if (system_wavelength <= 0) throw SimulationError("Invalid numerical parameters: system_wavelength={}", system_wavelength);
+        if (system_wavelength <= 0) throw SimulationError("Invalid simulation parameters: system_wavelength={}", system_wavelength);
         // no check for enable_path_loss
-        if (n_polar <= 0) throw SimulationError("Invalid numerical parameters: n_polar={}", n_polar);
-        if (n_azimuth <= 0) throw SimulationError("Invalid numerical parameters: n_azimuth={}", n_azimuth);
-        if (n_linear1 <= 0) throw SimulationError("Invalid numerical parameters: n_linear1={}", n_linear1);
-        if (n_linear2 <= 0) throw SimulationError("Invalid numerical parameters: n_linear2={}", n_linear2);
-        if (xtol_rel <= 0) throw SimulationError("Invalid numerical parameters: xtol_rel={}", xtol_rel);
-        if (ftol_rel <= 0) throw SimulationError("Invalid numerical parameters: ftol_rel={}", ftol_rel);
+        if (n_polar <= 0) throw SimulationError("Invalid simulation parameters: n_polar={}", n_polar);
+        if (n_azimuth <= 0) throw SimulationError("Invalid simulation parameters: n_azimuth={}", n_azimuth);
+        if (n_linear1 <= 0) throw SimulationError("Invalid simulation parameters: n_linear1={}", n_linear1);
+        if (n_linear2 <= 0) throw SimulationError("Invalid simulation parameters: n_linear2={}", n_linear2);
+        if (xtol_rel <= 0) throw SimulationError("Invalid simulation parameters: xtol_rel={}", xtol_rel);
+        if (ftol_rel <= 0) throw SimulationError("Invalid simulation parameters: ftol_rel={}", ftol_rel);
     }
 
     template void to_json(nlohmann::json&, SimParams const&);
