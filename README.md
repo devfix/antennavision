@@ -32,18 +32,19 @@ Antenna Simulation Tool
 - [x] Version check for setup files
 - [x] add disable-attenuation-flag to num_params
 - [x] commandline parameters for output control
-- [ ] implement directivity task for arrays (at the moment only supported for radiators)
+- [x] implement directivity task for arrays (at the moment only supported for radiators)
 - [x] if debug run: print sim params
 - [x] Check result file size > 0 OR create result.json as the last step in the eval functions
 - [x] print actual coordinates (pos, rot, ex ey ez) for antennas and references
-- [ ] eval electrical field
-- [ ] ~optional with references~ &rarr; not supported by compiler yet
+- [-] ~optional with references~ &rarr; not supported by compiler yet
 
 
 ### Future Features
 - [x] add output verbosity control
+- [ ] eval electrical field
 - [ ] Custom vector class that always has the right shape
 - [ ] implement UCA
+- [ ] refactor calc_directivity_from_spherical in antenna.cpp
 - [ ] print references as table instead of list
 - [ ] implement tx voltage field
 - [ ] find beam areas
