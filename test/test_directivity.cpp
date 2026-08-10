@@ -191,8 +191,8 @@ TEST_CASE("Directivity: 8-Element ULA with Isotropic Radiators", "[directivity][
   },
   "sim_params": {
     "system_wavelength": 0.005,
-    "n_polar": 101,
-    "n_azimuth": 201
+    "n_polar": 1001,
+    "n_azimuth": 2001
   },
   "references": [
     {
@@ -220,24 +220,14 @@ TEST_CASE("Directivity: 8-Element ULA with Isotropic Radiators", "[directivity][
     setup::Setup su(js);
     auto const & sim_params = su.sim_params();
     double const wavelength = sim_params.system_wavelength;
-    double const spacing = wavelength / 2.0;
-    std::size_t constexpr N_ELEMENTS = 8;
     antenna::Antenna const& ula = su.get_antenna("DUT");
 
     std::vector<Complex> const coeffs(antenna::size(ula), 1.0);
 
-    // 3. Define the Beamforming Weights (Broadside beam)
-    // Uniform amplitude and 0 phase shift on all elements yields a broadside beam.
-    std::vector<Complex> const weights(N_ELEMENTS, Complex{1.0, 0.0});
+    // Target Direction (Broadside), Y-axis = Polar: 90 deg (pi/2), Azimuth: 90 deg (pi/2)
+    double constexpr target_polar = pi / 2.0;
+    double constexpr target_azimuth = pi / 2.0;
 
-    // 4. Set Target Direction (Broadside)
-    // Assuming your ULA spans the local X-axis, the broadside direction
-    // is orthogonal to it (e.g., along the Y-axis or Z-axis).
-    // Y-axis = Polar: 90 deg (pi/2), Azimuth: 90 deg (pi/2)
-    double const target_polar = pi / 2.0;
-    double const target_azimuth = pi / 2.0;
-
-    // 5. Calculate Directivity
     double const directivity_actual = antenna::calc_directivity_from_spherical(
         ula,
         target_polar,
@@ -247,15 +237,9 @@ TEST_CASE("Directivity: 8-Element ULA with Isotropic Radiators", "[directivity][
         sim_params
     );
 
-    // 6. Assertions
     // Theoretical expectation: D = N for lambda/2 spaced isotropic elements
-    double const directivity_expected = static_cast<double>(N_ELEMENTS);
+    double const directivity_expected = static_cast<double>(antenna::size(ula));
 
-    // 1% tolerance allowance for numerical sphere integration variance
+    // only epsilon of 1% since the sim params are rather relaxed (not that many integration samples)
     CHECK_THAT(directivity_actual, WithinRel(directivity_expected, 0.01));
-
-    // Optional: Check in decibels (dBi) -> 10 * log10(8) ≈ 9.03 dBi
-    double const dbi_actual = math::db_from_power_ratio(directivity_actual);
-    double const dbi_expected = math::db_from_power_ratio(directivity_expected);
-    CHECK_THAT(dbi_actual, WithinAbs(dbi_expected, 0.1));
 }
