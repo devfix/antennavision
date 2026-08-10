@@ -8,7 +8,7 @@
 #include <string_view>
 
 static constexpr std::string_view APPLICATION_NAME("AntennaVision");
-static constexpr std::array<int, 3> APPLICATION_VERSION = {1, 0, 1};
+static constexpr std::array<int, 3> APPLICATION_VERSION = {0, 1, 0};
 extern std::string_view const BANNER;
 extern std::size_t const N_POINTS_THREE_CURVE;
 extern std::size_t const N_POINTS_THREE_SURFACE;
