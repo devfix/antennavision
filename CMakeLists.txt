@@ -121,10 +121,15 @@ FetchContent_MakeAvailable(magic_enum)
 
 
 ######### nlopt
-set(NLOPT_PYTHON OFF CACHE INTERNAL "")
+set(NLOPT_PYTHON OFF CACHE BOOL "" FORCE) # Good practice so it doesn't try to build python bindings statically
 set(NLOPT_GUILE OFF CACHE INTERNAL "")
 set(NLOPT_MATLAB OFF CACHE INTERNAL "")
 set(NLOPT_TESTS OFF CACHE INTERNAL "")
+if (NOT BUILD_ALL_SHARED)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    set(NLOPT_SHARED OFF CACHE BOOL "" FORCE)
+    set(NLOPT_GUI OFF CACHE BOOL "" FORCE)
+endif ()
 FetchContent_Declare(
         nlopt
         GIT_REPOSITORY https://github.com/stevengj/nlopt.git
