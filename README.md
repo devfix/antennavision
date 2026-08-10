@@ -4,6 +4,20 @@ Antenna Simulation Tool
 
 ## Agenda
 
+### Future features for v0.1.1
+- [x] add output verbosity control
+- [ ] print Banner only when setup file is provided
+- [ ] rename DEBUG_MODE to DEBUG_BUILT to prevent confusion with commandline parameter
+- [ ] eval electrical field
+- [ ] set bin as output dir for relase built as well
+- [ ] Custom vector class that always has the right shape
+- [ ] implement UCA
+- [ ] refactor calc_directivity_from_spherical in antenna.cpp
+- [ ] print references as table instead of list
+- [ ] implement tx voltage field
+- [ ] find beam areas
+- [ ] find beam area distance
+
 ### Features for v0.1.0
 - [x] look for setup files in a directory, loop over all setups
 - [x] implement plot_gain_over_straight
@@ -36,21 +50,7 @@ Antenna Simulation Tool
 - [x] if debug run: print sim params
 - [x] Check result file size > 0 OR create result.json as the last step in the eval functions
 - [x] print actual coordinates (pos, rot, ex ey ez) for antennas and references
-- [-] ~optional with references~ &rarr; not supported by compiler yet
-
-### Future features for v0.1.1
-- [x] add output verbosity control
-- [ ] print Banner only when setup file is provided
-- [ ] rename DEBUG_MODE to DEBUG_BUILT to prevent confusion with commandline parameter
-- [ ] eval electrical field
-- [ ] set bin as output dir for relase built as well
-- [ ] Custom vector class that always has the right shape
-- [ ] implement UCA
-- [ ] refactor calc_directivity_from_spherical in antenna.cpp
-- [ ] print references as table instead of list
-- [ ] implement tx voltage field
-- [ ] find beam areas
-- [ ] find beam area distance
+- [ ] ~optional with references~ &rarr; not supported by compiler yet
 
 ## Writing
 - [ ] derive magnetic vector potential using Lorenz Equation
