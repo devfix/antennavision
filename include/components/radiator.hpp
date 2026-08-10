@@ -80,9 +80,6 @@ struct Radiator
     [[nodiscard]] static double calc_ms_elv(elv_spherical_t const& elv_spherical, double wavelength, setup::SimParams const& sim_params);
     [[nodiscard]] Vec get_elv_spherical_from_cartesian(Pos const& pos_local, double wavelength) const;
 
-    [[nodiscard]] double calc_directivity_from_spherical(double polar, double azimuth, double wavelength, setup::SimParams const& sim_params) const;
-    [[nodiscard]] double calc_directivity_from_cartesian(Pos const& pos_local, double wavelength, setup::SimParams const& sim_params) const;
-
     Type type = Type::CustomRadiator; /// type of the radiator
     std::string id{}; /// identifier name
     std::string origin_id{}; /// name of the origin reference

@@ -95,7 +95,8 @@ double Radiator::calc_ms_elv(elv_spherical_t const& elv_spherical, double wavele
         squared_norms.begin(),
         [&elv_spherical, wavelength](double polar, double azimuth) -> double
         {//
-            return math::square(math::norm(elv_spherical(polar, azimuth, wavelength)));
+            auto const elv = elv_spherical(polar, azimuth, wavelength);
+            return math::square(math::norm(elv));
         });
 
     // Reshape squared_norms back to match the grid shape (num_azimuth x num_polar)
@@ -112,13 +113,4 @@ Vec Radiator::get_elv_spherical_from_cartesian(Pos const& pos_local, double wave
 {
     auto const [r, polar, azimuth] = math::spherical_from_cartesian_pos<std::array<double, 3>>(pos_local);
     return elv_spherical(polar, azimuth, wavelength);
-}
-
-double Radiator::calc_directivity_from_spherical(double polar, double azimuth, double wavelength, setup::SimParams const& sim_params) const
-{ return math::square(math::norm(elv_spherical(polar, azimuth, wavelength))) / calc_ms_elv(elv_spherical, wavelength, sim_params); }
-
-double Radiator::calc_directivity_from_cartesian(Pos const& pos_local, double wavelength, setup::SimParams const& sim_params) const
-{
-    auto const [r, polar, azimuth] = math::spherical_from_cartesian_pos<std::array<double, 3>>(pos_local);
-    return calc_directivity_from_spherical(polar, azimuth, wavelength, sim_params);
 }

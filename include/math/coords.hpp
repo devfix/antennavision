@@ -44,42 +44,42 @@ namespace math
         double const r = std::hypot(pos.x, pos.y, pos.z);
         if (r < NUMERICAL_MARGIN) { return {0, 0, 0}; }
         double const rho = std::hypot(pos.x, pos.y);
-        double const theta = std::atan2(rho, pos.z);
-        double const phi = std::atan2(pos.y, pos.x);
-        return {r, theta, phi};
+        double const polar = std::atan2(rho, pos.z);
+        double const azimuth = std::atan2(pos.y, pos.x);
+        return {r, polar, azimuth};
     }
 
     template <typename T>
     [[nodiscard]] Pos cartesian_from_spherical_pos(T const& pos)
     {
         double const& r = pos[0];
-        double const& theta = pos[1];
-        double const& phi = pos[2];
-        return {r * std::sin(theta) * std::cos(phi), r * std::sin(theta) * std::sin(phi), r * std::cos(theta)};
+        double const& polar = pos[1];
+        double const& azimuth = pos[2];
+        return {r * std::sin(polar) * std::cos(azimuth), r * std::sin(polar) * std::sin(azimuth), r * std::cos(polar)};
     }
 
-    [[nodiscard]] inline Pos cartesian_from_spherical_pos(double r, double theta, double phi) { return cartesian_from_spherical_pos(std::array{r, theta, phi}); }
+    [[nodiscard]] inline Pos cartesian_from_spherical_pos(double r, double polar, double azimuth) { return cartesian_from_spherical_pos(std::array{r, polar, azimuth}); }
 
     template <typename T>
     [[nodiscard]] double constexpr norm(nc::NdArray<T> array)
     { return std::real(nc::norm(array).item()); }
 
     /**
-     * Computes the spherical-to-Cartesian transformation matrix Omega(theta, phi).
+     * Computes the spherical-to-Cartesian transformation matrix Omega(polar, azimuth).
      * The resulting matrix can be used to transform any arbitrary vector from
      * local spherical components [A_r, A_theta, A_phi]^T to global Cartesian
      * components [A_x, A_y, A_z]^T via standard matrix-vector multiplication.
      *
-     * @param theta Polar angle (in radians) [cite: 226]
-     * @param phi   Azimuthal angle (in radians) [cite: 227]
+     * @param polar Polar angle (in radians) [cite: 226]
+     * @param azimuth   Azimuthal angle (in radians) [cite: 227]
      * @return      A 3x3 matrix represented as NdArray
      */
-    [[nodiscard]] constexpr RealArray get_rot_mat_from_spherical(double const theta, double const phi)
+    [[nodiscard]] constexpr RealArray get_rot_mat_from_spherical(double const polar, double const azimuth)
     {
-        double const st = std::sin(theta);
-        double const ct = std::cos(theta);
-        double const sp = std::sin(phi);
-        double const cp = std::cos(phi);
+        double const st = std::sin(polar);
+        double const ct = std::cos(polar);
+        double const sp = std::sin(azimuth);
+        double const cp = std::cos(azimuth);
 
         RealArray omega(3, 3);
         omega(0, 0) = st * cp;

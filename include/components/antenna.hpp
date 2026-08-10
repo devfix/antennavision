@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include <magic_enum/magic_enum.hpp>
 #include <span>
 #include <variant>
-#include <magic_enum/magic_enum.hpp>
 #include "components/uniformlineararray.hpp"
 #include "components/uniformplanararray.hpp"
 #include "customarray.hpp"
@@ -91,8 +91,25 @@ namespace antenna
 
     [[nodiscard]] Vec calc_electrical_field( //
         Antenna const& ant,
-        Pos const& pos,
+        Pos const& pos_global,
         Complex i_exc,
+        double wavelength,
+        std::span<Complex const> coeffs,
+        setup::SimParams const& sim_params //
+    );
+
+    [[nodiscard]] double calc_directivity_from_spherical( //
+        Antenna const& ant,
+        double polar,
+        double azimuth,
+        double wavelength,
+        std::span<Complex const> coeffs,
+        setup::SimParams const& sim_params //
+    );
+
+    [[nodiscard]] double calc_directivity_from_cartesian( //
+        Antenna const& ant,
+        Pos const& pos_local,
         double wavelength,
         std::span<Complex const> coeffs,
         setup::SimParams const& sim_params //

@@ -12,7 +12,7 @@ namespace eval::output
 {
     void directivity_over_polar( //
         std::filesystem::path const& path_output,
-        antenna::Antenna const& antenna,
+        antenna::Antenna const& ant,
         double wavelength,
         sweep::Sweep const& sweep_azimuth,
         setup::SimParams const& sim_params //

@@ -161,6 +161,11 @@ namespace antenna
         setup::SimParams const& sim_params //
     )
     {
+        if (tx_coeffs.size() != size(tx))
+            throw SimulationError("Invalid number of tx coefficients for '{}': expected {}, got {}", get_id(tx), size(tx), tx_coeffs.size());
+        if (rx_coeffs.size() != size(rx))
+            throw SimulationError("Invalid number of rx coefficients for '{}': expected {}, got {}", get_id(rx), size(rx), rx_coeffs.size());
+
         auto const tx_rad = static_cast<std::size_t>(std::holds_alternative<Radiator>(tx));
         auto const rx_rad = static_cast<std::size_t>(std::holds_alternative<Radiator>(rx));
         switch (tx_rad << 1u | rx_rad)
@@ -169,22 +174,9 @@ namespace antenna
                 return std::visit(
                     [&](const auto& tx_arr, const auto& rx_arr)
                     {
-                        using TxType = std::decay_t<decltype(tx_arr)>;
-                        using RxType = std::decay_t<decltype(rx_arr)>;
                         Complex gain = 0;
-                        if constexpr (std::is_base_of_v<RadiatorArray<TxType>, TxType> and std::is_base_of_v<RadiatorArray<RxType>, RxType>)
+                        if constexpr (is_array<decltype(tx_arr)> and is_array<decltype(rx_arr)>)
                         {
-                            if (tx_coeffs.size() != tx_arr.elements.size())
-                                throw SimulationError("Invalid number of transmitter coefficients for '{}': expected {}, got {}", //
-                                    tx_arr.id,
-                                    tx_arr.elements.size(),
-                                    tx_coeffs.size());
-                            if (rx_coeffs.size() != rx_arr.elements.size())
-                                throw SimulationError("Invalid number of receiver coefficients for '{}': expected {}, got {}", //
-                                    rx_arr.id,
-                                    rx_arr.elements.size(),
-                                    rx_coeffs.size());
-
                             // core computation loop
                             for (std::size_t k_rx = 0; k_rx < rx_arr.elements.size(); k_rx++)
                                 for (std::size_t k_tx = 0; k_tx < tx_arr.elements.size(); k_tx++)
@@ -202,19 +194,10 @@ namespace antenna
                 return tx.visit(
                     [&](const auto& tx_arr)
                     {
-                        using TxType = std::decay_t<decltype(tx_arr)>;
                         auto& rx_rad = std::get<Radiator>(rx);
                         Complex gain = 0;
-                        if constexpr (std::is_base_of_v<RadiatorArray<TxType>, TxType>)
+                        if constexpr (is_array<decltype(tx_arr)>)
                         {
-                            if (tx_coeffs.size() != tx_arr.elements.size())
-                                throw SimulationError("Invalid number of transmitter coefficients for '{}': expected {}, got {}", //
-                                    tx_arr.id,
-                                    tx_arr.elements.size(),
-                                    tx_coeffs.size());
-                            if (rx_coeffs.size() != 1)
-                                throw SimulationError("Invalid number of receiver coefficients for '{}': expected 1, got {}", rx_rad.id, rx_coeffs.size());
-
                             // core computation loop
                             for (std::size_t k = 0; k < tx_arr.elements.size(); k++)
                                 gain += tx_coeffs[k] //
@@ -229,19 +212,10 @@ namespace antenna
                 return rx.visit(
                     [&](const auto& rx_arr)
                     {
-                        using RxType = std::decay_t<decltype(rx_arr)>;
                         auto& tx_rad = std::get<Radiator>(tx);
                         Complex gain = 0;
-                        if constexpr (std::is_base_of_v<RadiatorArray<RxType>, RxType>)
+                        if constexpr (is_array<decltype(rx_arr)>)
                         {
-                            if (tx_coeffs.size() != 1)
-                                throw SimulationError("Invalid number of receiver coefficients for '{}': expected 1, got {}", tx_rad.id, tx_coeffs.size());
-                            if (rx_coeffs.size() != rx_arr.elements.size())
-                                throw SimulationError("Invalid number of receiver coefficients for '{}': expected {}, got {}", //
-                                    rx_arr.id,
-                                    rx_arr.elements.size(),
-                                    rx_coeffs.size());
-
                             // core computation loop
                             for (std::size_t k = 0; k < rx_arr.elements.size(); k++)
                                 gain += tx_coeffs[0] //
@@ -255,15 +229,8 @@ namespace antenna
                 ;
             case 0b11: // both antennas are single radiators
             {
-                auto const tx_rad = std::get<Radiator>(tx);
-                auto const rx_rad = std::get<Radiator>(rx);
-                if (tx_coeffs.size() != 1)
-                    throw SimulationError("Invalid number of receiver coefficients for '{}': expected 1, got {}", tx_rad.id, tx_coeffs.size());
-                if (rx_coeffs.size() != 1)
-                    throw SimulationError("Invalid number of receiver coefficients for '{}': expected 1, got {}", rx_rad.id, rx_coeffs.size());
-
                 // no computation loop, only direct forward
-                return calc_voltage_gain_direct(tx_rad, rx_rad, wavelength, sim_params);
+                return calc_voltage_gain_direct(std::get<Radiator>(tx), std::get<Radiator>(rx), wavelength, sim_params);
             }
             default: std::unreachable();
         }
@@ -280,18 +247,20 @@ namespace antenna
     { return math::square(std::abs(calc_voltage_gain(tx, rx, wavelength, tx_coeffs, rx_coeffs, sim_params))); }
 
     Vec calc_electrical_field(Antenna const& ant,
-        Pos const& pos,
+        Pos const& pos_global,
         Complex i_exc,
         double wavelength,
         std::span<Complex const> coeffs,
         setup::SimParams const& sim_params)
     {
+        if (coeffs.size() != size(ant))
+            throw SimulationError("Invalid number of coefficients for '{}': expected {}, got {}", get_id(ant), size(ant), coeffs.size());
+
         // case 1: antenna is a single radiator
         if (std::holds_alternative<Radiator>(ant))
         {
             auto const rad = std::get<Radiator>(ant);
-            if (coeffs.size() != 1) throw SimulationError("Invalid number of radiator coefficients for '{}': expected 1, got {}", rad.id, coeffs.size());
-            return coeffs[0] * calc_electrical_field_direct(rad, pos, i_exc, wavelength, sim_params);
+            return coeffs[0] * calc_electrical_field_direct(rad, pos_global, i_exc, wavelength, sim_params);
         }
 
         // case 2: antenna is an array
@@ -302,20 +271,86 @@ namespace antenna
                 Vec field = nc::zeros<Complex>(coeffs.size(), 1);
                 if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
                 {
+                    // core computation loop
+                    for (std::size_t k = 0; k < arr.elements.size(); k++)
+                        field += coeffs[k] * calc_electrical_field_direct(arr.elements[k], pos_global, i_exc, wavelength, sim_params);
+                }
+                else
+                    std::unreachable();
+                return field;
+            });
+    }
+
+    double calc_directivity_from_spherical(Antenna const& ant,
+        double polar,
+        double azimuth,
+        double wavelength,
+        std::span<Complex const> coeffs,
+        setup::SimParams const& sim_params)
+    {
+        return ant.visit(
+            [&](auto const& arr) -> double
+            {
+                if constexpr (is_radiator<decltype(arr)>)
+                {
+                    Radiator const& rad = arr;
+                    if (arr.type == Radiator::Type::IsotropicRadiator) return 1.0;
+                    Vec const elv = rad.elv_spherical(polar, azimuth, wavelength);
+                    double const ms_elv = rad.ms_elv ? rad.ms_elv(wavelength) : Radiator::calc_ms_elv(rad.elv_spherical, wavelength, sim_params);
+                    return math::square(math::norm(elv)) / ms_elv;
+                }
+                else
+                {
                     if (coeffs.size() != arr.elements.size())
                         throw SimulationError("Invalid number of array coefficients for '{}': expected {}, got {}", //
                             arr.id,
                             arr.elements.size(),
                             coeffs.size());
 
-                    // core computation loop
-                    for (std::size_t k = 0; k < arr.elements.size(); k++)
-                        field += coeffs[k] * calc_electrical_field_direct(arr.elements[k], pos, i_exc, wavelength, sim_params);
+                    Pos const pos_arr_center = arr.origin->global_from_local_pos(POS_ZERO); // center position of the array
+                    double const k = 2.0 * pi / wavelength; // wave number
+
+                    // ELV callback for superimposed far-field elv of the array
+                    auto calc_elv_superimposed = [&](double polar, double azimuth, double wavelength) -> Vec
+                    {
+                        // unit vector pointing towards the far-field direction (polar, azimuth)
+                        Pos const dir = math::cartesian_from_spherical_pos(1.0, polar, azimuth);
+
+                        Vec total_elv = nc::zeros<Complex>(3, 1);
+                        for (std::size_t i = 0; i < size(arr); ++i)
+                        {
+                            Radiator const& el = arr.elements[i]; // current array element
+
+                            // Relative position of current element to the center of the array
+                            Pos const pos = el.origin->global_from_local_pos(POS_ZERO) - pos_arr_center;
+
+                            double const delta_r = dir.dot(pos);
+                            Complex const phase_term = std::exp(j * k * delta_r);
+
+                            Vec const elv =
+                                el.type == Radiator::Type::IsotropicRadiator ? math::vec<Complex>(1, 0, 0) : el.elv_spherical(polar, azimuth, wavelength);
+
+                            total_elv += coeffs[i] * phase_term * elv;
+                        }
+                        asm("nop");
+                        return total_elv;
+                    };
+
+                    double const elv_squared = math::square(math::norm(calc_elv_superimposed(polar, azimuth, wavelength)));
+                    double const ms_elv = Radiator::calc_ms_elv(calc_elv_superimposed, wavelength, sim_params);
+                    return elv_squared / ms_elv;
                 }
-                else
-                    std::unreachable();
-                return field;
             });
+    }
+
+    double calc_directivity_from_cartesian(Antenna const& ant,
+        Pos const& pos_local,
+        double wavelength,
+        std::span<Complex const> coeffs,
+        setup::SimParams const& sim_params)
+    {
+        auto const [r, polar, azimuth] = math::spherical_from_cartesian_pos<std::array<double, 3>>(pos_local);
+        return calc_directivity_from_spherical(ant, polar, azimuth, wavelength, coeffs, sim_params);
     }
 
     void rebind_origin_pointers(std::span<Antenna> antennas, std::span<Reference> references)

@@ -35,17 +35,16 @@ namespace eval::output
 
     void directivity_over_polar( //
         std::filesystem::path const& path_output,
-        antenna::Antenna const& antenna,
+        antenna::Antenna const& ant,
         double wavelength,
         sweep::Sweep const& sweep_azimuth,
         setup::SimParams const& sim_params //
     )
     {
-        // at the moment, we only support to calculate the directivity of single radiators
-        auto& radiator = antenna::cast<Radiator>(antenna);
-
         auto const polar_angles = nc::linspace(0.0, nc::constants::pi, 51);
         auto const azimuths = sweep::get_values(sweep_azimuth);
+
+        std::vector<Complex> coeffs(antenna::size(ant), 1.0);
 
         std::vector<ojson> entries;
         for (auto const azimuth : azimuths)
@@ -57,7 +56,7 @@ namespace eval::output
                 directivities.begin(),
                 [&](double polar)
                 {
-                    return radiator.calc_directivity_from_spherical(polar, azimuth, wavelength, sim_params);
+                    return antenna::calc_directivity_from_spherical(ant, polar, azimuth, wavelength, coeffs, sim_params);
                 } //
             );
             js_entry["azimuth"] = azimuth;
