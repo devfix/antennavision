@@ -307,6 +307,36 @@ namespace antenna
                             arr.elements.size(),
                             coeffs.size());
 
+                    // integrity check: all elements must have the same radiator type
+                    if (arr.elements[0].type == Radiator::Type::IsotropicRadiator)
+                    {
+                        for (std::size_t i = 1; i < arr.elements.size(); ++i)
+                        {
+                            if (arr.elements[i].type != Radiator::Type::IsotropicRadiator)
+                                throw SimulationError( //
+                                    "Unsupported array '{}': {} requires either all or none of the elements to be isotropic radiators\n"
+                                    "Hint: element '{}' is isotropic, but '{}' is not",
+                                    arr.id,
+                                    __func__,
+                                    arr.elements[0].id,
+                                    arr.elements[i].id);
+                        }
+                    }
+                    else
+                    {
+                        for (std::size_t i = 1; i < arr.elements.size(); ++i)
+                        {
+                            if (arr.elements[i].type == Radiator::Type::IsotropicRadiator)
+                                throw SimulationError( //
+                                    "Unsupported array '{}': {} requires either all or none of the elements to be isotropic radiators\n"
+                                    "Hint: element '{}' is isotropic, but '{}' is not",
+                                    arr.id,
+                                    __func__,
+                                    arr.elements[i].id,
+                                    arr.elements[0].id);
+                        }
+                    }
+
                     Pos const pos_arr_center = arr.origin->global_from_local_pos(POS_ZERO); // center position of the array
                     double const k = 2.0 * pi / wavelength; // wave number
 

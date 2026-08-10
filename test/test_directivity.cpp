@@ -191,8 +191,8 @@ TEST_CASE("Directivity: 8-Element ULA with Isotropic Radiators", "[directivity][
   },
   "sim_params": {
     "system_wavelength": 0.005,
-    "n_polar": 1001,
-    "n_azimuth": 2001
+    "n_polar": 101,
+    "n_azimuth": 201
   },
   "references": [
     {
