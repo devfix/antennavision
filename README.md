@@ -41,7 +41,10 @@ Antenna Simulation Tool
 
 ### Future Features
 - [x] add output verbosity control
+- [ ] print Banner only when setup file is provided
+- [ ] rename DEBUG_MODE to DEBUG_BUILT to prevent confusion with commandline parameter
 - [ ] eval electrical field
+- [ ] set bin as output dir for relase built as well
 - [ ] Custom vector class that always has the right shape
 - [ ] implement UCA
 - [ ] refactor calc_directivity_from_spherical in antenna.cpp
