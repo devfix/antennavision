@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "setup_name": "2a1",
+    "version": "0.1.0"
+  },
+  "variables": {
+    "system_frequency": 60000000000.0,
+    "system_wavelength": 0.004996540966666667,
+    "number_of_elements:int": 16,
+    "wavelength": "system_wavelength",
+    "dipole_length": "0.5*wavelength"
+  },
+  "sim_params": {
+    "system_wavelength": 0.004996540966666667,
+    "enable_path_loss": false
+  },
+  "references": [
+    {
+      "id": "ref_tx",
+      "origin": "",
+      "pos": [
+        0,
+        0,
+        0
+      ],
+      "rot": {
+        "yaw": 0,
+        "pitch": 0,
+        "roll": 0
+      }
+    },
+    {
+      "id": "ref_rx",
+      "origin": "",
+      "pos": [
+        0,
+        0,
+        "2*wavelength"
+      ],
+      "rot": {
+        "yaw": 0,
+        "pitch": 0,
+        "roll": 0
+      }
+    }
+  ],
+  "antennas": [
+    {
+      "id": "tx2",
+      "type": "ULA",
+      "ref": "ref_tx",
+      "spacing": "wavelength * 0.5",
+      "size": "number_of_elements",
+      "rot": {
+        "yaw": 0,
+        "pitch": 0,
+        "roll": 0
+      },
+      "radiator": {
+        "type": "IsotropicRadiator"
+      }
+    },
+    {
+      "id": "tx",
+      "ref": "ref_tx",
+      "type": "IsotropicRadiator"
+    },
+    {
+      "id": "rx",
+      "ref": "ref_rx",
+      "type": "IsotropicRadiator"
+    }
+  ],
+  "geometries": [
+    {
+      "id": "rectangle",
+      "type": "Rectangle",
+      "center": [
+        0,
+        0.49965409666666666,
+        0
+      ],
+      "normal": [
+        0,
+        0,
+        1
+      ],
+      "e1": [
+        1,
+        0,
+        0
+      ],
+      "width": 0.09993081933333334,
+      "height": 0.9993081933333333
+    }
+  ],
+  "sweeps": [
+    {
+      "id": "sweep",
+      "type": "ListSweep",
+      "values": [
+        "wavelength"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "type": "RxVoltageField@Wavelength",
+      "path_output": "p2a1.result.json",
+      "ref": "",
+      "tx": "tx",
+      "rx": "rx",
+      "tx_codebook": [],
+      "rx_codebook": [],
+      "geo": "rectangle",
+      "n_dim1": 101,
+      "n_dim2": 51,
+      "sweep": "sweep"
+    }
+  ]
+}

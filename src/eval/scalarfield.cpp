@@ -334,24 +334,7 @@ namespace eval
         nc::NdArray<OutputT> values(positions.shape());
         std::size_t const total_size = positions.size();
 
-#ifdef ANTENNAVISION_SINGLE_THREADED
-        auto const ctx = make_context(wavelength);
-        auto it = positions.begin();
-        auto ot = values.begin();
-
-        constexpr OutputCast cast_op{};
-        for (std::size_t k = 0; it != positions.end(); ++it, ++ot, ++k)
-        {
-            // Periodic terminal update without atomic/mutex overhead
-            if (k % N_BATCH_PROGRESS_REPORT == 0)
-            {
-                double const p = static_cast<double>(k) / static_cast<double>(total_size);
-                lg::print(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, p * 100.0);
-                std::cout << std::flush;
-            }
-            *ot = cast_op(ctx(*it));
-        }
-#else
+#if defined(ANTENNAVISION_MULTI_THREADED) && (ANTENNAVISION_MULTI_THREADED == 1)
         // Determine thread count and calculate chunk sizes
         std::size_t const num_threads = std::thread::hardware_concurrency();
         std::size_t const chunk_size = (total_size + num_threads - 1) / num_threads;
@@ -404,6 +387,23 @@ namespace eval
 
         // Wait for all threads to finish computing their chunks
         for (auto& f : futures) f.get();
+#else
+        auto const ctx = make_context(wavelength);
+        auto it = positions.begin();
+        auto ot = values.begin();
+
+        constexpr OutputCast cast_op{};
+        for (std::size_t k = 0; it != positions.end(); ++it, ++ot, ++k)
+        {
+            // Periodic terminal update without atomic/mutex overhead
+            if (k % N_BATCH_PROGRESS_REPORT == 0)
+            {
+                double const p = static_cast<double>(k) / static_cast<double>(total_size);
+                lg::print(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, p * 100.0);
+                std::cout << std::flush;
+            }
+            *ot = cast_op(ctx(*it));
+        }
 #endif
 
         // Print final 100% completion cleanup

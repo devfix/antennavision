@@ -268,6 +268,7 @@ namespace setup
 
         for (auto const& geo : geometries_) container.add(three::export_geometry(geo));
         container.export_to_javascript(path_objects);
+        lg::println("Exported objects to {}", path_objects.string());
     }
 
     void Setup::run_tasks(bool force_recomputation) const

@@ -19,7 +19,8 @@ else ()
 endif ()
 
 
-option(BUILD_ALL_SHARED "[AntennaVision] Build all internal libraries as shared and place next to executable" ON)
+option(BUILD_ALL_SHARED "[AntennaVision] Build all internal libraries as shared and place next to executable" OFF)
+option(ANTENNAVISION_MULTI_THREADED "[AntennaVision] Disable multi-threaded computation" ON)
 
 
 # === static runtime linkage ===
@@ -238,6 +239,11 @@ file(GLOB_RECURSE TEST_FILES
 
 ######### target: antennavision
 add_executable(antennavision main.cpp ${SOURCE_FILES})
+if(ANTENNAVISION_MULTI_THREADED)
+    target_compile_definitions(antennavision PRIVATE ANTENNAVISION_MULTI_THREADED=1)
+else()
+    target_compile_definitions(antennavision PRIVATE ANTENNAVISION_MULTI_THREADED=0)
+endif()
 target_compile_definitions(antennavision PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(antennavision PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(antennavision PRIVATE
@@ -256,6 +262,11 @@ target_compile_definitions(antennavision PRIVATE JSON_DIAGNOSTICS=0)
 
 ######### target: testrunner
 add_executable(testrunner ${SOURCE_FILES} ${TEST_FILES})
+if(ANTENNAVISION_MULTI_THREADED)
+    target_compile_definitions(testrunner PRIVATE ANTENNAVISION_MULTI_THREADED=1)
+else()
+    target_compile_definitions(testrunner PRIVATE ANTENNAVISION_MULTI_THREADED=0)
+endif()
 target_compile_definitions(testrunner PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(testrunner PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(testrunner PRIVATE

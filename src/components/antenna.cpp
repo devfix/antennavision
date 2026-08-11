@@ -59,7 +59,8 @@ namespace antenna
             }
 
             auto const k = 2.0 * pi / wavelength; // wave number
-            auto const propagation = std::exp(-j * k * r) * (sim_params.enable_path_loss ? 1.0 / r : 1.0);
+            auto const phase = std::exp(-j * k * r);
+            auto const path_loss = sim_params.enable_path_loss ? wavelength / (4 * pi * r) : 1.0;
 
             auto const tx_iso = static_cast<std::size_t>(tx.type == Radiator::Type::IsotropicRadiator);
             auto const rx_iso = static_cast<std::size_t>(rx.type == Radiator::Type::IsotropicRadiator);
@@ -72,23 +73,23 @@ namespace antenna
                     auto const ms_elv_tx = tx.ms_elv ? tx.ms_elv(wavelength) : Radiator::calc_ms_elv(tx.elv_spherical, wavelength, sim_params);
                     auto const ms_elv_rx = rx.ms_elv ? rx.ms_elv(wavelength) : Radiator::calc_ms_elv(rx.elv_spherical, wavelength, sim_params);
                     Complex const coupling = elv_tx.dot(elv_rx).item() / std::sqrt(ms_elv_tx * ms_elv_rx);
-                    return -j * coupling * wavelength / (4.0 * pi) * propagation;
+                    return -j * coupling * phase * path_loss;
                 }
                 case 0b01:
                 {
                     auto const ms_elv_tx = tx.ms_elv ? tx.ms_elv(wavelength) : Radiator::calc_ms_elv(tx.elv_spherical, wavelength, sim_params);
                     Complex const coupling =
                         nc::norm(calc_global_elv(tx, rx.origin->global_from_local_pos(POS_ZERO), wavelength)).item() / std::sqrt(ms_elv_tx);
-                    return -j * coupling * wavelength / (4.0 * pi) * propagation;
+                    return -j * coupling * phase * path_loss;
                 }
                 case 0b10:
                 {
                     auto const ms_elv_rx = rx.ms_elv ? rx.ms_elv(wavelength) : Radiator::calc_ms_elv(rx.elv_spherical, wavelength, sim_params);
                     Complex const coupling =
                         nc::norm(calc_global_elv(rx, tx.origin->global_from_local_pos(POS_ZERO), wavelength)).item() / std::sqrt(ms_elv_rx);
-                    return -j * coupling * wavelength / (4.0 * pi) * propagation;
+                    return -j * coupling * phase * path_loss;
                 }
-                case 0b11: return -j * wavelength / (4.0 * pi) * propagation;
+                case 0b11: return -j * phase * path_loss;
                 default: break;
             }
             std::unreachable();
