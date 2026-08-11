@@ -55,7 +55,7 @@ ojson const SETUP_JSON = ojson::parse(R"JSON(
 {
   "metadata": {
     "setup_name": "test-ula",
-    "version": "0.1.1"
+    "version": "0.1.2"
   },
   "variables": {
     "system_wavelength": 0.1,
