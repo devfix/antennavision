@@ -99,7 +99,6 @@ namespace
             return EXIT_SUCCESS;
         }
 
-        if (not params.hide_banner) lg::println(lg::alert, "{}{} v.{}\n", BANNER, APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION));
         if (DEBUG_MODE) { lg::println(lg::warning, "Warning: Compiled in debug mode. This will severely increase the computation time!"); }
 
         if (params.debug_mode)
@@ -135,7 +134,11 @@ namespace
         if (params.print_antennas) su.print_antennas();
         if (not params.path_objects.empty()) su.export_to_three(params.path_objects);
         if (params.debug_mode) su.print_sim_params();
-        if (params.run_tasks) su.run_tasks(params.force_recomputation);
+        if (params.run_tasks)
+        {
+            if (not params.hide_banner) lg::println(lg::alert, "{}{} v.{}\n", BANNER, APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION));
+            su.run_tasks(params.force_recomputation);
+        }
 
         return EXIT_SUCCESS;
     }
