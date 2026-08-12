@@ -7,7 +7,7 @@
 #include "components/radiatorarray.hpp"
 
 /**
- * Class "CustomArray" of Aggregate Type
+ * Class "CustomArray" of Aggregate OutputType
  * Also known as POD (Plain Old Data) / PDS (Passive Data Structure) / DTO (Data Transfer Object)
  */
 struct CustomArray : RadiatorArray<CustomArray>

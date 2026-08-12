@@ -10,8 +10,16 @@
 
 namespace eval::output
 {
+    enum struct OutputType
+    {
+        JSON, BSON, CBOR, MSGPACK, UBJSON
+    };
+
+    std::optional<OutputType> output_type_from_ext (std::string_view ext);
+
     void directivity_over_polar( //
         std::filesystem::path const& path_output,
+        OutputType output_type,
         antenna::Antenna const& ant,
         double wavelength,
         sweep::Sweep const& sweep_azimuth,
@@ -21,6 +29,7 @@ namespace eval::output
     template <typename T>
     void complex_scalarfield_at_wavelength( //
         std::filesystem::path const& path_output,
+        OutputType output_type,
         setup::task::RxVoltageFieldAtWavelength const& task,
         reference::Reference const& ref,
         ComplexScalarField<T> const& scalar_field,

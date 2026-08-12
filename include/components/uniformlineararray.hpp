@@ -7,7 +7,7 @@
 #include "components/radiatorarray.hpp"
 
 /**
- * Class "UniformLinearArray" of Aggregate Type
+ * Class "UniformLinearArray" of Aggregate OutputType
  * Also known as POD (Plain Old Data) / PDS (Passive Data Structure) / DTO (Data Transfer Object)
  */
 struct UniformLinearArray : RadiatorArray<UniformLinearArray>

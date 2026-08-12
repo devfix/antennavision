@@ -279,6 +279,9 @@ namespace setup
         {
             auto const id = setup::task::get_id(task);
             std::filesystem::path const path_output = std::filesystem::weakly_canonical(path_cwd_ / setup::task::get_output_path(task));
+            auto const ext = path_output.extension().string();
+            auto opt_output_type = eval::output::output_type_from_ext(ext);
+            if (not opt_output_type) throw SimulationError("Task '{}' has invalid output file type '{}'", id, ext);
 
             lg::println("Next task:");
             lg::println("  * name:         {}", setup::task::get_name(task));
@@ -301,7 +304,7 @@ namespace setup
             else
                 lg::println("Running task...");
 
-            run_task(task, path_output);
+            run_task(task, path_output, opt_output_type.value());
         }
     }
 
@@ -488,14 +491,14 @@ namespace setup
         js.erase("tasks");
     }
 
-    void Setup::run_task(task::Task const& task, std::filesystem::path const& path_output) const
+    void Setup::run_task(task::Task const& task, std::filesystem::path const& path_output, eval::output::OutputType output_type) const
     {
         if (std::holds_alternative<task::DirectivityOverPolarAtAzimuth>(task))
         {
             auto& t = std::get<task::DirectivityOverPolarAtAzimuth>(task);
             auto& ant = antenna::get(antennas_, t.antenna_id);
             auto& sweep = sweep::get(sweeps_, t.sweep_id);
-            eval::output::directivity_over_polar(path_output, ant, t.wavelength, sweep, sim_params_);
+            eval::output::directivity_over_polar(path_output, output_type, ant, t.wavelength, sweep, sim_params_);
         }
         else if (std::holds_alternative<task::RxVoltageFieldAtWavelength>(task))
         {
@@ -517,7 +520,7 @@ namespace setup
             auto const& geo = geometry::get(geometries_, t.geo_id);
             auto const& sweep = sweep::get(sweeps_, t.sweep_wavelength_id);
 
-            eval::output::complex_scalarfield_at_wavelength(path_output, t, ref, field, geo, sweep);
+            eval::output::complex_scalarfield_at_wavelength(path_output, output_type, t, ref, field, geo, sweep);
         }
     }
 } // namespace setup

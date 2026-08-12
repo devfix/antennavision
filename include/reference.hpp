@@ -12,7 +12,7 @@
 namespace reference
 {
     /**
-     * Class "Reference" of Aggregate Type
+     * Class "Reference" of Aggregate OutputType
      * Also known as POD (Plain Old Data) / PDS (Passive Data Structure) / DTO (Data Transfer Object)
      */
     struct Reference

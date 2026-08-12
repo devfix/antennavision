@@ -31,10 +31,35 @@ namespace eval::output
             );
             return positions_spherical;
         }
+
+        template <AnyJson json_t>
+        void save_result(json_t const& js, std::filesystem::path const& path_output, OutputType output_type)
+        {
+            std::ofstream ofs(path_output, std::ios::binary);
+            switch (output_type)
+            {
+                case OutputType::JSON: ofs << js.dump(2) << '\n'; break;
+                case OutputType::BSON: json::to_bson(js, ofs); break;
+                case OutputType::CBOR: json::to_cbor(js, ofs); break;
+                case OutputType::MSGPACK: json::to_msgpack(js, ofs); break;
+                case OutputType::UBJSON: json::to_ubjson(js, ofs); break;
+            }
+        }
     } // namespace
+
+    std::optional<OutputType> output_type_from_ext(std::string_view ext)
+    {
+        if (ext == ".json") return OutputType::JSON;
+        if (ext == ".bson") return OutputType::BSON;
+        if (ext == ".cbor") return OutputType::CBOR;
+        if (ext == ".mpk" || ext == ".msgpack") return OutputType::MSGPACK;
+        if (ext == ".ubj" || ext == ".ubjson") return OutputType::UBJSON;
+        return std::nullopt;
+    }
 
     void directivity_over_polar( //
         std::filesystem::path const& path_output,
+        OutputType output_type,
         antenna::Antenna const& ant,
         double wavelength,
         sweep::Sweep const& sweep_azimuth,
@@ -65,17 +90,17 @@ namespace eval::output
             entries.push_back(std::move(js_entry));
         }
 
-        std::ofstream ofs(path_output);
         ojson js;
         js["sweep"] = sweep_azimuth;
         js["sim_params"] = sim_params;
         js["data"] = entries;
-        ofs << js.dump(2) << '\n';
+        save_result(js, path_output, output_type);
     }
 
     template <typename T>
     void complex_scalarfield_at_wavelength( //
         std::filesystem::path const& path_output,
+        OutputType output_type,
         setup::task::RxVoltageFieldAtWavelength const& task,
         reference::Reference const& ref,
         ComplexScalarField<T> const& scalar_field,
@@ -85,7 +110,6 @@ namespace eval::output
     {
         auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(geo, sweep_wavelength, task.n_dim1, task.n_dim2);
 
-        std::ofstream ofs(path_output);
         ojson js;
         js["sim_params"] = scalar_field.sim_params;
         js["geo"] = geo;
@@ -95,7 +119,7 @@ namespace eval::output
         js["positions"]["cartesian"] = positions_cartesian;
         js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);
         js["data"] = data;
-        ofs << js.dump(2) << '\n';
+        save_result(js, path_output, output_type);
     }
 
     // -----------------------------------------------------------------------------
@@ -103,6 +127,7 @@ namespace eval::output
     // -----------------------------------------------------------------------------
     template void complex_scalarfield_at_wavelength<RxVoltageField>( //
         std::filesystem::path const&,
+        OutputType,
         setup::task::RxVoltageFieldAtWavelength const&,
         reference::Reference const&,
         ComplexScalarField<RxVoltageField> const&,

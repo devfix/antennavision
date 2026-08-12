@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <functional>
 #include <list>
+#include "eval/output.hpp"
 #include "factory/find.hpp"
 #include "factory/make.hpp"
 #include "task.hpp"
@@ -100,7 +101,7 @@ namespace setup
         void extract_sweeps(ojson& js);
         void extract_tasks(ojson& js);
 
-        void run_task(task::Task const& task, std::filesystem::path const& path_output) const;
+        void run_task(task::Task const& task, std::filesystem::path const& path_output, eval::output::OutputType output_type) const;
 
         std::filesystem::path path_cwd_{};
         timeutil::timestamp_t timestamp_{};
