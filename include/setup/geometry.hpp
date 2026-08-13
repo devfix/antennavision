@@ -222,6 +222,12 @@ namespace geometry
 
     using Curve = std::variant<Line, CircleArc>;
 
+    template <AnyJson JsonType>
+    void to_json(JsonType& js, Curve const& curve);
+
+    template <AnyJson JsonType>
+    void from_json(JsonType const& js, Curve& curve);
+
     using Surface = std::variant<Rectangle, SphericalRectangle>;
 
     namespace curve

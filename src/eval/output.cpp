@@ -97,70 +97,123 @@ namespace eval::output
         save_result(js, path_output, output_type);
     }
 
-    template <typename T>
-    void complex_scalar_points(std::filesystem::path const& path_output,
-        OutputType output_type,
-        setup::task::RxVoltage const& task,
-        reference::Reference const& ref,
-        ComplexScalarField<T> const& scalar_field //
-    )
+    namespace voltgain
     {
-        Vec3Array positions(task.points.size(), 1);
-        for (auto k = 0; k < task.points.size(); k++) positions(k,0) = task.points[k];
+        template <typename T>
+        void points(std::filesystem::path const& path_output,
+            OutputType output_type,
+            setup::task::VoltGainOverPoints const& task,
+            reference::Reference const& ref,
+            ComplexScalarField<T> const& scalar_field //
+        )
+        {
+            Vec3Array positions(task.points.size(), 1);
+            for (auto k = 0; k < task.points.size(); k++) positions(k, 0) = task.points[k];
 
-        auto const gains = scalar_field.eval(positions, task.wavelength);
+            auto const gains = scalar_field.eval(positions, task.wavelength);
 
-        ojson js;
-        js["sim_params"] = scalar_field.sim_params;
-        js["points"] = task.points;
-        js["sweep"] = task.wavelength;
-        js["task"] = task;
-        js["positions"] = ojson();
-        js["positions"]["cartesian"] = task.points;
-        js["positions"]["spherical"] = calc_positions_spherical(ref, positions).toStlVector();;
-        js["gains"] = gains.toStlVector();
-        save_result(js, path_output, output_type);
-    }
+            ojson js;
+            js["sim_params"] = scalar_field.sim_params;
+            js["task"] = task;
+            js["positions"] = ojson();
+            js["positions"]["cartesian"] = task.points;
+            js["positions"]["spherical"] = calc_positions_spherical(ref, positions).toStlVector();
+            js["gains"] = gains.toStlVector();
+            save_result(js, path_output, output_type);
+        }
 
-    template <typename T>
-    void complex_scalarfield_at_wavelength( //
-        std::filesystem::path const& path_output,
-        OutputType output_type,
-        setup::task::RxVoltageFieldAtWavelength const& task,
-        reference::Reference const& ref,
-        ComplexScalarField<T> const& scalar_field,
-        geometry::Geometry const& geo,
-        sweep::Sweep const& sweep_wavelength //
-    )
-    {
-        auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(geo, sweep_wavelength, task.n_dim1, task.n_dim2);
+        template <typename T>
+        void geometry( //
+            std::filesystem::path const& path_output,
+            OutputType output_type,
+            setup::task::VoltGainOverGeometry const& task,
+            reference::Reference const& ref,
+            ComplexScalarField<T> const& scalar_field,
+            geometry::Geometry const& geo //
+        )
+        {
+            auto const [positions_cartesian, data] = scalar_field.eval_geometry(geo, task.wavelength, task.n_dim1, task.n_dim2);
 
-        ojson js;
-        js["sim_params"] = scalar_field.sim_params;
-        js["geo"] = geo;
-        js["sweep"] = sweep_wavelength;
-        js["task"] = task;
-        js["positions"] = ojson();
-        js["positions"]["cartesian"] = positions_cartesian;
-        js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);
-        js["gains"] = data;
-        save_result(js, path_output, output_type);
-    }
+            ojson js;
+            js["sim_params"] = scalar_field.sim_params;
+            js["geo"] = geo;
+            js["task"] = task;
+            js["positions"] = ojson();
+            js["positions"]["cartesian"] = positions_cartesian;
+            js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);
+            js["gains"] = data;
+            save_result(js, path_output, output_type);
+        }
+
+        template <typename T>
+        void geometry_at_wavelength( //
+            std::filesystem::path const& path_output,
+            OutputType output_type,
+            setup::task::VoltGainOverGeometryAtWavelength const& task,
+            reference::Reference const& ref,
+            ComplexScalarField<T> const& scalar_field,
+            geometry::Geometry const& geo,
+            sweep::Sweep const& sweep_wavelength //
+        )
+        {
+            auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(geo, sweep_wavelength, task.n_dim1, task.n_dim2);
+
+            ojson js;
+            js["sim_params"] = scalar_field.sim_params;
+            js["geo"] = geo;
+            js["sweep"] = sweep_wavelength;
+            js["task"] = task;
+            js["positions"] = ojson();
+            js["positions"]["cartesian"] = positions_cartesian;
+            js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);
+            js["gains"] = data;
+            save_result(js, path_output, output_type);
+        }
+
+        template <typename T>
+        void curve_peak_and_cutoff(std::filesystem::path const& path_output,
+            OutputType output_type,
+            setup::task::VoltGainPeakAndCutoffs const& task,
+            reference::Reference const& ref,
+            ComplexScalarField<T> const& scalar_field,
+            geometry::Curve const& curve //
+        )
+        {
+            auto const [positions_cartesian, data] = scalar_field.find_curve_peak_and_cutoffs(curve, task.wavelength, task.ratio, task.n_scan);
+
+            ojson js;
+            js["sim_params"] = scalar_field.sim_params;
+            js["curve"] = curve;
+            js["task"] = task;
+            js["positions"] = ojson();
+            js["positions"]["cartesian"] = positions_cartesian;
+            js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);
+            js["gains"] = data;
+            save_result(js, path_output, output_type);
+        }
+    } // namespace voltgain
 
     // -----------------------------------------------------------------------------
     // EXPLICIT INSTANTIATION
     // -----------------------------------------------------------------------------
-    template void complex_scalar_points<RxVoltageField>( //
+    template void voltgain::points<RxVoltageField>( //
         std::filesystem::path const&,
         OutputType,
-        setup::task::RxVoltage const&,
+        setup::task::VoltGainOverPoints const&,
         reference::Reference const&,
-        ComplexScalarField<RxVoltageField> const&//
-        );
-    template void complex_scalarfield_at_wavelength<RxVoltageField>( //
+        ComplexScalarField<RxVoltageField> const& //
+    );
+    template void voltgain::geometry<RxVoltageField>( //
         std::filesystem::path const&,
         OutputType,
-        setup::task::RxVoltageFieldAtWavelength const&,
+        setup::task::VoltGainOverGeometry const&,
+        reference::Reference const&,
+        ComplexScalarField<RxVoltageField> const&,
+        geometry::Geometry const&);
+    template void voltgain::geometry_at_wavelength<RxVoltageField>( //
+        std::filesystem::path const&,
+        OutputType,
+        setup::task::VoltGainOverGeometryAtWavelength const&,
         reference::Reference const&,
         ComplexScalarField<RxVoltageField> const&,
         geometry::Geometry const&,

@@ -35,10 +35,10 @@ namespace geometry
         }
 
         template <AnyJson JsonType>
-        void load_line(JsonType const& js, Geometry& g)
+        void from_json(JsonType const& js, Line& l)
         {
             serialization::assert_structure(js,
-                Line::name,
+                l.name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -46,8 +46,8 @@ namespace geometry
                     {"pos_end", json::value_t::array},
                 },
                 {});
-            reconstruct_at(g,
-                Line{
+            reconstruct_at(l,
+                std::decay_t<decltype(l)>{
                     js.at("id").template get<std::string>(),
                     js.at("pos_begin").template get<Pos>(),
                     js.at("pos_end").template get<Pos>() //
@@ -55,10 +55,10 @@ namespace geometry
         }
 
         template <AnyJson JsonType>
-        void load_circle_arc(JsonType const& js, Geometry& g)
+        void from_json(JsonType const& js, CircleArc& ca)
         {
             serialization::assert_structure(js,
-                CircleArc::name,
+                ca.name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -69,8 +69,8 @@ namespace geometry
                     {"angle_span", json::value_t::number_float},
                 },
                 {{"e2", json::value_t::array}});
-            reconstruct_at(g,
-                CircleArc{js.at("id").template get<std::string>(),
+            reconstruct_at(ca,
+                std::decay_t<decltype(ca)>{js.at("id").template get<std::string>(),
                     js.at("center").template get<Pos>(),
                     js.at("normal").template get<Pos>(),
                     js.at("e1").template get<Pos>(),
@@ -81,10 +81,10 @@ namespace geometry
         }
 
         template <AnyJson JsonType>
-        void load_rectangle(JsonType const& js, Geometry& g)
+        void from_json(JsonType const& js, Rectangle& r)
         {
             serialization::assert_structure(js,
-                Rectangle::name,
+                r.name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -95,8 +95,8 @@ namespace geometry
                     {"height", json::value_t::number_float},
                 },
                 {{"e2", json::value_t::array}});
-            reconstruct_at(g,
-                Rectangle{js.at("id").template get<std::string>(),
+            reconstruct_at(r,
+                std::decay_t<decltype(r)>{js.at("id").template get<std::string>(),
                     js.at("center").template get<Pos>(),
                     js.at("normal").template get<Pos>(),
                     js.at("e1").template get<Pos>(),
@@ -107,10 +107,10 @@ namespace geometry
         }
 
         template <AnyJson JsonType>
-        void load_spherical_rectangle(JsonType const& js, Geometry& g)
+        void from_json(JsonType const& js, SphericalRectangle& sr)
         {
             serialization::assert_structure(js,
-                SphericalRectangle::name,
+                sr.name,
                 {
                     {"type", json::value_t::string},
                     {"id", json::value_t::string},
@@ -122,8 +122,8 @@ namespace geometry
                     {"azimuth_span", json::value_t::number_float},
                 },
                 {{"e2", json::value_t::array}});
-            reconstruct_at(g,
-                SphericalRectangle(js.at("id").template get<std::string>(),
+            reconstruct_at(sr,
+                std::decay_t<decltype(sr)>(js.at("id").template get<std::string>(),
                     js.at("center").template get<Pos>(),
                     js.at("normal").template get<Pos>(),
                     js.at("e1").template get<Pos>(),
@@ -132,6 +132,63 @@ namespace geometry
                     js.at("polar_span").template get<double>(),
                     js.at("azimuth_span").template get<double>())
                     .normalized());
+        }
+
+        template <AnyJson JsonType>
+        void to_json(JsonType& js, Line const& l)
+        {
+            js = JsonType{
+                {"type", l.name},
+                {"id", l.id()},
+                {"pos_begin", l.pos_begin()},
+                {"pos_end", l.pos_end()} //
+            };
+        }
+
+        template <AnyJson JsonType>
+        void to_json(JsonType& js, CircleArc const& ca)
+        {
+            js = JsonType{
+                {"type", ca.name},
+                {"id", ca.id()},
+                {"center", ca.center()},
+                {"normal", ca.normal()},
+                {"e1", ca.e1()},
+                {"e2", ca.e2()},
+                {"radius", ca.radius()},
+                {"angle_span", ca.angle_span()} //
+            };
+        }
+
+        template <AnyJson JsonType>
+        void to_json(JsonType& js, Rectangle const& r)
+        {
+            js = JsonType{
+                {"type", r.name},
+                {"id", r.id()},
+                {"center", r.center()},
+                {"normal", r.normal()},
+                {"e1", r.e1()},
+                {"e2", r.e2()},
+                {"width", r.width()},
+                {"height", r.height()} //
+            };
+        }
+
+        template <AnyJson JsonType>
+        void to_json(JsonType& js, SphericalRectangle const& sr)
+        {
+            js = JsonType{
+                {"type", sr.name},
+                {"id", sr.id()},
+                {"center", sr.center()},
+                {"normal", sr.normal()},
+                {"e1", sr.e1()},
+                {"e2", sr.e2()},
+                {"radius", sr.radius()},
+                {"polar_span", sr.polar_span()},
+                {"azimuth_span", sr.azimuth_span()} //
+            };
         }
     } // namespace
 
@@ -183,57 +240,7 @@ namespace geometry
     template <AnyJson JsonType>
     void to_json(JsonType& js, Geometry const& geo)
     {
-        if (auto* line = std::get_if<Line>(&geo))
-        {
-            js = JsonType{
-                {"type", Line::name},
-                {"id", line->id()},
-                {"pos_begin", line->pos_begin()},
-                {"pos_end", line->pos_end()} //
-            };
-        }
-        else if (auto* circle_arc = std::get_if<CircleArc>(&geo))
-        {
-            js = JsonType{
-                {"type", CircleArc::name},
-                {"id", circle_arc->id()},
-                {"center", circle_arc->center()},
-                {"normal", circle_arc->normal()},
-                {"e1", circle_arc->e1()},
-                {"e2", circle_arc->e2()},
-                {"radius", circle_arc->radius()},
-                {"angle_span", circle_arc->angle_span()} //
-            };
-        }
-        else if (auto* rectangle = std::get_if<Rectangle>(&geo))
-        {
-            js = JsonType{
-                {"type", Rectangle::name},
-                {"id", rectangle->id()},
-                {"center", rectangle->center()},
-                {"normal", rectangle->normal()},
-                {"e1", rectangle->e1()},
-                {"e2", rectangle->e2()},
-                {"width", rectangle->width()},
-                {"height", rectangle->height()} //
-            };
-        }
-        else if (auto* spherical_rectangle = std::get_if<SphericalRectangle>(&geo))
-        {
-            js = JsonType{
-                {"type", SphericalRectangle::name},
-                {"id", spherical_rectangle->id()},
-                {"center", spherical_rectangle->center()},
-                {"normal", spherical_rectangle->normal()},
-                {"e1", spherical_rectangle->e1()},
-                {"e2", spherical_rectangle->e2()},
-                {"radius", spherical_rectangle->radius()},
-                {"polar_span", spherical_rectangle->polar_span()},
-                {"azimuth_span", spherical_rectangle->azimuth_span()} //
-            };
-        }
-        else
-            throw SimulationError("Unknown geometry object");
+        geo.visit([&js](auto const& g) { to_json(js, g); });
     }
 
     template <AnyJson JsonType>
@@ -245,15 +252,35 @@ namespace geometry
         auto const type = js.at("type").template get<std::string>();
 
         if (type == Line::name)
-            load_line(js, geo);
+            geo = Line{};
         else if (type == CircleArc::name)
-            load_circle_arc(js, geo);
+            geo = CircleArc{};
         else if (type == Rectangle::name)
-            load_rectangle(js, geo);
+            geo = Rectangle{};
         else if (type == SphericalRectangle::name)
-            load_spherical_rectangle(js, geo);
+            geo = SphericalRectangle{};
         else
             throw SimulationError("Unknown geometry type '{}'", type);
+
+        geo.visit([&js](auto& g) { from_json(js, g); });
+    }
+
+    template <AnyJson JsonType>
+    void to_json(JsonType& js, Curve const& curve)
+    {
+        curve.visit([&js](auto const& c) { to_json(js, c); });
+    }
+
+    template <AnyJson JsonType>
+    void from_json(JsonType const& js, Curve& curve)
+    {
+        Geometry geo;
+        from_json(js, geo);
+        geo.visit(
+            [&curve](auto const& g)
+            {
+                if constexpr (std::is_constructible_v<Curve, std::decay_t<decltype(g)>>) curve = std::move(g);
+            });
     }
 
     Geometry const& get(std::span<Geometry const> geometries, std::string const& id)
@@ -308,4 +335,8 @@ namespace geometry
     template void to_json(nlohmann::ordered_json&, Geometry const&);
     template void from_json(nlohmann::json const&, Geometry&);
     template void from_json(nlohmann::ordered_json const&, Geometry&);
+    template void to_json(nlohmann::json&, Curve const&);
+    template void to_json(nlohmann::ordered_json&, Curve const&);
+    template void from_json(nlohmann::json const&, Curve&);
+    template void from_json(nlohmann::ordered_json const&, Curve&);
 } // namespace geometry

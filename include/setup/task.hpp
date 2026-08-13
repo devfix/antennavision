@@ -21,9 +21,9 @@ namespace setup::task
         [[nodiscard]] std::string id() const { return std::format("{}.{}.{}", name, antenna_id, sweep_id); }
     };
 
-    struct RxVoltage
+    struct VoltGainOverPoints
     {
-        static constexpr std::string_view name = "RxVoltage";
+        static constexpr std::string_view name = "VoltGain(Points)";
         std::string path_output;
         std::string ref_id;
         std::string tx_id;
@@ -35,13 +35,33 @@ namespace setup::task
 
         [[nodiscard]] std::string id() const
         { //
-            return std::format("{}.{}.{}.{}.{}.{:06.0f}", name, ref_id.empty() ? "origin" : ref_id, tx_id, rx_id, points.size(), wavelength * 1e6);
+            return std::format("{}.{}.{}.{}.{}.{:06.0f}", name, ref_id.empty() ? "<global origin>" : ref_id, tx_id, rx_id, points.size(), wavelength * 1e6);
         }
     };
 
-    struct RxVoltageFieldAtWavelength
+    struct VoltGainOverGeometry
     {
-        static constexpr std::string_view name = "RxVoltageField@Wavelength";
+        static constexpr std::string_view name = "VoltGain(Geometry)";
+        std::string path_output;
+        std::string ref_id;
+        std::string tx_id;
+        std::string rx_id;
+        std::vector<std::string> tx_codebook;
+        std::vector<std::string> rx_codebook;
+        std::string geo_id;
+        std::size_t n_dim1;
+        std::size_t n_dim2;
+        double wavelength;
+
+        [[nodiscard]] std::string id() const
+        { //
+            return std::format("{}.{}.{}.{}.{}.{}.{}.{:06.0f}", name, ref_id.empty() ? "<global origin>" : ref_id, tx_id, rx_id, geo_id, n_dim1, n_dim2, wavelength * 1e6);
+        }
+    };
+
+    struct VoltGainOverGeometryAtWavelength
+    {
+        static constexpr std::string_view name = "VoltGain(Geometry)@Wavelength";
         std::string path_output;
         std::string ref_id;
         std::string tx_id;
@@ -55,11 +75,31 @@ namespace setup::task
 
         [[nodiscard]] std::string id() const
         { //
-            return std::format("{}.{}.{}.{}.{}.{}.{}", name, ref_id.empty() ? "origin" : ref_id, tx_id, rx_id, geo_id, n_dim1, n_dim2, sweep_wavelength_id);
+            return std::format("{}.{}.{}.{}.{}.{}.{}", name, ref_id.empty() ? "<global origin>" : ref_id, tx_id, rx_id, geo_id, n_dim1, n_dim2, sweep_wavelength_id);
         }
     };
 
-    using Task = std::variant<DirectivityOverPolarAtAzimuth, RxVoltage, RxVoltageFieldAtWavelength>;
+    struct VoltGainPeakAndCutoffs
+    {
+        static constexpr std::string_view name = "VoltGain.PeakAndCutoffs";
+        std::string path_output;
+        std::string ref_id;
+        std::string tx_id;
+        std::string rx_id;
+        std::vector<std::string> tx_codebook;
+        std::vector<std::string> rx_codebook;
+        std::string curve_id;
+        std::size_t n_scan;
+        double ratio;
+        double wavelength;
+
+        [[nodiscard]] std::string id() const
+        { //
+            return std::format("{}.{}.{}.{}.{}.{}.{:03.0f}.{:06.0f}", name, ref_id.empty() ? "<global origin>" : ref_id, tx_id, rx_id, curve_id, n_scan, ratio*1e3, wavelength * 1e6);
+        }
+    };
+
+    using Task = std::variant<DirectivityOverPolarAtAzimuth, VoltGainOverPoints, VoltGainOverGeometry, VoltGainOverGeometryAtWavelength, VoltGainPeakAndCutoffs>;
 
     template <AnyJson JsonType>
     void to_json(JsonType& js, Task const& task);
