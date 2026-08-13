@@ -179,16 +179,16 @@ namespace eval::output
             geometry::Curve const& curve //
         )
         {
-            auto const [positions_cartesian, data] = scalar_field.find_curve_peak_and_cutoffs(curve, task.wavelength, task.ratio, task.n_scan);
+            auto const curve_peak_span = scalar_field.find_curve_peak_and_cutoffs(curve, task.wavelength, task.ratio, task.n_scan);
 
             ojson js;
             js["sim_params"] = scalar_field.sim_params;
             js["curve"] = curve;
             js["task"] = task;
-            js["positions"] = ojson();
-            js["positions"]["cartesian"] = positions_cartesian;
-            js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);
-            js["gains"] = data;
+            js["peak"] = curve_peak_span.peak;
+            js["pos_peak"] = curve_peak_span.pos_peak;
+            js["pos_left"] = curve_peak_span.pos_left;
+            js["pos_right"] = curve_peak_span.pos_right;
             save_result(js, path_output, output_type);
         }
     } // namespace voltgain
@@ -218,6 +218,14 @@ namespace eval::output
         ComplexScalarField<RxVoltageField> const&,
         geometry::Geometry const&,
         sweep::Sweep const& //
+        );
+    template void voltgain::curve_peak_and_cutoff<RxVoltageField>( //
+        std::filesystem::path const&,
+        OutputType,
+        setup::task::VoltGainPeakAndCutoffs const&,
+        reference::Reference const&,
+        ComplexScalarField<RxVoltageField> const&,
+        geometry::Curve const&//
     );
 
 } // namespace eval::output

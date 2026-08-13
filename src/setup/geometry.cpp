@@ -283,6 +283,17 @@ namespace geometry
             });
     }
 
+    Curve curve::get(std::span<Geometry const> geometries, std::string const& id)
+    {
+        Geometry const& geo = geometry::get(geometries, id);
+        return geo.visit(
+            [](auto const& g) -> Curve
+            {
+                if constexpr (std::is_constructible_v<Curve, std::decay_t<decltype(g)>>) return g;
+                throw SimulationError("Geometry '{}' is not a curve", g.id());
+            });
+    }
+
     Geometry const& get(std::span<Geometry const> geometries, std::string const& id)
     {
         auto const it = std::ranges::find(geometries, id, [](auto& geo) { return geo.visit([](auto& g) { return g.id(); }); });

@@ -257,7 +257,8 @@ namespace eval
             .arg_initial = math::nidx(k_max, n),
         };
         auto const opt_peak = SingleOpt::run(params_peak, sim_params);
-        double const thres = ratio * (-opt_peak.f_min);
+        double const peak = -opt_peak.f_min;
+        double const thres = ratio * peak;
 
         // step 2: find left cutoff search bound
         std::size_t k_lower = k_max;
@@ -288,12 +289,13 @@ namespace eval
         auto const opt_right = SingleOpt::run(params_right, sim_params);
 
         return {
-            opt_left.arg_min,
-            opt_peak.arg_min,
-            opt_right.arg_min,
-            geometry::curve::get_pos_at(curve, opt_left.arg_min),
-            geometry::curve::get_pos_at(curve, opt_peak.arg_min),
-            geometry::curve::get_pos_at(curve, opt_right.arg_min),
+            .t_left = opt_left.arg_min,
+            .t_peak = opt_peak.arg_min,
+            .t_right = opt_right.arg_min,
+            .peak = peak,
+            .pos_left = geometry::curve::get_pos_at(curve, opt_left.arg_min),
+            .pos_peak = geometry::curve::get_pos_at(curve, opt_peak.arg_min),
+            .pos_right = geometry::curve::get_pos_at(curve, opt_right.arg_min),
         };
     }
 

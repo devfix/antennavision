@@ -301,14 +301,6 @@ namespace setup
             auto opt_output_type = eval::output::output_type_from_ext(ext);
             if (not opt_output_type) throw SimulationError("Task '{}' has invalid output file type '{}'", id, ext);
 
-            if (not params.quiet_mode)
-            {
-                lg::println("Next task:");
-                lg::println("  * name:         {}", setup::task::get_name(task));
-                lg::println("  * id:           {}", id);
-                lg::println("  * path output:  {}", path_output.string());
-            }
-
             bool const result_found = std::filesystem::is_regular_file(path_output) and std::filesystem::file_size(path_output) > 0;
             auto const timestamp_result = result_found ? timeutil::get_of_file(path_output) : 0;
             bool const up_to_date = timestamp_result > timestamp_;
@@ -323,9 +315,12 @@ namespace setup
             if (not params.quiet_mode)
             {
                 if (up_to_date)
-                    lg::println("Running task (forced)...");
+                    lg::println("Next task (forced):");
                 else
-                    lg::println("Running task...");
+                    lg::println("Next task:");
+                lg::println("  * name:         {}", setup::task::get_name(task));
+                lg::println("  * id:           {}", id);
+                lg::println("  * path output:  {}", path_output.string());
             }
 
             run_task(params, task, path_output, opt_output_type.value());
@@ -579,6 +574,25 @@ namespace setup
             auto const& sweep = sweep::get(sweeps_, t->sweep_wavelength_id);
 
             eval::output::voltgain::geometry_at_wavelength(path_output, output_type, *t, ref, field, geo, sweep);
+        }
+        else if (auto t = std::get_if<task::VoltGainPeakAndCutoffs>(&task))
+        {
+            auto& tx = antenna::get(antennas_, t->tx_id);
+            auto& rx = antenna::get(antennas_, t->rx_id);
+
+            auto const tx_coeffs = t->tx_codebook.empty() //
+                ? std::vector<Complex>(antenna::size(tx), 1.0)
+                : get_coeffs_from_codebook(codebooks_, t->tx_codebook);
+
+            auto const rx_coeffs = t->rx_codebook.empty() //
+                ? std::vector<Complex>(antenna::size(rx), 1.0)
+                : get_coeffs_from_codebook(codebooks_, t->rx_codebook);
+
+            auto const& ref = reference::get(references_, t->ref_id);
+            auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_, params);
+            auto const& curve = geometry::curve::get(geometries_, t->curve_id);
+
+            eval::output::voltgain::curve_peak_and_cutoff(path_output, output_type, *t, ref, field, curve);
         }
     }
 } // namespace setup

@@ -232,6 +232,8 @@ namespace geometry
 
     namespace curve
     {
+        [[nodiscard]] Curve get(std::span<Geometry const> geometries, std::string const& id);
+
         [[nodiscard]] constexpr double get_length(Curve const& curve) noexcept
         {
             return curve.visit([](auto const& c) -> double { return c.length(); });
@@ -245,6 +247,8 @@ namespace geometry
 
     namespace surface
     {
+        [[nodiscard]] Surface get(std::span<Geometry const> geometries, std::string const& id);
+
         [[nodiscard]] constexpr Pos const& get_center(Surface const& surf) noexcept
         {
             return surf.visit([](auto const& gt) -> Pos const& { return gt.center(); });

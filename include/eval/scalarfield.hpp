@@ -22,6 +22,7 @@ namespace eval
             double t_left;
             double t_peak;
             double t_right;
+            double peak;
             Pos pos_left;
             Pos pos_peak;
             Pos pos_right;
