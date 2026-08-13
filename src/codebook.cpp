@@ -12,11 +12,8 @@
 
 namespace
 {
-    void load(json const& js, Codebook::Node & node)
+    void load_recursively(json const& js, Codebook::Node & node)
     {
-        // if (!js.is_d()) throw SimulationError("Expected array, but got {}", js.type_name());
-        // if (js.empty()) throw SimulationError("Unexpected empty array");
-
         if (js.is_array())
         {
             auto const weights_comp = js.get<std::vector<std::array<double, 2>>>();
@@ -29,33 +26,52 @@ namespace
             auto nodes = std::vector<Codebook::Node>{};
             for (auto& [key, val] : js.items())
             {
-                load(val, nodes.emplace_back(key));
+                load_recursively(val, nodes.emplace_back(key));
             }
             node.element = std::move(nodes);
         } else throw SimulationError("Malformed codebook json");
     }
 } // namespace
 
-Codebook::Codebook(std::string_view id, std::filesystem::path const& p) : id(id)
+Codebook Codebook::from_json(std::string_view id, json const& js)
+{
+    try
+    {
+        decltype(n_elements) const n_elements = js.at("n_elements").get<decltype(n_elements)>();
+        decltype(n_elements) const oversampling_factor = js.at("oversampling_factor").get<decltype(oversampling_factor)>();
+        decltype(n_elements) const n_dim1 = js.at("n_dim1").get<decltype(n_dim1)>();
+        decltype(n_elements) const n_dim2 = js.at("n_dim2").get<decltype(n_dim2)>();
+        if (n_dim1 * n_dim2 != n_elements)
+            throw SimulationError("Codebook assertion failed: n_dim1 ({}) * n_dim2 ({}) ?= n_elements ({})", n_dim1, n_dim2, n_elements);
+
+        Node root{.element = std::vector<Node>{}};
+        load_recursively(js.at("weights"), root);
+
+        return Codebook{
+            .id = std::string(id),
+            .n_elements = n_elements,
+            .oversampling_factor = oversampling_factor,
+            .n_dim1 = n_dim1,
+            .n_dim2 = n_dim2,
+            .root = std::move(root)
+        };
+    } catch (...)
+    {
+        std::throw_with_nested(SimulationError("Failed to load codebook json:\n{}", js.dump(2)));
+    }
+}
+
+Codebook Codebook::from_file(std::string_view id, std::filesystem::path const& p)
 {
     try
     {
         lg::println("Loading codebook file '{}'", std::filesystem::weakly_canonical(p).string());
         std::ifstream file(p);
         if (!file.is_open()) { throw SimulationError("Could not open codebook. Does the file exist?"); }
-        auto const js = nlohmann::json::parse(file);
+        auto const js = json::parse(file);
         file.close();
-
-        js.at("n_elements").get_to(n_elements_);
-        js.at("oversampling_factor").get_to(oversampling_factor_);
-        js.at("n_dim1").get_to(n_dim1_);
-        js.at("n_dim2").get_to(n_dim2_);
-        if (n_dim1_ * n_dim2_ != n_elements_)
-            throw SimulationError("Codebook assertion failed: n_dim1 ({}) * n_dim2 ({}) ?= n_elements ({})", n_dim1_, n_dim2_, n_elements_);
-
-        load( js.at("weights"), root_);
-    }
-    catch (...)
+        return from_json(id, js);
+    } catch (...)
     {
         std::throw_with_nested(SimulationError("Failed to load codebook file '{}'", p.string()));
     }
@@ -63,7 +79,7 @@ Codebook::Codebook(std::string_view id, std::filesystem::path const& p) : id(id)
 
 std::span<Complex const> Codebook::operator[](std::span<std::string const> key) const
 {
-    Node const* current = &root_;
+    Node const* current = &root;
     std::size_t depth = 0;
     for (auto const& id : key)
     {

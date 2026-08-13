@@ -26,24 +26,15 @@ struct Codebook
         Element element;
     };
 
-    Codebook(std::string_view id, std::filesystem::path const& p);
-
-    [[nodiscard]] std::uint32_t n_elements() const { return n_elements_; }
-
-    [[nodiscard]] std::uint32_t oversampling_factor() const { return oversampling_factor_; }
-
-    [[nodiscard]] std::size_t n_dim1() const { return n_dim1_; }
-
-    [[nodiscard]] std::size_t n_dim2() const { return n_dim2_; }
+    static Codebook from_json(std::string_view id, json const& js);
+    static Codebook from_file(std::string_view id, std::filesystem::path const& p);
 
     std::span<Complex const> operator[](std::span<std::string const> key) const;
 
     std::string id;
-
-private:
-    Node root_{.element = std::vector<Node>{}};
-    std::uint32_t n_elements_{};
-    std::uint32_t oversampling_factor_{};
-    std::size_t n_dim1_{};
-    std::size_t n_dim2_{};
+    std::uint32_t n_elements;
+    std::uint32_t oversampling_factor;
+    std::size_t n_dim1;
+    std::size_t n_dim2;
+    Node root;
 };

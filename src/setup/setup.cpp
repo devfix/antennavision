@@ -380,7 +380,7 @@ namespace setup
                 {
                     auto id = cb_desc.at("id").get<std::string>();
                     auto path = path_cwd_ / cb_desc.at("path").get<std::string>();
-                    codebooks_.emplace_back(id, path);
+                    codebooks_.push_back(std::move(Codebook::from_file(id, path)));
                 }
                 js.erase("codebooks");
             }
