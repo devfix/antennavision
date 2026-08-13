@@ -17,7 +17,6 @@
 #include "factory/parse.hpp"
 #include "lg.hpp"
 #include "manifest.hpp"
-#include "parameters.hpp"
 #include "simulationerror.hpp"
 #include "three.hpp"
 
@@ -272,7 +271,7 @@ namespace setup
         lg::println("Exported objects to {}", path_objects.string());
     }
 
-    void Setup::run_tasks(Parameters const& params) const
+    void Setup::run_tasks(AppParams const& params) const
     {
         bool force_recomputation = params.force_recomputation;
         if (timestamp_ == 0) force_recomputation = true;
@@ -312,7 +311,7 @@ namespace setup
                     lg::println("Running task...");
             }
 
-            run_task(task, path_output, opt_output_type.value());
+            run_task(params, task, path_output, opt_output_type.value());
         }
     }
 
@@ -499,7 +498,7 @@ namespace setup
         js.erase("tasks");
     }
 
-    void Setup::run_task(task::Task const& task, std::filesystem::path const& path_output, eval::output::OutputType output_type) const
+    void Setup::run_task(AppParams const& params, task::Task const& task, std::filesystem::path const& path_output, eval::output::OutputType output_type) const
     {
         if (std::holds_alternative<task::DirectivityOverPolarAtAzimuth>(task))
         {
@@ -524,7 +523,7 @@ namespace setup
                 : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
 
             auto const& ref = reference::get(const_cast<decltype(references_) const&>(references_), t.ref_id);
-            auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_);
+            auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_, params);
             auto const& geo = geometry::get(geometries_, t.geo_id);
             auto const& sweep = sweep::get(sweeps_, t.sweep_wavelength_id);
 

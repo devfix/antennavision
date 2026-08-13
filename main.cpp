@@ -7,7 +7,7 @@
 #include "convert.hpp"
 #include "lg.hpp"
 #include "manifest.hpp"
-#include "parameters.hpp"
+#include "appparams.hpp"
 #include "setup/setup.hpp"
 
 using ansi_color::fg4;
@@ -47,21 +47,21 @@ namespace
         {}
     }
 
-    std::optional<Parameters> parse_params(int argc, char* argv[])
+    std::optional<AppParams> parse_params(int argc, char* argv[])
     {
-        Parameters params{};
+        AppParams app_params{};
         CLI::App app{"Electromagnetic Wave Propagation Simulator", std::string(APPLICATION_NAME)};
-        app.add_flag("-v,--version", params.print_version, "Print version and exit");
-        app.add_flag("-d,--debug", params.debug_mode, "Enable verbose debug output");
-        app.add_flag("-q,--quiet", params.quiet_mode, "Quiet mode (less output)");
-        app.add_flag("-n,--hide-banner", params.hide_banner, "Hide ascii art application banner");
-        app.add_flag("-b,--variables", params.print_variables, "Print evaluated variables");
-        app.add_flag("-c,--references", params.print_references, "Print constructed references");
-        app.add_flag("-a,--antennas", params.print_antennas, "Print constructed antennas");
-        app.add_flag("-r,--run-tasks", params.run_tasks, "Run setup tasks");
-        app.add_flag("-f,--force", params.force_recomputation, "Force recomputation of all tasks");
-        app.add_option("-s,--setup", params.path_setup, "Set path to setups");
-        app.add_option("-o,--objects", params.path_objects, "Set path to objects (three) export");
+        app.add_flag("-v,--version", app_params.print_version, "Print version and exit");
+        app.add_flag("-d,--debug", app_params.debug_mode, "Enable verbose debug output");
+        app.add_flag("-q,--quiet", app_params.quiet_mode, "Quiet mode (less output)");
+        app.add_flag("-n,--hide-banner", app_params.hide_banner, "Hide ascii art application banner");
+        app.add_flag("-b,--variables", app_params.print_variables, "Print evaluated variables");
+        app.add_flag("-c,--references", app_params.print_references, "Print constructed references");
+        app.add_flag("-a,--antennas", app_params.print_antennas, "Print constructed antennas");
+        app.add_flag("-r,--run-tasks", app_params.run_tasks, "Run setup tasks");
+        app.add_flag("-f,--force", app_params.force_recomputation, "Force recomputation of all tasks");
+        app.add_option("-s,--setup", app_params.path_setup, "Set path to setups");
+        app.add_option("-o,--objects", app_params.path_objects, "Set path to objects (three) export");
 
         try
         {
@@ -73,15 +73,15 @@ namespace
             return {};
         }
 
-        if (params.debug_mode)
+        if (app_params.debug_mode)
         {
-            params.quiet_mode = false;
-            params.print_variables = true;
-            params.print_references = true;
-            params.print_antennas = true;
+            app_params.quiet_mode = false;
+            app_params.print_variables = true;
+            app_params.print_references = true;
+            app_params.print_antennas = true;
         }
 
-        return params;
+        return app_params;
     }
 
     int run(int argc, char* argv[])

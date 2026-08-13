@@ -26,7 +26,7 @@ namespace eval
         };
 
         [[nodiscard]] ComplexScalarMathField(std::function<Complex(Pos const& pos, double wavelength)> fn, setup::SimParams const& sim_params) :
-            ScalarField(sim_params), fn_(std::move(fn))
+            ScalarField(sim_params, AppParams{}), fn_(std::move(fn))
         {}
 
     private:

@@ -11,7 +11,7 @@
 #include "eval/output.hpp"
 #include "factory/find.hpp"
 #include "factory/make.hpp"
-#include "parameters.hpp"
+#include "appparams.hpp"
 #include "task.hpp"
 #include "timeutil.hpp"
 
@@ -80,7 +80,7 @@ namespace setup
         void print_antennas() const;
         void print_sim_params() const;
         void export_to_three(std::filesystem::path const& path_objects) const;
-        void run_tasks(Parameters const& params) const;
+        void run_tasks(AppParams const& params) const;
 
         [[nodiscard]] reference::Reference const& get_reference(std::string_view id) const;
         [[nodiscard]] antenna::Antenna const& get_antenna(std::string const& id) const;
@@ -103,7 +103,7 @@ namespace setup
         void extract_sweeps(ojson& js);
         void extract_tasks(ojson& js);
 
-        void run_task(task::Task const& task, std::filesystem::path const& path_output, eval::output::OutputType output_type) const;
+        void run_task(AppParams const& params, task::Task const& task, std::filesystem::path const& path_output, eval::output::OutputType output_type) const;
 
         std::filesystem::path path_cwd_{};
         timeutil::timestamp_t timestamp_{};

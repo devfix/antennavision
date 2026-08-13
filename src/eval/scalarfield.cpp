@@ -14,6 +14,12 @@
 #include "manifest.hpp"
 #include "math/functions.hpp"
 
+#if defined(ANTENNAVISION_MULTI_THREADED) && (ANTENNAVISION_MULTI_THREADED == 1)
+bool constexpr MULTI_THREADED_SUPPORTED = true;
+#else
+bool constexpr MULTI_THREADED_SUPPORTED = false;
+#endif
+
 namespace eval
 {
     using nc::Vec2;
@@ -334,80 +340,95 @@ namespace eval
         nc::NdArray<OutputT> values(positions.shape());
         std::size_t const total_size = positions.size();
 
-#if defined(ANTENNAVISION_MULTI_THREADED) && (ANTENNAVISION_MULTI_THREADED == 1)
-        // Determine thread count and calculate chunk sizes
+        // we only perform multithreaded computation if generally enabled and the number of points is large enough
         std::size_t const num_threads = std::thread::hardware_concurrency();
-        std::size_t const chunk_size = (total_size + num_threads - 1) / num_threads;
-        std::size_t const n_report = N_BATCH_PROGRESS_REPORT * std::max(num_threads / 2, static_cast<std::size_t>(1));
+        bool const multi_threaded = MULTI_THREADED_SUPPORTED and total_size >= num_threads;
 
-        // --- PROGRESS TRACKING STATE ---
-        std::atomic<std::size_t> processed{0};
-        std::mutex print_mutex;
-
-        std::vector<std::future<void>> futures;
-        futures.reserve(num_threads);
-
-        // Launch 1 task per chunk
-        for (std::size_t t = 0; t < num_threads; ++t)
+        if (multi_threaded)
         {
-            std::size_t const start_idx = t * chunk_size;
-            if (start_idx >= total_size) break;
-            std::size_t const end_idx = std::min(start_idx + chunk_size, total_size);
+            // Determine thread count and calculate chunk sizes
+            std::size_t const chunk_size = (total_size + num_threads - 1) / num_threads;
+            std::size_t const n_report = N_BATCH_PROGRESS_REPORT * std::max(num_threads / 2, static_cast<std::size_t>(1));
 
-            futures.push_back(std::async(std::launch::async,
-                [this, start_idx, end_idx, &positions, &values, wavelength, &processed, &print_mutex, total_size, n_report]
-                {
-                    auto const ctx = make_context(wavelength);
-                    auto it = positions.begin() + static_cast<std::ptrdiff_t>(start_idx);
-                    auto ot = values.begin() + start_idx;
+            // --- PROGRESS TRACKING STATE ---
+            std::atomic<std::size_t> processed{0};
+            std::mutex print_mutex;
 
-                    constexpr OutputCast cast_op{};
-                    std::size_t local_counter = 0;
-                    for (std::size_t k = start_idx; k < end_idx; ++k, ++it, ++ot)
-                    {
-                        *ot = cast_op(ctx(*it));
+            std::vector<std::future<void>> futures;
+            futures.reserve(num_threads);
 
-                        // Batch atomic updates to prevent CPU cache contention
-                        if (++local_counter >= n_report)
-                        {
-                            std::size_t const current_total = processed.fetch_add(local_counter, std::memory_order_relaxed) + local_counter;
-                            local_counter = 0;
-
-                            std::lock_guard lock(print_mutex);
-                            double const p = static_cast<double>(current_total) / static_cast<double>(total_size);
-                            lg::print(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, std::min(100.0, p * 100.0));
-                            std::cout << std::flush;
-                        }
-                    }
-
-                    // Add any remaining remainder from this thread's chunk
-                    if (local_counter > 0) { processed.fetch_add(local_counter, std::memory_order_relaxed); }
-                }));
-        }
-
-        // Wait for all threads to finish computing their chunks
-        for (auto& f : futures) f.get();
-#else
-        auto const ctx = make_context(wavelength);
-        auto it = positions.begin();
-        auto ot = values.begin();
-
-        constexpr OutputCast cast_op{};
-        for (std::size_t k = 0; it != positions.end(); ++it, ++ot, ++k)
-        {
-            // Periodic terminal update without atomic/mutex overhead
-            if (k % N_BATCH_PROGRESS_REPORT == 0)
+            // Launch 1 task per chunk
+            for (std::size_t t = 0; t < num_threads; ++t)
             {
-                double const p = static_cast<double>(k) / static_cast<double>(total_size);
-                lg::print(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, p * 100.0);
-                std::cout << std::flush;
-            }
-            *ot = cast_op(ctx(*it));
-        }
-#endif
+                std::size_t const start_idx = t * chunk_size;
+                if (start_idx >= total_size) break;
+                std::size_t const end_idx = std::min(start_idx + chunk_size, total_size);
 
-        // Print final 100% completion cleanup
-        lg::println(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : done", wavelength);
+                futures.push_back(std::async(std::launch::async,
+                    [this, start_idx, end_idx, &positions, &values, wavelength, &processed, &print_mutex, total_size, n_report]
+                    {
+                        auto const ctx = make_context(wavelength);
+                        auto it = positions.begin() + static_cast<std::ptrdiff_t>(start_idx);
+                        auto ot = values.begin() + start_idx;
+
+                        constexpr OutputCast cast_op{};
+                        std::size_t local_counter = 0;
+                        for (std::size_t k = start_idx; k < end_idx; ++k, ++it, ++ot)
+                        {
+                            *ot = cast_op(ctx(*it));
+
+                            // Batch atomic updates to prevent CPU cache contention
+                            if (++local_counter >= n_report)
+                            {
+                                std::size_t const current_total = processed.fetch_add(local_counter, std::memory_order_relaxed) + local_counter;
+                                local_counter = 0;
+
+                                std::lock_guard lock(print_mutex);
+                                double const p = static_cast<double>(current_total) / static_cast<double>(total_size);
+                                if (not app_params.quiet_mode)
+                                {
+                                    lg::print(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, std::min(100.0, p * 100.0));
+                                    std::cout << std::flush;
+                                }
+                            }
+                        }
+
+                        // Add any remaining remainder from this thread's chunk
+                        if (local_counter > 0) { processed.fetch_add(local_counter, std::memory_order_relaxed); }
+                    }));
+            }
+
+            // Wait for all threads to finish computing their chunks
+            for (auto& f : futures) f.get();
+        }
+        else
+        {
+            auto const ctx = make_context(wavelength);
+            auto it = positions.begin();
+            auto ot = values.begin();
+
+            constexpr OutputCast cast_op{};
+            for (std::size_t k = 0; it != positions.end(); ++it, ++ot, ++k)
+            {
+                // Periodic terminal update without atomic/mutex overhead
+                if (k % N_BATCH_PROGRESS_REPORT == 0)
+                {
+                    double const p = static_cast<double>(k) / static_cast<double>(total_size);
+                    if (not app_params.quiet_mode)
+                    {
+                        lg::print(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, p * 100.0);
+                        std::cout << std::flush;
+                    }
+                }
+                *ot = cast_op(ctx(*it));
+            }
+        }
+
+        if (not app_params.quiet_mode)
+        {
+            // Print final 100% completion cleanup
+            lg::println(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : done", wavelength);
+        }
 
         return values;
     }

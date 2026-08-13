@@ -6,15 +6,15 @@
 
 #include <utility>
 
+#include "appparams.hpp"
 #include "opt.hpp"
-#include "setup/simparams.hpp"
 #include "setup/geometry.hpp"
+#include "setup/simparams.hpp"
 #include "setup/sweep.hpp"
 #include "types/math.hpp"
 
 namespace eval
 {
-
     namespace result
     {
         struct CurvePeakSpan
@@ -174,6 +174,7 @@ namespace eval
         trace_isolines(geometry::Surface const& surf, double wavelength, double ratio, std::size_t n1, std::size_t n2) const;
 
         setup::SimParams sim_params;
+        AppParams const& app_params;
 
     protected:
         // Prevent direct deletion through base pointer without virtual destructor

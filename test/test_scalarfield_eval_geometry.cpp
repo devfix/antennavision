@@ -105,7 +105,7 @@ TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometrie
     auto const& tx = su.get_antenna("ula1");
     auto& rx = su.get_antenna("receiver");
 
-    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params());
+    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params(), AppParams{});
     auto& sim_params = voltage_field.sim_params;
 
     // Configure a simple sweep with 3 test frequencies/wavelengths

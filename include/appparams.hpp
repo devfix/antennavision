@@ -6,7 +6,7 @@
 
 #include <string>
 
-struct Parameters
+struct AppParams
 {
     bool print_version = false;
     bool debug_mode = false;
