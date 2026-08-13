@@ -24,6 +24,15 @@ namespace eval::output
         double wavelength,
         sweep::Sweep const& sweep_azimuth,
         setup::SimParams const& sim_params //
+        );
+
+    template <typename T>
+    void complex_scalar_points( //
+        std::filesystem::path const& path_output,
+        OutputType output_type,
+        setup::task::RxVoltage const& task,
+        reference::Reference const& ref,
+        ComplexScalarField<T> const& scalar_field//
     );
 
     template <typename T>

@@ -54,7 +54,7 @@ namespace antenna
             double r = (tx.origin->global_from_local_pos(POS_ZERO) - rx.origin->global_from_local_pos(POS_ZERO)).norm();
             if (r <= wavelength / 100)
             {
-                lg::println(lg::warning, "Warning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength);
+                lg::println(lg::warning, "\nWarning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength);
                 r = std::max(r, NUMERICAL_MARGIN); // sanity
             }
 

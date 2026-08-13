@@ -269,6 +269,8 @@ namespace factory
         {
             try_resolve_int_expressions(desc, variables, "n_dim1");
             try_resolve_int_expressions(desc, variables, "n_dim2");
+            try_resolve_double_expressions(desc, variables, "points");
+            try_resolve_double_expressions(desc, variables, "wavelength");
             return desc.get<setup::task::Task>(); // no id check here since the user doesn't choose the id by himself
         }
         catch (...)

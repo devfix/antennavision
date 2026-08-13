@@ -270,7 +270,7 @@ namespace geometry
         }
     } // namespace surface
 
-    template<typename T>
+    template <typename T>
     [[nodiscard]] constexpr std::string const& get_id(T const& obj) noexcept
     {
         return obj.visit([](auto const& g) -> std::string const& { return g.id(); });

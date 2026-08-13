@@ -34,6 +34,36 @@ namespace setup::task
         }
 
         template <AnyJson JsonType>
+        void load_rx_voltage(JsonType const& js, Task& t)
+        {
+            serialization::assert_structure(js,
+                RxVoltageFieldAtWavelength::name,
+                {
+                    {"path_output", json::value_t::string},
+                    {"type", json::value_t::string},
+                    {"ref", json::value_t::string},
+                    {"tx", json::value_t::string},
+                    {"rx", json::value_t::string},
+                    {"tx_codebook", json::value_t::array},
+                    {"rx_codebook", json::value_t::array},
+                    {"points", json::value_t::array},
+                    {"wavelength", json::value_t::number_float},
+                },
+                {});
+            reconstruct_at(t,
+                RxVoltage{
+                    .path_output = js.at("path_output").template get<std::string>(),
+                    .ref_id = js.at("ref").template get<std::string>(),
+                    .tx_id = js.at("tx").template get<std::string>(),
+                    .rx_id = js.at("rx").template get<std::string>(),
+                    .tx_codebook = js.at("tx_codebook").template get<std::vector<std::string>>(),
+                    .rx_codebook = js.at("rx_codebook").template get<std::vector<std::string>>(),
+                    .points = js.at("points").template get<std::vector<Pos>>(),
+                    .wavelength = js.at("wavelength").template get<double>(), //
+                });
+        }
+
+        template <AnyJson JsonType>
         void load_rx_voltage_field_at_wavelength(JsonType const& js, Task& t)
         {
             serialization::assert_structure(js,
@@ -81,6 +111,20 @@ namespace setup::task
                 {"sweep", directivity_over_polar_sweep_azimuth->sweep_id} //
             };
         }
+        else if (auto* rx_voltage = std::get_if<task::RxVoltage>(&task))
+        {
+            js = JsonType{
+                    {"type", RxVoltageFieldAtWavelength::name},
+                    {"path_output", rx_voltage->path_output},
+                    {"ref", rx_voltage->ref_id},
+                    {"tx", rx_voltage->tx_id},
+                    {"rx", rx_voltage->rx_id},
+                    {"tx_codebook", rx_voltage->tx_codebook},
+                    {"rx_codebook", rx_voltage->rx_codebook},
+                    {"points", rx_voltage->points},
+                    {"wavelength", rx_voltage->wavelength} //
+            };
+        }
         else if (auto* rx_voltage_field_at_wavelength = std::get_if<task::RxVoltageFieldAtWavelength>(&task))
         {
             js = JsonType{
@@ -111,10 +155,12 @@ namespace setup::task
 
         if (type == "DirectivityOverPolar@Azimuth")
             load_directivity_over_polar_at_azimuth(js, task);
+        else if (type == "RxVoltage")
+            load_rx_voltage(js, task);
         else if (type == "RxVoltageField@Wavelength")
             load_rx_voltage_field_at_wavelength(js, task);
         else
-            throw SimulationError("Unknown geometry type '{}'", type);
+            throw SimulationError("Unknown task type '{}'", type);
     }
 
     // -----------------------------------------------------------------------------

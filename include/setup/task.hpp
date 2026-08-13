@@ -21,6 +21,24 @@ namespace setup::task
         [[nodiscard]] std::string id() const { return std::format("{}.{}.{}", name, antenna_id, sweep_id); }
     };
 
+    struct RxVoltage
+    {
+        static constexpr std::string_view name = "RxVoltage";
+        std::string path_output;
+        std::string ref_id;
+        std::string tx_id;
+        std::string rx_id;
+        std::vector<std::string> tx_codebook;
+        std::vector<std::string> rx_codebook;
+        std::vector<Pos> points;
+        double wavelength;
+
+        [[nodiscard]] std::string id() const
+        { //
+            return std::format("{}.{}.{}.{}.{}.{:06.0f}", name, ref_id.empty() ? "origin" : ref_id, tx_id, rx_id, points.size(), wavelength * 1e6);
+        }
+    };
+
     struct RxVoltageFieldAtWavelength
     {
         static constexpr std::string_view name = "RxVoltageField@Wavelength";
@@ -41,7 +59,7 @@ namespace setup::task
         }
     };
 
-    using Task = std::variant<DirectivityOverPolarAtAzimuth, RxVoltageFieldAtWavelength>;
+    using Task = std::variant<DirectivityOverPolarAtAzimuth, RxVoltage, RxVoltageFieldAtWavelength>;
 
     template <AnyJson JsonType>
     void to_json(JsonType& js, Task const& task);

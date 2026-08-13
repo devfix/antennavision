@@ -507,6 +507,26 @@ namespace setup
             auto& sweep = sweep::get(sweeps_, t.sweep_id);
             eval::output::directivity_over_polar(path_output, output_type, ant, t.wavelength, sweep, sim_params_);
         }
+        else if (std::holds_alternative<task::RxVoltage>(task))
+        {
+            auto& t = std::get<task::RxVoltage>(task);
+
+            auto& tx = antenna::get(antennas_, t.tx_id);
+            auto& rx = antenna::get(antennas_, t.rx_id);
+
+            auto const tx_coeffs = t.tx_codebook.empty() //
+                ? std::vector<Complex>(antenna::size(tx), 1.0)
+                : get_coeffs_from_codebook(codebooks_, t.tx_codebook);
+
+            auto const rx_coeffs = t.rx_codebook.empty() //
+                ? std::vector<Complex>(antenna::size(rx), 1.0)
+                : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
+
+            auto const& ref = reference::get(references_, t.ref_id);
+            auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_, params);
+
+            eval::output::complex_scalar_points(path_output, output_type, t, ref, field);
+        }
         else if (std::holds_alternative<task::RxVoltageFieldAtWavelength>(task))
         {
             auto& t = std::get<task::RxVoltageFieldAtWavelength>(task);
@@ -522,7 +542,7 @@ namespace setup
                 ? std::vector<Complex>(antenna::size(rx), 1.0)
                 : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
 
-            auto const& ref = reference::get(const_cast<decltype(references_) const&>(references_), t.ref_id);
+            auto const& ref = reference::get(references_, t.ref_id);
             auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_, params);
             auto const& geo = geometry::get(geometries_, t.geo_id);
             auto const& sweep = sweep::get(sweeps_, t.sweep_wavelength_id);

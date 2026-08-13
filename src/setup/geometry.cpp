@@ -273,10 +273,11 @@ namespace geometry
     Vec3Array get_positions(Geometry const& geo, std::size_t n1, std::size_t n2)
     {
         return geo.visit(
-            [&n1, &n2]<typename T>(T const& shape) -> Vec3Array
+            [&n1, &n2](auto const& shape) -> Vec3Array
             {
+                using Type = std::decay_t<decltype(shape)>;
                 if (n1 == 0) throw SimulationError("Sample dimension 1 is zero");
-                if constexpr (is_variant_alternative<T, Curve>)
+                if constexpr (is_variant_alternative<Type, Curve>)
                 {
                     Vec3Array positions(n1, 1);
                     for (ComplexArray::index_type k = 0; k < n1; k++) positions(k, 0) = curve::get_pos_at(shape, math::nidx(k, n1));

@@ -98,6 +98,31 @@ namespace eval::output
     }
 
     template <typename T>
+    void complex_scalar_points(std::filesystem::path const& path_output,
+        OutputType output_type,
+        setup::task::RxVoltage const& task,
+        reference::Reference const& ref,
+        ComplexScalarField<T> const& scalar_field //
+    )
+    {
+        Vec3Array positions(task.points.size(), 1);
+        for (auto k = 0; k < task.points.size(); k++) positions(k,0) = task.points[k];
+
+        auto const gains = scalar_field.eval(positions, task.wavelength);
+
+        ojson js;
+        js["sim_params"] = scalar_field.sim_params;
+        js["points"] = task.points;
+        js["sweep"] = task.wavelength;
+        js["task"] = task;
+        js["positions"] = ojson();
+        js["positions"]["cartesian"] = task.points;
+        js["positions"]["spherical"] = calc_positions_spherical(ref, positions).toStlVector();;
+        js["gains"] = gains.toStlVector();
+        save_result(js, path_output, output_type);
+    }
+
+    template <typename T>
     void complex_scalarfield_at_wavelength( //
         std::filesystem::path const& path_output,
         OutputType output_type,
@@ -118,13 +143,20 @@ namespace eval::output
         js["positions"] = ojson();
         js["positions"]["cartesian"] = positions_cartesian;
         js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);
-        js["data"] = data;
+        js["gains"] = data;
         save_result(js, path_output, output_type);
     }
 
     // -----------------------------------------------------------------------------
     // EXPLICIT INSTANTIATION
     // -----------------------------------------------------------------------------
+    template void complex_scalar_points<RxVoltageField>( //
+        std::filesystem::path const&,
+        OutputType,
+        setup::task::RxVoltage const&,
+        reference::Reference const&,
+        ComplexScalarField<RxVoltageField> const&//
+        );
     template void complex_scalarfield_at_wavelength<RxVoltageField>( //
         std::filesystem::path const&,
         OutputType,
