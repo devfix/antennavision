@@ -132,7 +132,7 @@ namespace
         }
 
         setup::Setup su(path_setup);
-        su.print_meta();
+        if (not params.quiet_mode) su.print_meta();
         if (params.print_variables) su.print_variables();
         if (params.print_references) su.print_references();
         if (params.print_antennas) su.print_antennas();
