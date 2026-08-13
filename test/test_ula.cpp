@@ -30,7 +30,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
 {
   "metadata": {
     "setup_name": "test-ula",
-    "version": "0.1.3"
+    "version": "0.2.0"
   },
   "sim_params": {
     "system_wavelength": 0.1,
@@ -83,7 +83,7 @@ TEST_CASE("ULA gain", "[TestULA]")
 {
   "metadata": {
     "setup_name": "test-ula",
-    "version": "0.1.3"
+    "version": "0.2.0"
   },
   "sim_params": {
     "system_wavelength": 0.1,
@@ -178,7 +178,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
 {
   "metadata": {
     "setup_name": "test-ula",
-    "version": "0.1.3"
+    "version": "0.2.0"
   },
   "sim_params": {
     "system_wavelength": 0.1,
