@@ -231,7 +231,7 @@ namespace antenna
             case 0b11: // both antennas are single radiators
             {
                 // no computation loop, only direct forward
-                return calc_voltage_gain_direct(std::get<Radiator>(tx), std::get<Radiator>(rx), wavelength, sim_params);
+                return tx_coeffs[0] * calc_voltage_gain_direct(std::get<Radiator>(tx), std::get<Radiator>(rx), wavelength, sim_params) * rx_coeffs[0];
             }
             default: std::unreachable();
         }
