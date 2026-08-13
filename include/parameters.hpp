@@ -10,6 +10,7 @@ struct Parameters
 {
     bool print_version = false;
     bool debug_mode = false;
+    bool quiet_mode = false;
     bool hide_banner = false;
     bool print_variables = false;
     bool print_references = false;

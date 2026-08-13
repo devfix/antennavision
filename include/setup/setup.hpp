@@ -7,9 +7,11 @@
 #include <filesystem>
 #include <functional>
 #include <list>
+
 #include "eval/output.hpp"
 #include "factory/find.hpp"
 #include "factory/make.hpp"
+#include "parameters.hpp"
 #include "task.hpp"
 #include "timeutil.hpp"
 
@@ -78,7 +80,7 @@ namespace setup
         void print_antennas() const;
         void print_sim_params() const;
         void export_to_three(std::filesystem::path const& path_objects) const;
-        void run_tasks(bool force_recomputation) const;
+        void run_tasks(Parameters const& params) const;
 
         [[nodiscard]] reference::Reference const& get_reference(std::string_view id) const;
         [[nodiscard]] antenna::Antenna const& get_antenna(std::string const& id) const;

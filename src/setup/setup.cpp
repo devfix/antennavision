@@ -17,6 +17,7 @@
 #include "factory/parse.hpp"
 #include "lg.hpp"
 #include "manifest.hpp"
+#include "parameters.hpp"
 #include "simulationerror.hpp"
 #include "three.hpp"
 
@@ -271,8 +272,9 @@ namespace setup
         lg::println("Exported objects to {}", path_objects.string());
     }
 
-    void Setup::run_tasks(bool force_recomputation) const
+    void Setup::run_tasks(Parameters const& params) const
     {
+        bool force_recomputation = params.force_recomputation;
         if (timestamp_ == 0) force_recomputation = true;
 
         for (auto const& task : tasks_)
@@ -283,10 +285,13 @@ namespace setup
             auto opt_output_type = eval::output::output_type_from_ext(ext);
             if (not opt_output_type) throw SimulationError("Task '{}' has invalid output file type '{}'", id, ext);
 
-            lg::println("Next task:");
-            lg::println("  * name:         {}", setup::task::get_name(task));
-            lg::println("  * id:           {}", id);
-            lg::println("  * path output:  {}", path_output.string());
+            if (not params.quiet_mode)
+            {
+                lg::println("Next task:");
+                lg::println("  * name:         {}", setup::task::get_name(task));
+                lg::println("  * id:           {}", id);
+                lg::println("  * path output:  {}", path_output.string());
+            }
 
             bool const result_found = std::filesystem::is_regular_file(path_output) and std::filesystem::file_size(path_output) > 0;
             auto const timestamp_result = result_found ? timeutil::get_of_file(path_output) : 0;
@@ -299,10 +304,13 @@ namespace setup
                 continue;
             }
 
-            if (up_to_date)
-                lg::println("Running task (forced)...");
-            else
-                lg::println("Running task...");
+            if (not params.quiet_mode)
+            {
+                if (up_to_date)
+                    lg::println("Running task (forced)...");
+                else
+                    lg::println("Running task...");
+            }
 
             run_task(task, path_output, opt_output_type.value());
         }

@@ -53,6 +53,7 @@ namespace
         CLI::App app{"Electromagnetic Wave Propagation Simulator", std::string(APPLICATION_NAME)};
         app.add_flag("-v,--version", params.print_version, "Print version and exit");
         app.add_flag("-d,--debug", params.debug_mode, "Enable verbose debug output");
+        app.add_flag("-q,--quiet", params.quiet_mode, "Quiet mode (less output)");
         app.add_flag("-n,--hide-banner", params.hide_banner, "Hide ascii art application banner");
         app.add_flag("-b,--variables", params.print_variables, "Print evaluated variables");
         app.add_flag("-c,--references", params.print_references, "Print constructed references");
@@ -74,6 +75,7 @@ namespace
 
         if (params.debug_mode)
         {
+            params.quiet_mode = false;
             params.print_variables = true;
             params.print_references = true;
             params.print_antennas = true;
@@ -105,6 +107,8 @@ namespace
         {
             lg::println(lg::note, "print version:       {}", params.print_version);
             lg::println(lg::note, "debug mode:          {}", params.debug_mode);
+            lg::println(lg::note, "quiet mode:          {}", params.quiet_mode);
+            lg::println(lg::note, "hide banner:         {}", params.hide_banner);
             lg::println(lg::note, "print variables:     {}", params.print_variables);
             lg::println(lg::note, "print references:    {}", params.print_references);
             lg::println(lg::note, "print antennas:      {}", params.print_antennas);
@@ -136,8 +140,8 @@ namespace
         if (params.debug_mode) su.print_sim_params();
         if (params.run_tasks)
         {
-            if (not params.hide_banner) lg::println(lg::alert, "{}{} v.{}\n", BANNER, APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION));
-            su.run_tasks(params.force_recomputation);
+            if (not params.hide_banner and not params.quiet_mode) lg::println(lg::alert, "{}{} v.{}\n", BANNER, APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION));
+            su.run_tasks(params);
         }
 
         return EXIT_SUCCESS;
