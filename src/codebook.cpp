@@ -65,7 +65,6 @@ Codebook Codebook::from_file(std::string_view id, std::filesystem::path const& p
 {
     try
     {
-        lg::println("Loading codebook file '{}'", std::filesystem::weakly_canonical(p).string());
         std::ifstream file(p);
         if (!file.is_open()) { throw SimulationError("Could not open codebook. Does the file exist?"); }
         auto const js = json::parse(file);
