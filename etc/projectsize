@@ -1,0 +1,2 @@
+#!/bin/bash
+(find ../src -name "*.cpp" -exec cat {} \;; find ../test -name "*.cpp" -exec cat {} \;; find ../include/ -name "*.hpp" -exec cat {} \;; cat ../main.cpp) | wc -l
