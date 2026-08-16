@@ -41,14 +41,14 @@ namespace antenna
         return magic_enum::enum_name(active_enum);
     }
 
-    [[nodiscard]] constexpr std::string const& get_id(Antenna const& antenna)
+    [[nodiscard]] constexpr std::string_view get_id(Antenna const& antenna)
     {
-        return antenna.visit([](auto& ant) -> std::string const& { return ant.id; });
+        return antenna.visit([](auto& ant) -> std::string_view { return ant.id; });
     }
 
-    [[nodiscard]] constexpr std::string const& get_origin_id(Antenna const& antenna)
+    [[nodiscard]] constexpr std::string_view get_origin_id(Antenna const& antenna)
     {
-        return antenna.visit([](auto& ant) -> std::string const& { return ant.origin_id; });
+        return antenna.visit([](auto& ant) -> std::string_view { return ant.origin_id; });
     }
 
     [[nodiscard]] constexpr reference::Reference* const& get_origin(Antenna const& antenna)
@@ -168,8 +168,8 @@ namespace antenna
     void rebind_origin_pointers(std::initializer_list<std::reference_wrapper<Radiator>> radiators,
         std::initializer_list<std::reference_wrapper<reference::Reference>> references);
 
-    [[nodiscard]] Antenna const& get(std::span<Antenna const> antennas, std::string const& id);
-    [[nodiscard]] Antenna& get(std::span<Antenna> antennas, std::string const& id);
+    [[nodiscard]] Antenna const& get(std::span<Antenna const> antennas, std::string_view id);
+    [[nodiscard]] Antenna& get(std::span<Antenna> antennas, std::string_view id);
 
     [[nodiscard]] std::size_t size(Antenna const& ant);
 

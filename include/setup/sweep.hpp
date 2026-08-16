@@ -131,12 +131,12 @@ namespace sweep
     template <AnyJson JsonType>
     void from_json(JsonType const& js, Sweep& sweep);
 
-    [[nodiscard]] std::string const& get_id(Sweep const& sweep);
+    [[nodiscard]] std::string_view get_id(Sweep const& sweep);
     [[nodiscard]] std::size_t get_size(Sweep const& sweep);
     [[nodiscard]] std::vector<double> get_values(Sweep const& sweep);
     [[nodiscard]] double get_begin_val(Sweep const& sweep);
     [[nodiscard]] double get_end_val(Sweep const& sweep);
 
-    Sweep const& get(std::span<Sweep const> sweeps, std::string const& id);
-    Sweep& get(std::span<Sweep> sweeps, std::string const& id);
+    Sweep const& get(std::span<Sweep const> sweeps, std::string_view id);
+    Sweep& get(std::span<Sweep> sweeps, std::string_view id);
 } // namespace sweep

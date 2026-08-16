@@ -22,8 +22,8 @@ namespace
     void print_fatal_error()
     {
         // Route exception trace to stderr
-        std::cout.flush(); // 'end' stdout: create new line and flush output
-        std::cout.rdbuf(nullptr); // Disables std::cout
+        // std::cout.flush(); // 'end' stdout: create new line and flush output
+        // std::cout.rdbuf(nullptr); // Disables std::cout
         antennavision::logging::error(LOG_NAME, "-------------------------------- FATAL ERROR  --------------------------------");
         antennavision::logging::error(LOG_NAME, "Error Stack Trace:");
     }
@@ -138,7 +138,7 @@ namespace
             return EXIT_FAILURE;
         }
 
-        setup::Setup su(path_setup);
+        auto su = setup::Setup::from_file(path_setup);
         if (not params.quiet_mode) su.print_meta();
         if (params.print_variables) su.print_variables();
         if (params.print_references) su.print_references();
@@ -149,6 +149,7 @@ namespace
         {
             if (not params.hide_banner)
                 antennavision::logging::alert(LOG_NAME, "{}{} v.{}\n", BANNER, APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION));
+            su.reconcile();
             su.run_tasks(params.force_recomputation);
         }
 

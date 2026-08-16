@@ -259,7 +259,8 @@ namespace setup::task
     template <AnyJson JsonType>
     Task from_json(JsonType& js, Context const& ctx)
     {
-        if (!js.contains("type")) throw SimulationError("Missing task type");
+        auto s= js.dump(2);
+        if (not js.contains("type")) throw SimulationError("Missing task type");
         if (js.at("type").type() != nlohmann::json::value_t::string)
             throw SimulationError("Task attribute type must be string, but is {}", js.at("type").type_name());
         auto const type = js.at("type").template get<std::string>();
@@ -278,7 +279,7 @@ namespace setup::task
     {
         task.visit([&js](auto const& t) { t.to_json(js); });
     }
-    
+
     std::optional<OutputType> output_type_from_ext(std::string_view ext)
     {
         if (ext == ".json") return OutputType::JSON;

@@ -59,9 +59,9 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
   ]
 }
 )JSON");
-    setup::Setup setup(js);
-    auto const& wavelength = setup.sim_params().system_wavelength;
-    auto const& ula = antenna::cast<UniformLinearArray>(setup.get_antenna("ula1"));
+    auto su = setup::Setup::from_json(js);
+    auto const& wavelength = su.sim_params.system_wavelength;
+    auto const& ula = antenna::cast<UniformLinearArray>(su.get_antenna("ula1"));
 
     // check ULA element references
     for (std::size_t i = 0; i < 8; i++)
@@ -130,12 +130,12 @@ TEST_CASE("ULA gain", "[TestULA]")
   ]
 }
 )JSON");
-    setup::Setup setup(js);
-    auto const& tx = setup.get_antenna("ula1");
-    auto const& rx = setup.get_antenna("receiver");
-    reference::Reference const& ref_start = setup.get_reference("ref_rx_start");
+    auto su = setup::Setup::from_json(js);
+    auto const& tx = su.get_antenna("ula1");
+    auto const& rx = su.get_antenna("receiver");
+    reference::Reference const& ref_start = su.get_reference("ref_rx_start");
     reference::Reference const ref_start_initial = ref_start; // we make a copy
-    reference::Reference const& ref_stop = setup.get_reference("ref_rx_stop");
+    reference::Reference const& ref_stop = su.get_reference("ref_rx_stop");
 
     constexpr std::size_t n_points = 11;
     Pos const pos_delta = ref_stop.pos - ref_start_initial.pos;
@@ -149,7 +149,7 @@ TEST_CASE("ULA gain", "[TestULA]")
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         const_cast<Pos&>(ref_start.pos) = ref_start_initial.pos + pos_delta * f; // TODO user better approach than const_cast
-        gains.at(k) = antenna::calc_voltage_gain(tx, rx, setup.sim_params().system_wavelength, uc(tx), uc(rx), setup.sim_params());
+        gains.at(k) = antenna::calc_voltage_gain(tx, rx, su.sim_params.system_wavelength, uc(tx), uc(rx), su.sim_params);
         distances.at(k) = *distance_ptr;
     }
     const_cast<Pos&>(ref_start.pos) = ref_start_initial.pos; // TODO user better approach than const_cast
@@ -226,17 +226,17 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
   ]
 }
 )JSON");
-    setup::Setup setup(js);
-    auto const& tx = setup.get_antenna("ula1");
-    auto const& rx = setup.get_antenna("receiver");
-    reference::Reference const& ref_stop = setup.get_reference("ref_rx_stop");
-    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), setup.sim_params());
+    auto su = setup::Setup::from_json(js);
+    auto const& tx = su.get_antenna("ula1");
+    auto const& rx = su.get_antenna("receiver");
+    reference::Reference const& ref_stop = su.get_reference("ref_rx_stop");
+    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params);
 
     Pos const pos_start = antenna::get_origin(rx)->global_pos();
     Pos const pos_end = ref_stop.global_pos();
 
     geometry::Line line("", pos_start, pos_end);
-    auto result = voltage_field.eval_geometry(line, setup.sim_params().system_wavelength, setup.sim_params().n_linear1, setup.sim_params().n_linear2);
+    auto result = voltage_field.eval_geometry(line, su.sim_params.system_wavelength, su.sim_params.n_linear1, su.sim_params.n_linear2);
     auto &gains = result.values;
     auto const gains_abs = nc::abs(gains);
     auto const idx_max = nc::argmax(gains_abs);

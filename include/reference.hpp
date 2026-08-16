@@ -41,8 +41,8 @@ namespace reference
      * @param target_id id of the target references that shall be returned
      * @return reference to matching reference
      */
-    [[nodiscard]] Reference const& get(std::span<Reference const> references, std::string const& target_id);
-    [[nodiscard]] Reference& get(std::span<Reference> references, std::string const& target_id);
+    [[nodiscard]] Reference const& get(std::span<Reference const> references, std::string_view target_id);
+    [[nodiscard]] Reference& get(std::span<Reference> references, std::string_view target_id);
 
     [[nodiscard]] inline std::string_view get_id(Reference const& ref) { return ref.id.empty() ? std::string_view("<global origin>") : ref.id; }
 

@@ -283,7 +283,7 @@ namespace geometry
             });
     }
 
-    Curve curve::get(std::span<Geometry const> geometries, std::string const& id)
+    Curve curve::get(std::span<Geometry const> geometries, std::string_view id)
     {
         Geometry const& geo = geometry::get(geometries, id);
         return geo.visit(
@@ -294,14 +294,14 @@ namespace geometry
             });
     }
 
-    Geometry const& get(std::span<Geometry const> geometries, std::string const& id)
+    Geometry const& get(std::span<Geometry const> geometries, std::string_view id)
     {
         auto const it = std::ranges::find(geometries, id, [](auto& geo) { return geo.visit([](auto& g) { return g.id(); }); });
         if (it == geometries.end()) { throw SimulationError("Could not find geometry with id '{}'", id); }
         return *it;
     }
 
-    Geometry& get(std::span<Geometry> geometries, std::string const& id)
+    Geometry& get(std::span<Geometry> geometries, std::string_view id)
     {
         // Safe const_cast: Delegates to the const overload to eliminate duplication.
         // Safe because the underlying 'geometries' span refers to non-const objects.

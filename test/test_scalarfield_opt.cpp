@@ -27,9 +27,9 @@
 
 using Catch::Matchers::WithinAbs;
 using Catch::Matchers::WithinRel;
-using geometry::Geometry;
-using eval::RxVoltageField;
 using eval::ComplexScalarMathField;
+using eval::RxVoltageField;
+using geometry::Geometry;
 
 namespace
 {
@@ -106,14 +106,14 @@ TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][Ar
     std::size_t const n_dim1 = 101;
     SECTION("Correct Maximum on geometry::Line")
     {
-        setup::Setup su(SETUP_JSON);
+        auto su = setup::Setup::from_json(SETUP_JSON);
         su.export_to_three("/home/core");
-        auto& wavelength = su.sim_params().system_wavelength;
+        auto& wavelength = su.sim_params.system_wavelength;
         auto const distance = su.get_double("distance");
         auto const& tx = su.get_antenna("ula1");
         auto& rx = su.get_antenna("receiver");
 
-        auto voltage_field = RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params());
+        auto voltage_field = RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params);
         {
             auto line = geometry::Line("", Pos(0, distance, -0.5 * distance), Pos(0, distance, 0.5 * distance));
             auto result = voltage_field.argmax_curve_abs(line, wavelength, n_dim1);
@@ -125,13 +125,13 @@ TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][Ar
 
     SECTION("Correct Maximum on geometry::CircleArc")
     {
-        setup::Setup su(SETUP_JSON);
-        auto& wavelength = su.sim_params().system_wavelength;
+        auto su = setup::Setup::from_json(SETUP_JSON);
+        auto& wavelength = su.sim_params.system_wavelength;
         auto const distance = su.get_double("distance");
         auto const& tx = su.get_antenna("ula1");
         auto& rx = su.get_antenna("receiver");
 
-        auto voltage_field = RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params());
+        auto voltage_field = RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params);
         {
             auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, distance, 0), POS_ZERO, distance, 0.5 * pi).normalized();
             auto result = voltage_field.argmax_curve_abs(arc, wavelength, n_dim1);
@@ -144,15 +144,15 @@ TEST_CASE("ArgMax returns the correct position", "[ScalarField][VoltageField][Ar
 
 TEST_CASE("beamwidth", "[ScalarField][VoltageField][beamwidth]")
 {
-    setup::Setup su(SETUP_JSON);
-    auto& wavelength = su.sim_params().system_wavelength;
+    auto su = setup::Setup::from_json(SETUP_JSON);
+    auto& wavelength = su.sim_params.system_wavelength;
     auto const distance = su.get_double("distance");
     auto const& tx = su.get_antenna("ula1");
     auto& rx = su.get_antenna("receiver");
 
     constexpr std::size_t N_POINTS = 101;
 
-    auto voltage_field = RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params());
+    auto voltage_field = RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params);
     {
         auto arc = geometry::CircleArc("", POS_ZERO, Pos(1.0, 0.0, 0.0), Pos(0.0, 1.0, 0.0), POS_ZERO, distance, 0.5 * pi).normalized();
         auto [pos_beam, beamwidth] = voltage_field.calc_beamwidth(arc, wavelength, sqrt2_2, N_POINTS);
@@ -176,7 +176,7 @@ TEST_CASE("Optimization Algorithms", "[ScalarField][ComplexMathField][Optimizati
 
     SECTION("Correct Maximum on geometry::Rectangle")
     {
-        constexpr std::size_t N = 33;  // we use this "strange" number to guarantee that we don't hit the maximum exactly during the pre-scan
+        constexpr std::size_t N = 33; // we use this "strange" number to guarantee that we don't hit the maximum exactly during the pre-scan
         auto const [t1, t2, pos, peak] = field.argmax_surface_abs(rect, 0, N, N);
         CHECK_THAT(t1, WithinAbs(pos_peak.x / rect.width() + 0.5, DELTA_DISTANCE));
         CHECK_THAT(t2, WithinAbs(pos_peak.y / rect.height() + 0.5, DELTA_DISTANCE));
@@ -186,8 +186,7 @@ TEST_CASE("Optimization Algorithms", "[ScalarField][ComplexMathField][Optimizati
 
     SECTION("Correct Isolines")
     {
-        constexpr std::size_t N = 33;  // we use this "strange" number to guarantee that we don't hit the maximum exactly during the pre-scan
+        constexpr std::size_t N = 33; // we use this "strange" number to guarantee that we don't hit the maximum exactly during the pre-scan
         field.trace_isolines(rect, 0, sqrt2_2, N, N);
     }
 }
-

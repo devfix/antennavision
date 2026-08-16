@@ -8,7 +8,6 @@
 #include "components/antenna.hpp"
 #include "setup/geometry.hpp"
 #include "setup/sweep.hpp"
-#include "setup/task.hpp"
 #include "types/setup.hpp"
 
 namespace factory

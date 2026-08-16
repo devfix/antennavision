@@ -120,10 +120,10 @@ TEST_CASE("HalfWaveDipole via setup", "[Radiator][Directivity]")
   ]
 }
 )JSON");
-    setup::Setup setup(js);
-    auto& ant = setup.get_antenna("DUT");
+    auto su = setup::Setup::from_json(js);
+    auto& ant = su.get_antenna("DUT");
     std::vector<Complex> const coeffs(antenna::size(ant), 1.0);
-    auto const actual = antenna::calc_directivity_from_spherical(ant, 0.5 * pi, 0, setup.sim_params().system_wavelength, coeffs, setup.sim_params());
+    auto const actual = antenna::calc_directivity_from_spherical(ant, 0.5 * pi, 0, su.sim_params.system_wavelength, coeffs, su.sim_params);
     CHECK_THAT(actual, WithinRel(1.640922388, 1e-3));
 }
 
@@ -162,10 +162,10 @@ TEST_CASE("FullWaveDipole via setup", "[Radiator][Directivity]")
   ]
 }
 )JSON");
-    setup::Setup setup(js);
-    auto& ant = setup.get_antenna("DUT");
+    auto su = setup::Setup::from_json(js);
+    auto& ant = su.get_antenna("DUT");
     std::vector<Complex> const coeffs(antenna::size(ant), 1.0);
-    auto const actual = antenna::calc_directivity_from_spherical(ant, 0.5 * pi, 0, WAVELENGTH, coeffs, setup.sim_params());
+    auto const actual = antenna::calc_directivity_from_spherical(ant, 0.5 * pi, 0, WAVELENGTH, coeffs, su.sim_params);
     CHECK_THAT(actual, WithinRel(2.4116035252, 1e-3));
 }
 
@@ -210,10 +210,10 @@ TEST_CASE("3/2-WaveDipole via setup", "[Radiator][Directivity]")
   ]
 }
 )JSON");
-    setup::Setup setup(js);
-    auto& ant = setup.get_antenna("DUT");
+    auto su = setup::Setup::from_json(js);
+    auto& ant = su.get_antenna("DUT");
     std::vector<Complex> const coeffs(antenna::size(ant), 1.0);
-    auto const actual = antenna::calc_directivity_from_spherical(ant, 0.5 * pi, 0, WAVELENGTH, coeffs, setup.sim_params());
+    auto const actual = antenna::calc_directivity_from_spherical(ant, 0.5 * pi, 0, WAVELENGTH, coeffs, su.sim_params);
     CHECK_THAT(actual, WithinRel(1.13750300493283, 1e-3));
 }
 
@@ -252,9 +252,8 @@ TEST_CASE("Directivity: 8-Element ULA with Isotropic Radiators", "[directivity][
   ]
 }
 )JSON");
-
-    setup::Setup su(js);
-    auto const& sim_params = su.sim_params();
+    auto su = setup::Setup::from_json(js);
+    auto const& sim_params = su.sim_params;
     double const wavelength = sim_params.system_wavelength;
     antenna::Antenna const& ula = su.get_antenna("DUT");
 
@@ -311,8 +310,8 @@ TEST_CASE("Directivity: 8-Element ULA with Z-Directed Dipoles", "[directivity][u
     }
     )JSON");
 
-    setup::Setup su(js);
-    auto const& sim_params = su.sim_params();
+    auto su = setup::Setup::from_json(js);
+    auto const& sim_params = su.sim_params;
     double const wavelength = sim_params.system_wavelength;
     antenna::Antenna const& ula = su.get_antenna("DUT_DIPOLE");
 

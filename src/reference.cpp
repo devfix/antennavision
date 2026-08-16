@@ -55,14 +55,14 @@ namespace reference
 
     Pos Reference::global_pos() const { return global_from_local_pos(POS_ZERO); }
 
-    Reference const& get(std::span<Reference const> references, std::string const& target_id)
+    Reference const& get(std::span<Reference const> references, std::string_view target_id)
     {
         auto const it = std::ranges::find(references, target_id, &Reference::id);
         if (it == references.end()) { throw SimulationError("Could not find reference with id '{}'", target_id); }
         return *it;
     }
 
-    Reference& get(std::span<Reference> references, std::string const& target_id)
+    Reference& get(std::span<Reference> references, std::string_view target_id)
     {
         // std::as_const converts std::span<Antenna> -> std::span<Antenna const>
         // const_cast safe here because the original span contains non-const elements

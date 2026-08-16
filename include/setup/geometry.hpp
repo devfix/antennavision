@@ -232,7 +232,7 @@ namespace geometry
 
     namespace curve
     {
-        [[nodiscard]] Curve get(std::span<Geometry const> geometries, std::string const& id);
+        [[nodiscard]] Curve get(std::span<Geometry const> geometries, std::string_view id);
 
         [[nodiscard]] constexpr double get_length(Curve const& curve) noexcept
         {
@@ -286,8 +286,8 @@ namespace geometry
         return obj.visit([](auto const& g) -> std::string const& { return g.id(); });
     }
 
-    [[nodiscard]] Geometry const& get(std::span<Geometry const> geometries, std::string const& id);
-    [[nodiscard]] Geometry& get(std::span<Geometry> geometries, std::string const& id);
+    [[nodiscard]] Geometry const& get(std::span<Geometry const> geometries, std::string_view id);
+    [[nodiscard]] Geometry& get(std::span<Geometry> geometries, std::string_view id);
 
     Vec3Array get_positions(Geometry const& geo, std::size_t n1, std::size_t n2);
 

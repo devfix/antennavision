@@ -99,13 +99,13 @@ ojson const SETUP_JSON = ojson::parse(R"JSON(
 
 TEST_CASE("VoltageField eval_geometry and eval_geometry_sweep over all geometries", "[ScalarField][VoltageField][eval_geometry]")
 {
-    setup::Setup su(SETUP_JSON);
-    auto& wavelength = su.sim_params().system_wavelength;
+    auto su = setup::Setup::from_json(SETUP_JSON);
+    auto& wavelength = su.sim_params.system_wavelength;
     auto const distance = su.get_double("distance");
     auto const& tx = su.get_antenna("ula1");
     auto& rx = su.get_antenna("receiver");
 
-    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params());
+    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params);
     auto& sim_params = voltage_field.sim_params;
 
     // Configure a simple sweep with 3 test frequencies/wavelengths

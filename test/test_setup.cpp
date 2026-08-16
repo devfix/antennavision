@@ -38,7 +38,7 @@ TEST_CASE("setup without rotation", "[Setup]")
   ]
 }
 )");
-    auto su = setup::Setup(js);
+    auto su = setup::Setup::from_json(js);
     auto const& ref1 = su.get_reference("ref1");
     auto const& ref2 = su.get_reference("ref2");
     auto const& ref3 = su.get_reference("ref3");
@@ -79,7 +79,7 @@ TEST_CASE("setup with rotation", "[Setup]")
   ]
 }
 )");
-    setup::Setup su(js);
+    auto su = setup::Setup::from_json(js);
     auto const& ref1 = su.get_reference("ref1");
     auto const& ref2 = su.get_reference("ref2");
     auto const& ref3 = su.get_reference("ref3");
@@ -109,7 +109,7 @@ TEST_CASE("setup context only variables", "[Setup]")
   }
 }
 )JSON");
-    setup::Setup const su(js);
+    auto su = setup::Setup::from_json(js);
     CHECK_THAT(su.get_double("x"), WithinAbs(2.0, DELTA_DISTANCE));
     CHECK_THAT(su.get_double("y"), WithinAbs(6.0, DELTA_DISTANCE));
     CHECK_THAT(su.get_double("z"), WithinAbs(8.0, DELTA_DISTANCE));
@@ -151,7 +151,7 @@ TEST_CASE("setup context with references", "[Setup]")
   ]
 }
 )JSON");
-    setup::Setup su(js);
+    auto su = setup::Setup::from_json(js);
     CHECK_THAT(su.get_reference("ref1").pos.x, WithinAbs(1.0, DELTA_DISTANCE));
     CHECK_THAT(su.get_reference("ref1").pos.y, WithinAbs(2.0, DELTA_DISTANCE));
     CHECK_THAT(su.get_reference("ref1").pos.z, WithinAbs(3.0, DELTA_DISTANCE));

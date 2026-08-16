@@ -210,9 +210,9 @@ namespace sweep
         return values;
     }
 
-    std::string const& get_id(Sweep const& sweep)
+    std::string_view get_id(Sweep const& sweep)
     {
-        return std::visit([](auto const& s) -> std::string const& { return s.id(); }, sweep);
+        return std::visit([](auto const& s) -> std::string_view { return s.id(); }, sweep);
     }
 
     std::size_t get_size(Sweep const& sweep)
@@ -235,14 +235,14 @@ namespace sweep
         return std::visit([](auto const& s) -> double { return s.end_val(); }, sweep);
     }
 
-    Sweep const& get(std::span<Sweep const> sweeps, std::string const& id)
+    Sweep const& get(std::span<Sweep const> sweeps, std::string_view id)
     {
         auto const it = std::ranges::find(sweeps, id, [](auto& sweep) { return std::visit([](auto& s) { return s.id(); }, sweep); });
         if (it == sweeps.end()) { throw SimulationError("Could not find sweep with id '{}'", id); }
         return *it;
     }
 
-    Sweep& get(std::span<Sweep> sweeps, std::string const& id)
+    Sweep& get(std::span<Sweep> sweeps, std::string_view id)
     {
         // Safe const_cast: Delegates to the const overload to eliminate duplication.
         // Safe because the underlying 'sweeps' span refers to non-const objects.

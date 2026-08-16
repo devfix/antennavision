@@ -130,7 +130,7 @@ namespace antenna
 
         void resolve_origin_impl(Antenna& ant, std::span<Reference*> refs)
         {
-            std::string const& origin_id = get_origin_id(ant);
+            auto origin_id = get_origin_id(ant);
             if (not origin_id.empty()) // TODO is this safe?
             {
                 auto const it = std::ranges::find(refs, origin_id, [](Reference* ref) -> std::string const& { return ref->id; });
@@ -412,14 +412,14 @@ namespace antenna
         for (auto const& rad : radiators) { resolve_origin_impl(rad, ref_vec); }
     }
 
-    Antenna const& get(std::span<Antenna const> antennas, std::string const& id)
+    Antenna const& get(std::span<Antenna const> antennas, std::string_view id)
     {
         auto const it = std::ranges::find(antennas, id, [](auto& ant) { return std::visit([](auto& a) { return a.id; }, ant); });
         if (it == antennas.end()) { throw SimulationError("Could not find antenna with id '{}'", id); }
         return *it;
     }
 
-    Antenna& get(std::span<Antenna> antennas, std::string const& id)
+    Antenna& get(std::span<Antenna> antennas, std::string_view id)
     {
         // Safe const_cast: Delegates to the const overload to eliminate duplication.
         // Safe because the underlying 'antennas' span refers to non-const objects.

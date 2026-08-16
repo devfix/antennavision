@@ -136,23 +136,22 @@ namespace antennavision::logging
 
     void log_impl(LogLevel lvl, std::string_view component, std::string_view message, bool newline, bool clear_line)
     {
-        // 1. Get current local time (HH:MM:SS)
-        auto const now = std::chrono::system_clock::now();
-        auto const time = std::chrono::current_zone()->to_local(now);
+        // auto const now = std::chrono::system_clock::now();
+        // auto const time = std::chrono::current_zone()->to_local(now);
 
         auto const meta = get_level_metadata(lvl);
 
         std::lock_guard _(g_log_mutex);
 
-        // Format prefix: [14:32:01] [ScalarField] [INFO ]
         if (clear_line) std::cout << CLEAR_LINE;
-        std::cout << std::format("[{:%H:%M:%S}] [{}] [{}{}{}] {}",
-            std::chrono::floor<std::chrono::seconds>(time),
-            component,
+        std::cout << std::format( //
+            "{}[{}:{}] {}{}",
             meta.color,
+            component,
             meta.name,
-            ansi::RESET,
-            message);
+            message,
+            ansi::RESET //
+        );
 
         if (newline)
             std::cout << '\n';

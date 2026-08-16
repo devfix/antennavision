@@ -56,7 +56,7 @@ namespace builtin
 
     BUILTIN_FUNCTION(t00_ula_beamwidth, Setup& setup_task)
     {
-        std::filesystem::path const dir_plot = std::filesystem::path(setup_task.name());
+        std::filesystem::path const dir_plot = std::filesystem::path(setup_task.meta.name);
 
         std::string name = std::format("builtin.{}", __func__);
         std::println("Creating plot: {}", name);
