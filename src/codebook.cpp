@@ -6,7 +6,6 @@
 #include <nlohmann/json.hpp>
 #include <print>
 
-#include "lg.hpp"
 #include "math/coords.hpp"
 #include "simulationerror.hpp"
 

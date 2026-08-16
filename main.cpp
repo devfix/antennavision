@@ -1,25 +1,22 @@
-#include <CLI/CLI.hpp>
-#include <NumCpp.hpp>
-#include <ansi_color.hpp>
 #include <optional>
 #include <ranges>
+#include <CLI/CLI.hpp>
+#include <NumCpp.hpp>
+#include "appparams.hpp"
 #include "bitmap.hpp"
 #include "convert.hpp"
-#include "lg.hpp"
+#include "logging.hpp"
 #include "manifest.hpp"
-#include "appparams.hpp"
 #include "setup/setup.hpp"
-
-using ansi_color::fg4;
-using ansi_color::reset;
-
 
 namespace
 {
+    constexpr std::string_view LOG_NAME = "main";
+    
 #ifndef NDEBUG
-    constexpr bool DEBUG_MODE = true;
+    constexpr bool DEBUG_BUILD = true;
 #else
-    constexpr bool DEBUG_MODE = false;
+    constexpr bool DEBUG_BUILD = false;
 #endif
 
     void print_fatal_error()
@@ -27,14 +24,13 @@ namespace
         // Route exception trace to stderr
         std::cout.flush(); // 'end' stdout: create new line and flush output
         std::cout.rdbuf(nullptr); // Disables std::cout
-        lg::println(lg::error, "-------------------------------- FATAL ERROR  --------------------------------");
-        lg::println(lg::error, "Error Stack Trace:");
+        antennavision::logging::error(LOG_NAME, "-------------------------------- FATAL ERROR  --------------------------------");
+        antennavision::logging::error(LOG_NAME, "Error Stack Trace:");
     }
 
     void print_exception_chain(const std::exception& e, int level = 0)
     {
-        lg::println(lg::error, "{}- {}", std::string(level * 2, ' '), e.what());
-
+        antennavision::logging::error(LOG_NAME, "{}- {}", std::string(level * 2, ' '), e.what());
         try
         {
             std::rethrow_if_nested(e);
@@ -89,45 +85,56 @@ namespace
         using std::filesystem::path;
         using std::filesystem::recursive_directory_iterator;
 
-        ansi_color::enable_windows_ansi();
+        antennavision::logging::enable_windows_ansi();
 
         auto const params_opt = parse_params(argc, argv);
         if (not params_opt) return EXIT_FAILURE;
         auto const params = params_opt.value();
 
+        if (params.quiet_mode and params.debug_mode)
+        {
+            antennavision::logging::error(LOG_NAME, "Quiet mode and debug mode can not be enabled simultaneously");
+            return EXIT_FAILURE;
+        }
+
         if (params.print_version)
         {
-            lg::println(lg::info, "{} v.{}", APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION));
+            antennavision::logging::info(LOG_NAME, "{} v.{}", APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION));
             return EXIT_SUCCESS;
         }
 
-        if (DEBUG_MODE) { lg::println(lg::warning, "Warning: Compiled in debug mode. This will severely increase the computation time!"); }
+        // set correct logging level
+        if (params.quiet_mode)
+            antennavision::logging::set_level(antennavision::logging::LogLevel::WARN);
+        else if (params.debug_mode)
+            antennavision::logging::set_level(antennavision::logging::LogLevel::DEBUG);
+        else
+            antennavision::logging::set_level(antennavision::logging::LogLevel::INFO);
 
-        if (params.debug_mode)
-        {
-            lg::println(lg::note, "print version:       {}", params.print_version);
-            lg::println(lg::note, "debug mode:          {}", params.debug_mode);
-            lg::println(lg::note, "quiet mode:          {}", params.quiet_mode);
-            lg::println(lg::note, "hide banner:         {}", params.hide_banner);
-            lg::println(lg::note, "print variables:     {}", params.print_variables);
-            lg::println(lg::note, "print references:    {}", params.print_references);
-            lg::println(lg::note, "print antennas:      {}", params.print_antennas);
-            lg::println(lg::note, "run tasks:           {}", params.run_tasks);
-            lg::println(lg::note, "force recomputation: {}", params.force_recomputation);
-            lg::println(lg::note, "path setup file:     {}", params.path_setup.empty() ? "<unset>" : params.path_setup);
-            lg::println(lg::note, "path objects file:   {}", params.path_objects.empty() ? "<unset>" : params.path_objects);
-        }
+        if (DEBUG_BUILD) antennavision::logging::warn(LOG_NAME, "Warning: Compiled in debug mode. This will severely increase the computation time!");
+
+        antennavision::logging::debug(LOG_NAME, "print version:       {}", params.print_version);
+        antennavision::logging::debug(LOG_NAME, "debug mode:          {}", params.debug_mode);
+        antennavision::logging::debug(LOG_NAME, "quiet mode:          {}", params.quiet_mode);
+        antennavision::logging::debug(LOG_NAME, "hide banner:         {}", params.hide_banner);
+        antennavision::logging::debug(LOG_NAME, "print variables:     {}", params.print_variables);
+        antennavision::logging::debug(LOG_NAME, "print references:    {}", params.print_references);
+        antennavision::logging::debug(LOG_NAME, "print antennas:      {}", params.print_antennas);
+        antennavision::logging::debug(LOG_NAME, "run tasks:           {}", params.run_tasks);
+        antennavision::logging::debug(LOG_NAME, "force recomputation: {}", params.force_recomputation);
+        antennavision::logging::debug(LOG_NAME, "path setup file:     {}", params.path_setup.empty() ? "<unset>" : params.path_setup);
+        antennavision::logging::debug(LOG_NAME, "path objects file:   {}", params.path_objects.empty() ? "<unset>" : params.path_objects);
 
         if (params.path_setup.empty())
         {
-            lg::println(lg::error, "Missing path to setup file. Pass -h for help.");
+            antennavision::logging::error(LOG_NAME, "Missing path to setup file. Pass -h for help.");
             return EXIT_SUCCESS;
         }
 
         path const path_setup = std::filesystem::weakly_canonical(params.path_setup);
         if (not std::filesystem::exists(path_setup) or not std::filesystem::is_regular_file(path_setup))
         {
-            lg::println(lg::error, "Could not find setup file: {}", path_setup.string());
+            antennavision::logging::error(LOG_NAME, "Could not find setup file: {}", path_setup.string());
             return EXIT_FAILURE;
         }
 
@@ -140,8 +147,9 @@ namespace
         if (params.debug_mode) su.print_sim_params();
         if (params.run_tasks)
         {
-            if (not params.hide_banner and not params.quiet_mode) lg::println(lg::alert, "{}{} v.{}\n", BANNER, APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION));
-            su.run_tasks(params);
+            if (not params.hide_banner)
+                antennavision::logging::alert(LOG_NAME, "{}{} v.{}\n", BANNER, APPLICATION_NAME, convert::string_from_version(APPLICATION_VERSION));
+            su.run_tasks(params.force_recomputation);
         }
 
         return EXIT_SUCCESS;
@@ -163,7 +171,7 @@ int main(int argc, char* argv[])
     catch (...)
     {
         print_fatal_error();
-        lg::println(lg::error, "- [Unknown Critical Exception Caught]");
+        antennavision::logging::error(LOG_NAME, "- [Unknown Critical Exception Caught]");
     }
     return EXIT_FAILURE;
 }

@@ -116,7 +116,6 @@ target_link_libraries(antennavision PRIVATE
         magic_enum::magic_enum
         nlopt
         CephesSiCi
-        ansi_color
         nlohmann_json::nlohmann_json
         exprtk
         CLI11::CLI11
@@ -139,7 +138,6 @@ target_link_libraries(testrunner PRIVATE
         magic_enum::magic_enum
         nlopt
         CephesSiCi
-        ansi_color
         nlohmann_json::nlohmann_json
         exprtk
         Catch2::Catch2WithMain

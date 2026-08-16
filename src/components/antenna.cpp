@@ -8,7 +8,7 @@
 #include <ranges>
 
 #include "NumCpp/Functions/zeros.hpp"
-#include "lg.hpp"
+#include "logging.hpp"
 #include "math/coords.hpp"
 #include "math/functions.hpp"
 
@@ -20,6 +20,8 @@ namespace antenna
 
     namespace
     {
+        constexpr std::string_view LOG_NAME = "antenna";
+
 #ifndef NDEBUG
         constexpr bool DEBUG_MODE = true;
 #else
@@ -54,7 +56,7 @@ namespace antenna
             double r = (tx.origin->global_from_local_pos(POS_ZERO) - rx.origin->global_from_local_pos(POS_ZERO)).norm();
             if (r <= wavelength / 100)
             {
-                lg::println(lg::warning, "\nWarning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength);
+                antennavision::logging::warn(LOG_NAME, "\nWarning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength);
                 r = std::max(r, NUMERICAL_MARGIN); // sanity
             }
 
@@ -107,7 +109,7 @@ namespace antenna
             double r = (rad.origin->global_from_local_pos(POS_ZERO) - pos).norm();
             if (r <= wavelength / 100)
             {
-                lg::println(lg::warning, "Warning: Electrical field position is very close to radiator {}, distance: {} m ({} λ)", rad.id, r, r / wavelength);
+                antennavision::logging::warn(LOG_NAME, "\nWarning: Electrical field position is very close to radiator {}, distance: {} m ({} λ)", rad.id, r, r / wavelength);
                 r = std::max(r, NUMERICAL_MARGIN); // sanity
             }
 

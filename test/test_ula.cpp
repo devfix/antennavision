@@ -230,7 +230,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
     auto const& tx = setup.get_antenna("ula1");
     auto const& rx = setup.get_antenna("receiver");
     reference::Reference const& ref_stop = setup.get_reference("ref_rx_stop");
-    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), setup.sim_params(), AppParams{});
+    auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), setup.sim_params());
 
     Pos const pos_start = antenna::get_origin(rx)->global_pos();
     Pos const pos_end = ref_stop.global_pos();

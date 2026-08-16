@@ -28,7 +28,7 @@ namespace {
             bool first = true;
             for (std::string_view line : lines_view) {
                 if (first) {
-                    std::format_to(std::back_inserter(out), " {}[!]{} {}\n", ansi_color::fg4::bright_yellow, ansi_color::reset, line);
+                    std::format_to(std::back_inserter(out), " [!] {}\n", line);
                     first = false;
                 } else {
                     std::format_to(std::back_inserter(out), "     {}\n", line);
@@ -41,7 +41,7 @@ namespace {
             bool first = true;
             for (std::string_view line : lines_view) {
                 if (first) {
-                    std::format_to(std::back_inserter(out), "{} {}\\--{} {}\n", indent, ansi_color::fg4::bright_yellow, ansi_color::reset, line);
+                    std::format_to(std::back_inserter(out), "{} \\-- {}\n", indent, line);
                     first = false;
                 } else {
                     std::format_to(std::back_inserter(out), "{}     {}\n", indent, line);

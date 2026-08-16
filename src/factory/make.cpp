@@ -3,7 +3,6 @@
 //
 
 #include "factory/make.hpp"
-#include <ansi_color.hpp>
 #include <locale>
 #include <nlohmann/json.hpp>
 #include <print>
@@ -12,12 +11,9 @@
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/parse.hpp"
-#include "lg.hpp"
 #include "math/coords.hpp"
 #include "math/functions.hpp"
 
-using ansi_color::fg4;
-using ansi_color::reset;
 
 namespace factory
 {

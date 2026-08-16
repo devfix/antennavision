@@ -55,10 +55,9 @@ namespace eval
             antenna::Antenna const& rx,
             std::span<Complex const> tx_coeffs,
             std::span<Complex const> rx_coeffs,
-            setup::SimParams const& sim_params,
-            AppParams const& app_params //
+            setup::SimParams const& sim_params //
             ) :
-            ScalarField(sim_params, app_params), tx_(tx), rx_(rx), tx_coeffs_(tx_coeffs | std::ranges::to<decltype(tx_coeffs_)>()),
+            ScalarField(sim_params), tx_(tx), rx_(rx), tx_coeffs_(tx_coeffs | std::ranges::to<decltype(tx_coeffs_)>()),
             rx_coeffs_(rx_coeffs | std::ranges::to<decltype(rx_coeffs_)>())
         { sim_params.assert_integrity(); }
 

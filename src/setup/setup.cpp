@@ -3,7 +3,6 @@
 //
 
 #include "setup/setup.hpp"
-#include <ansi_color.hpp>
 #include <fstream>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -15,7 +14,7 @@
 #include "factory/get.hpp"
 #include "factory/make.hpp"
 #include "factory/parse.hpp"
-#include "lg.hpp"
+#include "logging.hpp"
 #include "manifest.hpp"
 #include "simulationerror.hpp"
 #include "three.hpp"
@@ -26,6 +25,8 @@ namespace setup
 
     namespace
     {
+        constexpr std::string_view LOG_NAME = "setup";
+
         ojson load_json(std::filesystem::path const& path_json)
         {
             std::ifstream file(path_json);
@@ -50,7 +51,8 @@ namespace setup
             auto const ex = ref.global_from_local_pos(Pos(1, 0, 0)) - pos;
             auto const ey = ref.global_from_local_pos(Pos(0, 1, 0)) - pos;
             auto const ez = ref.global_from_local_pos(Pos(0, 0, 1)) - pos;
-            lg::println( //
+            antennavision::logging::info( //
+                LOG_NAME,
                 "{}Reference '{}' with origin ref {}: pos=({:.06f},{:.06f},{:.06f})"
                 " ex=({:.03f},{:.03f},{:.03f}) ey=({:.03f},{:.03f},{:.03f}) ez=({:.03f},{:.03f},{:.03f})",
                 indent,
@@ -103,8 +105,8 @@ namespace setup
 
     void Setup::print_meta() const
     {
-        lg::println("Setup name: {}", name_);
-        lg::println("Setup version: {}", convert::string_from_version(version_));
+        antennavision::logging::info(LOG_NAME, "Setup name: {}", name_);
+        antennavision::logging::info(LOG_NAME, "Setup version: {}", convert::string_from_version(version_));
     }
 
     void Setup::print_variables() const
@@ -113,10 +115,10 @@ namespace setup
         using std::views::elements;
         using std::views::transform;
 
-        lg::println("Setup variables:");
+        antennavision::logging::info(LOG_NAME, "Setup variables:");
         if (variables_.empty())
         {
-            lg::println("  No variables defined.");
+            antennavision::logging::info(LOG_NAME, "  No variables defined.");
             return;
         }
 
@@ -135,20 +137,20 @@ namespace setup
         std::size_t const max_len_type = std::ranges::max(rendered_map | elements<1>, {}, &std::string::length).length();
         std::size_t const max_len_value = std::ranges::max(rendered_map | elements<2>, {}, &std::string::length).length();
 
-        lg::println("  X-{:-<{}}---{:-<{}}---{:-<{}}-X", "", max_len_name, "", max_len_type, "", max_len_value);
+        antennavision::logging::info(LOG_NAME, "  X-{:-<{}}---{:-<{}}---{:-<{}}-X", "", max_len_name, "", max_len_type, "", max_len_value);
         for (auto const& [name, type, value] : rendered_map)
         {
-            lg::println("  | {:<{}} | {:<{}} | {:<{}} |", name, max_len_name, type, max_len_type, value, max_len_value);
+            antennavision::logging::info(LOG_NAME, "  | {:<{}} | {:<{}} | {:<{}} |", name, max_len_name, type, max_len_type, value, max_len_value);
         }
-        lg::println("  X-{:-<{}}---{:-<{}}---{:-<{}}-X", "", max_len_name, "", max_len_type, "", max_len_value);
+        antennavision::logging::info(LOG_NAME, "  X-{:-<{}}---{:-<{}}---{:-<{}}-X", "", max_len_name, "", max_len_type, "", max_len_value);
     }
 
     void Setup::print_references() const
     {
-        lg::println("Setup references:");
+        antennavision::logging::info(LOG_NAME, "Setup references:");
         if (antennas_.empty())
         {
-            lg::println("  No references defined.");
+            antennavision::logging::info(LOG_NAME, "  No references defined.");
             return;
         }
         for (Reference const& ref : references_)
@@ -159,10 +161,10 @@ namespace setup
 
     void Setup::print_antennas() const
     {
-        lg::println("Setup antennas:");
+        antennavision::logging::info(LOG_NAME, "Setup antennas:");
         if (antennas_.empty())
         {
-            lg::println("  No antennas defined.");
+            antennavision::logging::info(LOG_NAME, "  No antennas defined.");
             return;
         }
 
@@ -174,7 +176,7 @@ namespace setup
                     using Type = std::decay_t<decltype(a)>;
                     if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
                     {
-                        lg::println("  * Array '{}' of type {} placed at '{}'", a.id, magic_enum::enum_name(a.type), a.origin_id);
+                        antennavision::logging::info(LOG_NAME, "  * Array '{}' of type {} placed at '{}'", a.id, magic_enum::enum_name(a.type), a.origin_id);
                         for (Reference const& ref : a.references) //
                             print_reference(ref, "    ~ ");
                         for (Radiator const& el : a.elements) //
@@ -182,7 +184,11 @@ namespace setup
                     }
                     else if constexpr (std::is_same_v<Radiator, Type>)
                     {
-                        lg::println("  * Radiator '{}' of type {} with origin ref '{}'", a.id, magic_enum::enum_name(a.type), a.origin_id);
+                        antennavision::logging::info(LOG_NAME,
+                            "  * Radiator '{}' of type {} with origin ref '{}'",
+                            a.id,
+                            magic_enum::enum_name(a.type),
+                            a.origin_id);
                     }
                     else
                         std::unreachable();
@@ -192,15 +198,15 @@ namespace setup
 
     void Setup::print_sim_params() const
     {
-        lg::println(lg::note, "Simulation parameters:");
-        lg::println(lg::note, "  * system wavelength: {:.17g}", sim_params_.system_wavelength);
-        lg::println(lg::note, "  * enable path loss:  {}", sim_params_.enable_path_loss);
-        lg::println(lg::note, "  * n polar:           {}", sim_params_.n_polar);
-        lg::println(lg::note, "  * n azimuth:         {}", sim_params_.n_azimuth);
-        lg::println(lg::note, "  * n linear1:         {}", sim_params_.n_linear1);
-        lg::println(lg::note, "  * n linear2:         {}", sim_params_.n_linear2);
-        lg::println(lg::note, "  * xtol rel:          {:.17g}", sim_params_.xtol_rel);
-        lg::println(lg::note, "  * ftol rel:          {:.17g}", sim_params_.ftol_rel);
+        antennavision::logging::info(LOG_NAME, "Simulation parameters:");
+        antennavision::logging::info(LOG_NAME, "  * system wavelength: {:.17g}", sim_params_.system_wavelength);
+        antennavision::logging::info(LOG_NAME, "  * enable path loss:  {}", sim_params_.enable_path_loss);
+        antennavision::logging::info(LOG_NAME, "  * n polar:           {}", sim_params_.n_polar);
+        antennavision::logging::info(LOG_NAME, "  * n azimuth:         {}", sim_params_.n_azimuth);
+        antennavision::logging::info(LOG_NAME, "  * n linear1:         {}", sim_params_.n_linear1);
+        antennavision::logging::info(LOG_NAME, "  * n linear2:         {}", sim_params_.n_linear2);
+        antennavision::logging::info(LOG_NAME, "  * xtol rel:          {:.17g}", sim_params_.xtol_rel);
+        antennavision::logging::info(LOG_NAME, "  * ftol rel:          {:.17g}", sim_params_.ftol_rel);
     }
 
     void Setup::export_to_three(std::filesystem::path const& path_objects) const
@@ -251,12 +257,11 @@ namespace setup
 
         for (auto const& geo : geometries_) container.add(three::export_geometry(geo));
         container.export_to_javascript(path_objects);
-        lg::println("Exported objects to {}", path_objects.string());
+        antennavision::logging::info(LOG_NAME, "Exported objects to {}", path_objects.string());
     }
 
-    void Setup::run_tasks(AppParams const& params) const
+    void Setup::run_tasks(bool force_recomputation) const
     {
-        bool force_recomputation = params.force_recomputation;
         if (timestamp_ == 0) force_recomputation = true;
 
         std::filesystem::current_path(path_cwd_);
@@ -271,22 +276,20 @@ namespace setup
             bool const up_to_date = timestamp_result > timestamp_;
             if (up_to_date and not force_recomputation)
             {
-                lg::println("Skipping computation: Output file (modified {}) is newer than setup file (modified {}).",
+                antennavision::logging::info(LOG_NAME,
+                    "Skipping computation: Output file (modified {}) is newer than setup file (modified {}).",
                     timeutil::format(timestamp_result),
                     timeutil::format(timestamp_));
                 continue;
             }
 
-            if (not params.quiet_mode)
-            {
-                if (up_to_date)
-                    lg::println("Next task (forced):");
-                else
-                    lg::println("Next task:");
-                lg::println("  * name:         {}", setup::task::get_name(task));
-                lg::println("  * id:           {}", id);
-                lg::println("  * path output:  {}", output_path.string());
-            }
+            if (up_to_date)
+                antennavision::logging::info(LOG_NAME, "Next task (forced):");
+            else
+                antennavision::logging::info(LOG_NAME, "Next task:");
+            antennavision::logging::info(LOG_NAME, "  * name:         {}", setup::task::get_name(task));
+            antennavision::logging::info(LOG_NAME, "  * id:           {}", id);
+            antennavision::logging::info(LOG_NAME, "  * path output:  {}", output_path.string());
 
             task.visit(
                 [&](auto const& t)
@@ -303,7 +306,7 @@ namespace setup
                             ? std::vector<Complex>(antenna::size(t.rx), 1.0)
                             : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
 
-                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_, params);
+                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_);
                         eval::output::voltgain::points(t, field);
                     }
                     else if constexpr (std::is_same_v<TaskType, task::VoltGainOverGeometry>)
@@ -316,7 +319,7 @@ namespace setup
                             ? std::vector<Complex>(antenna::size(t.rx), 1.0)
                             : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
 
-                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_, params);
+                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_);
                         eval::output::voltgain::geometry(t, field);
                     }
                     else if constexpr (std::is_same_v<TaskType, task::VoltGainOverGeometryAtWavelength>)
@@ -329,7 +332,7 @@ namespace setup
                             ? std::vector<Complex>(antenna::size(t.rx), 1.0)
                             : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
 
-                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_, params);
+                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_);
                         eval::output::voltgain::geometry_at_wavelength(t, field);
                     }
                     else if constexpr (std::is_same_v<TaskType, task::VoltGainPeakAndCutoffs>)
@@ -342,7 +345,7 @@ namespace setup
                             ? std::vector<Complex>(antenna::size(t.rx), 1.0)
                             : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
 
-                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_, params);
+                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_);
                         eval::output::voltgain::curve_peak_and_cutoff(t, field);
                     }
                 });
@@ -404,7 +407,8 @@ namespace setup
                 convert::string_from_version(version_),
                 APPLICATION_VERSION[0]);
         if (version_[1] != APPLICATION_VERSION[1]) //
-            lg::println(lg::warning,
+            antennavision::logging::warn( //
+                LOG_NAME,
                 "Warning: Potentially incompatible setup version: setup is v{}, but application expects version {}.{}.x",
                 convert::string_from_version(version_),
                 APPLICATION_VERSION[0],

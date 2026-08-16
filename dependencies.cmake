@@ -6,7 +6,7 @@ FetchContent_Declare(
         GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(CLI11)
-######### NumCpp
+#########
 
 
 ######### NumCpp
@@ -74,18 +74,6 @@ if (MSVC)
 else ()
     target_compile_options(CephesSiCi PRIVATE -w)
 endif ()
-#########
-
-
-######### ansi_color
-FetchContent_Declare(
-        ansi_color
-        URL https://github.com/devfix/ansi_color/archive/refs/heads/main.zip
-        URL_HASH SHA256=cdebb0f9e5f48d7e61599247acb8dbf6210bf55e39a19e77446fdde50d1dd7f7
-)
-FetchContent_MakeAvailable(ansi_color)
-add_library(ansi_color INTERFACE)
-target_include_directories(ansi_color INTERFACE ${ansi_color_SOURCE_DIR})
 #########
 
 

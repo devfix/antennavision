@@ -11,7 +11,6 @@
 #include "eval/output.hpp"
 #include "factory/find.hpp"
 #include "factory/make.hpp"
-#include "appparams.hpp"
 #include "task.hpp"
 #include "timeutil.hpp"
 
@@ -80,9 +79,9 @@ namespace setup
         void print_antennas() const;
         void print_sim_params() const;
         void export_to_three(std::filesystem::path const& path_objects) const;
-        void run_tasks(AppParams const& params) const;
+        void run_tasks(bool force_recomputation) const;
 
-        Context get_context() const;
+        [[nodiscard]] Context get_context() const;
 
         [[nodiscard]] reference::Reference const& get_reference(std::string_view id) const;
         [[nodiscard]] antenna::Antenna const& get_antenna(std::string const& id) const;

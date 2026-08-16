@@ -6,26 +6,28 @@
 #include <future>
 #include <print>
 #include <thread>
-
 #include "eval/complexscalarmathfield.hpp"
 #include "eval/opt.hpp"
 #include "eval/rxvoltagefield.hpp"
-#include "lg.hpp"
+#include "logging.hpp"
 #include "manifest.hpp"
 #include "math/functions.hpp"
 
-#if defined(ANTENNAVISION_MULTI_THREADED) && (ANTENNAVISION_MULTI_THREADED == 1)
-bool constexpr MULTI_THREADED_SUPPORTED = true;
-#else
-bool constexpr MULTI_THREADED_SUPPORTED = false;
-#endif
-
 namespace eval
 {
+    using antennavision::logging::LogLevel;
     using nc::Vec2;
 
     namespace
     {
+        constexpr std::string_view LOG_NAME = "scalarfield";
+
+#if defined(ANTENNAVISION_MULTI_THREADED) && (ANTENNAVISION_MULTI_THREADED == 1)
+        bool constexpr MULTI_THREADED_SUPPORTED = true;
+#else
+        bool constexpr MULTI_THREADED_SUPPORTED = false;
+#endif
+
         // Helper callables
         struct IdentityOp
         {
@@ -89,7 +91,7 @@ namespace eval
             double const diff_delta = 1e-3;
             double const step_delta = 1e-2;
 
-            lg::println("ts: ({:.04f},{:.04f}) --> {:.04f}", ts.x, ts.y, ctx.abs(get_pos_at(surf, ts.x, ts.y)));
+            antennavision::logging::debug("scalarfield", "ts: ({:.04f},{:.04f}) --> {:.04f}", ts.x, ts.y, ctx.abs(get_pos_at(surf, ts.x, ts.y)));
             Vec2 gradient = ctx.surf_grad(surf, ts, diff_delta).normalize();
             Vec2 tangent = ctx.surf_tang(surf, ts, diff_delta).normalize();
             auto predictor = ts + step_delta * tangent;
@@ -387,11 +389,14 @@ namespace eval
 
                                 std::lock_guard lock(print_mutex);
                                 double const p = static_cast<double>(current_total) / static_cast<double>(total_size);
-                                if (not app_params.quiet_mode)
-                                {
-                                    lg::print(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, std::min(100.0, p * 100.0));
-                                    std::cout << std::flush;
-                                }
+                                antennavision::logging::log( //
+                                    LogLevel::INFO,
+                                    LOG_NAME,
+                                    "eval @ λ={:.06f}m : {: 5.1f}%",
+                                    wavelength,
+                                    p //
+                                );
+                                std::cout << std::flush;
                             }
                         }
 
@@ -416,21 +421,21 @@ namespace eval
                 if (k % N_BATCH_PROGRESS_REPORT == 0)
                 {
                     double const p = static_cast<double>(k) / static_cast<double>(total_size);
-                    if (not app_params.quiet_mode)
-                    {
-                        lg::print(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : {: 5.1f}%", wavelength, p * 100.0);
-                        std::cout << std::flush;
-                    }
+                    antennavision::logging::log( //
+                        LogLevel::INFO,
+                        LOG_NAME,
+                        "eval @ λ={:.06f}m : {: 5.1f}%",
+                        wavelength,
+                        p //
+                    );
+                    std::cout << std::flush;
                 }
                 *ot = cast_op(ctx(*it));
             }
         }
 
-        if (not app_params.quiet_mode)
-        {
-            // Print final 100% completion cleanup
-            lg::println(lg::note, "\033[2K\rScalarField::eval @ λ={:.06f}m : done", wavelength);
-        }
+        // Print final 100% completion cleanup
+        antennavision::logging::info(LOG_NAME, "eval @ λ={:.06f}m : 100%", wavelength);
 
         return values;
     }
@@ -507,7 +512,7 @@ namespace eval
                 auto intersection = check_segment_intersection(isoline.surf_points[0], isoline.surf_points[1], isoline.surf_points.back(), ts);
                 if (intersection)
                 {
-                    lg::println(lg::info, "isoline closed!");
+                    antennavision::logging::debug("scalarfield", "isoline closed!");
                     break;
                 }
             }

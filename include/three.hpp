@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <ansi_color.hpp>
 #include <vector>
 #include "color.hpp"
 #include "setup/geometry.hpp"
