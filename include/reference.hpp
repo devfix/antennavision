@@ -5,9 +5,9 @@
 #pragma once
 
 #include <optional>
+#include "simulationerror.hpp"
 #include "types/json.hpp"
 #include "types/math.hpp"
-#include "simulationerror.hpp"
 
 namespace reference
 {
@@ -44,6 +44,7 @@ namespace reference
     [[nodiscard]] Reference const& get(std::span<Reference const> references, std::string const& target_id);
     [[nodiscard]] Reference& get(std::span<Reference> references, std::string const& target_id);
 
+    [[nodiscard]] inline std::string_view get_id(Reference const& ref) { return ref.id.empty() ? std::string_view("<global origin>") : ref.id; }
 
     void resolve_origins(std::span<Reference*> refs);
 

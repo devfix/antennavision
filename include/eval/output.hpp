@@ -10,67 +10,21 @@
 
 namespace eval::output
 {
-    enum struct OutputType
-    {
-        JSON,
-        BSON,
-        CBOR,
-        MSGPACK,
-        UBJSON
-    };
-
-    std::optional<OutputType> output_type_from_ext(std::string_view ext);
-
-    void directivity_over_polar( //
-        std::filesystem::path const& path_output,
-        OutputType output_type,
-        antenna::Antenna const& ant,
-        double wavelength,
-        sweep::Sweep const& sweep_azimuth,
-        setup::SimParams const& sim_params //
-    );
+    void directivity_over_polar(setup::task::DirectivityOverPolarAtAzimuth const& task, setup::SimParams const& sim_params);
 
     namespace voltgain
     {
         template <typename T>
-        void points( //
-            std::filesystem::path const& path_output,
-            OutputType output_type,
-            setup::task::VoltGainOverPoints const& task,
-            reference::Reference const& ref,
-            ComplexScalarField<T> const& scalar_field //
-            );
+        void points(setup::task::VoltGainOverPoints const& task, ComplexScalarField<T> const& scalar_field);
 
         template <typename T>
-        void geometry( //
-            std::filesystem::path const& path_output,
-            OutputType output_type,
-            setup::task::VoltGainOverGeometry const& task,
-            reference::Reference const& ref,
-            ComplexScalarField<T> const& scalar_field,
-            geometry::Geometry const& geo//
-        );
+        void geometry(setup::task::VoltGainOverGeometry const& task, ComplexScalarField<T> const& scalar_field);
 
         template <typename T>
-        void geometry_at_wavelength( //
-            std::filesystem::path const& path_output,
-            OutputType output_type,
-            setup::task::VoltGainOverGeometryAtWavelength const& task,
-            reference::Reference const& ref,
-            ComplexScalarField<T> const& scalar_field,
-            geometry::Geometry const& geo,
-            sweep::Sweep const& sweep_wavelength //
-        );
+        void geometry_at_wavelength(setup::task::VoltGainOverGeometryAtWavelength const& task, ComplexScalarField<T> const& scalar_field);
 
         template <typename T>
-        void curve_peak_and_cutoff( //
-            std::filesystem::path const& path_output,
-            OutputType output_type,
-            setup::task::VoltGainPeakAndCutoffs const& task,
-            reference::Reference const& ref,
-            ComplexScalarField<T> const& scalar_field,
-            geometry::Curve const& curve //
-        );
+        void curve_peak_and_cutoff(setup::task::VoltGainPeakAndCutoffs const& task, ComplexScalarField<T> const& scalar_field);
     } // namespace voltgain
 
 } // namespace eval::output

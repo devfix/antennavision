@@ -262,21 +262,4 @@ namespace factory
             std::throw_with_nested(SimulationError("Failed to parse sweep:\n{}", desc.dump(2)));
         }
     }
-
-    setup::task::Task make_task(ojson& desc, VarMap const& variables)
-    {
-        try
-        {
-            try_resolve_int_expressions(desc, variables, "n_dim1");
-            try_resolve_int_expressions(desc, variables, "n_dim2");
-            try_resolve_double_expressions(desc, variables, "points");
-            try_resolve_double_expressions(desc, variables, "ratio");
-            try_resolve_double_expressions(desc, variables, "wavelength");
-            return desc.get<setup::task::Task>(); // no id check here since the user doesn't choose the id by himself
-        }
-        catch (...)
-        {
-            std::throw_with_nested(SimulationError("Failed to parse task:\n{}", desc.dump(2)));
-        }
-    }
 } // namespace factory

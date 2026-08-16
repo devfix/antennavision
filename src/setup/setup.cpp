@@ -99,40 +99,6 @@ namespace setup
         // crucial: trace all origins by their id and connect the pointers
         reference::resolve_origins(references_);
         antenna::rebind_origin_pointers(antennas_, references_);
-
-        // check that objects exists
-        for (auto const& task : tasks_)
-        {
-            if (auto const t = std::get_if<task::DirectivityOverPolarAtAzimuth>(&task))
-            {
-                (void)antenna::get(std::span{antennas_}, t->antenna_id);
-                (void)sweep::get(std::span{sweeps_}, t->sweep_id);
-            }
-            if (auto const t = std::get_if<task::VoltGainOverPoints>(&task))
-            {
-                (void)antenna::get(std::span{antennas_}, t->tx_id);
-                (void)antenna::get(std::span{antennas_}, t->rx_id);
-            }
-            if (auto const t = std::get_if<task::VoltGainOverGeometry>(&task))
-            {
-                (void)antenna::get(std::span{antennas_}, t->tx_id);
-                (void)antenna::get(std::span{antennas_}, t->rx_id);
-                (void)geometry::get(std::span{geometries_}, t->geo_id);
-            }
-            if (auto const t = std::get_if<task::VoltGainOverGeometryAtWavelength>(&task))
-            {
-                (void)antenna::get(std::span{antennas_}, t->tx_id);
-                (void)antenna::get(std::span{antennas_}, t->rx_id);
-                (void)geometry::get(std::span{geometries_}, t->geo_id);
-                (void)sweep::get(std::span{sweeps_}, t->sweep_wavelength_id);
-            }
-            if (auto const t = std::get_if<task::VoltGainPeakAndCutoffs>(&task))
-            {
-                (void)antenna::get(std::span{antennas_}, t->tx_id);
-                (void)antenna::get(std::span{antennas_}, t->rx_id);
-                (void)geometry::get(std::span{geometries_}, t->curve_id);
-            }
-        }
     }
 
     void Setup::print_meta() const
@@ -293,16 +259,15 @@ namespace setup
         bool force_recomputation = params.force_recomputation;
         if (timestamp_ == 0) force_recomputation = true;
 
+        std::filesystem::current_path(path_cwd_);
+
         for (auto const& task : tasks_)
         {
             auto const id = setup::task::get_id(task);
-            std::filesystem::path const path_output = std::filesystem::weakly_canonical(path_cwd_ / setup::task::get_output_path(task));
-            auto const ext = path_output.extension().string();
-            auto opt_output_type = eval::output::output_type_from_ext(ext);
-            if (not opt_output_type) throw SimulationError("Task '{}' has invalid output file type '{}'", id, ext);
 
-            bool const result_found = std::filesystem::is_regular_file(path_output) and std::filesystem::file_size(path_output) > 0;
-            auto const timestamp_result = result_found ? timeutil::get_of_file(path_output) : 0;
+            auto const& output_path = task::get_output_path(task);
+            bool const result_found = std::filesystem::is_regular_file(output_path) and std::filesystem::file_size(output_path) > 0;
+            auto const timestamp_result = result_found ? timeutil::get_of_file(output_path) : 0;
             bool const up_to_date = timestamp_result > timestamp_;
             if (up_to_date and not force_recomputation)
             {
@@ -320,11 +285,80 @@ namespace setup
                     lg::println("Next task:");
                 lg::println("  * name:         {}", setup::task::get_name(task));
                 lg::println("  * id:           {}", id);
-                lg::println("  * path output:  {}", path_output.string());
+                lg::println("  * path output:  {}", output_path.string());
             }
 
-            run_task(params, task, path_output, opt_output_type.value());
+            task.visit(
+                [&](auto const& t)
+                {
+                    using TaskType = std::decay_t<decltype(t)>;
+                    if constexpr (std::is_same_v<TaskType, task::DirectivityOverPolarAtAzimuth>) { eval::output::directivity_over_polar(t, sim_params_); }
+                    else if constexpr (std::is_same_v<TaskType, task::VoltGainOverPoints>)
+                    {
+                        auto const tx_coeffs = t.tx_codebook.empty() //
+                            ? std::vector<Complex>(antenna::size(t.tx), 1.0)
+                            : get_coeffs_from_codebook(codebooks_, t.tx_codebook);
+
+                        auto const rx_coeffs = t.rx_codebook.empty() //
+                            ? std::vector<Complex>(antenna::size(t.rx), 1.0)
+                            : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
+
+                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_, params);
+                        eval::output::voltgain::points(t, field);
+                    }
+                    else if constexpr (std::is_same_v<TaskType, task::VoltGainOverGeometry>)
+                    {
+                        auto const tx_coeffs = t.tx_codebook.empty() //
+                            ? std::vector<Complex>(antenna::size(t.tx), 1.0)
+                            : get_coeffs_from_codebook(codebooks_, t.tx_codebook);
+
+                        auto const rx_coeffs = t.rx_codebook.empty() //
+                            ? std::vector<Complex>(antenna::size(t.rx), 1.0)
+                            : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
+
+                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_, params);
+                        eval::output::voltgain::geometry(t, field);
+                    }
+                    else if constexpr (std::is_same_v<TaskType, task::VoltGainOverGeometryAtWavelength>)
+                    {
+                        auto const tx_coeffs = t.tx_codebook.empty() //
+                            ? std::vector<Complex>(antenna::size(t.tx), 1.0)
+                            : get_coeffs_from_codebook(codebooks_, t.tx_codebook);
+
+                        auto const rx_coeffs = t.rx_codebook.empty() //
+                            ? std::vector<Complex>(antenna::size(t.rx), 1.0)
+                            : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
+
+                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_, params);
+                        eval::output::voltgain::geometry_at_wavelength(t, field);
+                    }
+                    else if constexpr (std::is_same_v<TaskType, task::VoltGainPeakAndCutoffs>)
+                    {
+                        auto const tx_coeffs = t.tx_codebook.empty() //
+                            ? std::vector<Complex>(antenna::size(t.tx), 1.0)
+                            : get_coeffs_from_codebook(codebooks_, t.tx_codebook);
+
+                        auto const rx_coeffs = t.rx_codebook.empty() //
+                            ? std::vector<Complex>(antenna::size(t.rx), 1.0)
+                            : get_coeffs_from_codebook(codebooks_, t.rx_codebook);
+
+                        auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params_, params);
+                        eval::output::voltgain::curve_peak_and_cutoff(t, field);
+                    }
+                });
         }
+    }
+
+    Context Setup::get_context() const
+    {
+        return {
+            .codebooks = codebooks_,
+            .variables = variables_,
+            .references = references_,
+            .antennas = antennas_,
+            .geometries = geometries_,
+            .sweeps = sweeps_ //
+        };
     }
 
     Reference const& Setup::get_reference(std::string_view const id) const { return factory::find_reference_by_id(references_, id); }
@@ -506,93 +540,12 @@ namespace setup
     void Setup::extract_tasks(ojson& js)
     {
         if (!js.contains("tasks")) { return; }
-        for (auto& tasks = js.at("tasks"); auto& desc : tasks) tasks_.push_back(factory::make_task(desc, variables_));
+        for (auto& tasks = js.at("tasks"); auto& desc : tasks)
+        {
+            auto t = task::from_json(js, get_context());
+            (void)task::get_output_type(t); // assert that the task has a valid output type
+            tasks_.push_back(t);
+        }
         js.erase("tasks");
-    }
-
-    void Setup::run_task(AppParams const& params, task::Task const& task, std::filesystem::path const& path_output, eval::output::OutputType output_type) const
-    {
-        if (auto t = std::get_if<task::DirectivityOverPolarAtAzimuth>(&task))
-        {
-            auto& ant = antenna::get(antennas_, t->antenna_id);
-            auto& sweep = sweep::get(sweeps_, t->sweep_id);
-            eval::output::directivity_over_polar(path_output, output_type, ant, t->wavelength, sweep, sim_params_);
-        }
-        else if (auto t = std::get_if<task::VoltGainOverPoints>(&task))
-        {
-            auto& tx = antenna::get(antennas_, t->tx_id);
-            auto& rx = antenna::get(antennas_, t->rx_id);
-
-            auto const tx_coeffs = t->tx_codebook.empty() //
-                ? std::vector<Complex>(antenna::size(tx), 1.0)
-                : get_coeffs_from_codebook(codebooks_, t->tx_codebook);
-
-            auto const rx_coeffs = t->rx_codebook.empty() //
-                ? std::vector<Complex>(antenna::size(rx), 1.0)
-                : get_coeffs_from_codebook(codebooks_, t->rx_codebook);
-
-            auto const& ref = reference::get(references_, t->ref_id);
-            auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_, params);
-
-            eval::output::voltgain::points(path_output, output_type, *t, ref, field);
-        }
-        else if (auto t = std::get_if<task::VoltGainOverGeometry>(&task))
-        {
-            auto& tx = antenna::get(antennas_, t->tx_id);
-            auto& rx = antenna::get(antennas_, t->rx_id);
-
-            auto const tx_coeffs = t->tx_codebook.empty() //
-                ? std::vector<Complex>(antenna::size(tx), 1.0)
-                : get_coeffs_from_codebook(codebooks_, t->tx_codebook);
-
-            auto const rx_coeffs = t->rx_codebook.empty() //
-                ? std::vector<Complex>(antenna::size(rx), 1.0)
-                : get_coeffs_from_codebook(codebooks_, t->rx_codebook);
-
-            auto const& ref = reference::get(references_, t->ref_id);
-            auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_, params);
-            auto const& geo = geometry::get(geometries_, t->geo_id);
-
-            eval::output::voltgain::geometry(path_output, output_type, *t, ref, field, geo);
-        }
-        else if (auto t = std::get_if<task::VoltGainOverGeometryAtWavelength>(&task))
-        {
-            auto& tx = antenna::get(antennas_, t->tx_id);
-            auto& rx = antenna::get(antennas_, t->rx_id);
-
-            auto const tx_coeffs = t->tx_codebook.empty() //
-                ? std::vector<Complex>(antenna::size(tx), 1.0)
-                : get_coeffs_from_codebook(codebooks_, t->tx_codebook);
-
-            auto const rx_coeffs = t->rx_codebook.empty() //
-                ? std::vector<Complex>(antenna::size(rx), 1.0)
-                : get_coeffs_from_codebook(codebooks_, t->rx_codebook);
-
-            auto const& ref = reference::get(references_, t->ref_id);
-            auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_, params);
-            auto const& geo = geometry::get(geometries_, t->geo_id);
-            auto const& sweep = sweep::get(sweeps_, t->sweep_wavelength_id);
-
-            eval::output::voltgain::geometry_at_wavelength(path_output, output_type, *t, ref, field, geo, sweep);
-        }
-        else if (auto t = std::get_if<task::VoltGainPeakAndCutoffs>(&task))
-        {
-            auto& tx = antenna::get(antennas_, t->tx_id);
-            auto& rx = antenna::get(antennas_, t->rx_id);
-
-            auto const tx_coeffs = t->tx_codebook.empty() //
-                ? std::vector<Complex>(antenna::size(tx), 1.0)
-                : get_coeffs_from_codebook(codebooks_, t->tx_codebook);
-
-            auto const rx_coeffs = t->rx_codebook.empty() //
-                ? std::vector<Complex>(antenna::size(rx), 1.0)
-                : get_coeffs_from_codebook(codebooks_, t->rx_codebook);
-
-            auto const& ref = reference::get(references_, t->ref_id);
-            auto const field = eval::RxVoltageField(tx, rx, tx_coeffs, rx_coeffs, sim_params_, params);
-            auto const& curve = geometry::curve::get(geometries_, t->curve_id);
-
-            eval::output::voltgain::curve_peak_and_cutoff(path_output, output_type, *t, ref, field, curve);
-        }
     }
 } // namespace setup

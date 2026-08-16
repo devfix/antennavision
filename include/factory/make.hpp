@@ -17,5 +17,4 @@ namespace factory
     [[nodiscard]] antenna::Antenna make_antenna(ojson& desc, VarMap const& variables);
     [[nodiscard]] geometry::Geometry make_geometry(ojson& desc, VarMap const& variables);
     [[nodiscard]] sweep::Sweep make_sweep(ojson& desc, VarMap const& variables);
-    [[nodiscard]] setup::task::Task make_task(ojson& desc, VarMap const& variables);
 } // namespace factory

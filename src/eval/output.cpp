@@ -8,10 +8,10 @@
 #include <variant>
 #include "NumCpp/Functions/linspace.hpp"
 #include "math/coords.hpp"
-#include "setup/setup.hpp"
 
 namespace eval::output
 {
+    using setup::task::OutputType;
     using std::ranges::transform;
 
     namespace
@@ -32,11 +32,11 @@ namespace eval::output
             return positions_spherical;
         }
 
-        template <AnyJson json_t>
-        void save_result(json_t const& js, std::filesystem::path const& path_output, OutputType output_type)
+        template <AnyJson JsonType>
+        void save_result(JsonType const& js, setup::task::Task const& task)
         {
-            std::ofstream ofs(path_output, std::ios::binary);
-            switch (output_type)
+            std::ofstream ofs(setup::task::get_output_path(task), std::ios::binary);
+            switch (setup::task::get_output_type(task))
             {
                 case OutputType::JSON: ofs << js.dump(2) << '\n'; break;
                 case OutputType::BSON: json::to_bson(js, ofs); break;
@@ -47,29 +47,12 @@ namespace eval::output
         }
     } // namespace
 
-    std::optional<OutputType> output_type_from_ext(std::string_view ext)
-    {
-        if (ext == ".json") return OutputType::JSON;
-        if (ext == ".bson") return OutputType::BSON;
-        if (ext == ".cbor") return OutputType::CBOR;
-        if (ext == ".mpk" || ext == ".msgpack") return OutputType::MSGPACK;
-        if (ext == ".ubj" || ext == ".ubjson") return OutputType::UBJSON;
-        return std::nullopt;
-    }
-
-    void directivity_over_polar( //
-        std::filesystem::path const& path_output,
-        OutputType output_type,
-        antenna::Antenna const& ant,
-        double wavelength,
-        sweep::Sweep const& sweep_azimuth,
-        setup::SimParams const& sim_params //
-    )
+    void directivity_over_polar(setup::task::DirectivityOverPolarAtAzimuth const& task, setup::SimParams const& sim_params)
     {
         auto const polar_angles = nc::linspace(0.0, nc::constants::pi, 51);
-        auto const azimuths = sweep::get_values(sweep_azimuth);
+        auto const azimuths = sweep::get_values(task.sweep_azimuth);
 
-        std::vector<Complex> coeffs(antenna::size(ant), 1.0);
+        std::vector<Complex> coeffs(antenna::size(task.tx), 1.0);
 
         std::vector<ojson> entries;
         for (auto const azimuth : azimuths)
@@ -81,7 +64,7 @@ namespace eval::output
                 directivities.begin(),
                 [&](double polar)
                 {
-                    return antenna::calc_directivity_from_spherical(ant, polar, azimuth, wavelength, coeffs, sim_params);
+                    return antenna::calc_directivity_from_spherical(task.tx, polar, azimuth, task.wavelength, coeffs, sim_params);
                 } //
             );
             js_entry["azimuth"] = azimuth;
@@ -91,21 +74,16 @@ namespace eval::output
         }
 
         ojson js;
-        js["sweep"] = sweep_azimuth;
+        js["sweep"] = task.sweep_azimuth;
         js["sim_params"] = sim_params;
         js["data"] = entries;
-        save_result(js, path_output, output_type);
+        save_result(js, task);
     }
 
     namespace voltgain
     {
         template <typename T>
-        void points(std::filesystem::path const& path_output,
-            OutputType output_type,
-            setup::task::VoltGainOverPoints const& task,
-            reference::Reference const& ref,
-            ComplexScalarField<T> const& scalar_field //
-        )
+        void points(setup::task::VoltGainOverPoints const& task, ComplexScalarField<T> const& scalar_field)
         {
             Vec3Array positions(task.points.size(), 1);
             for (auto k = 0; k < task.points.size(); k++) positions(k, 0) = task.points[k];
@@ -117,115 +95,69 @@ namespace eval::output
             js["task"] = task;
             js["positions"] = ojson();
             js["positions"]["cartesian"] = task.points;
-            js["positions"]["spherical"] = calc_positions_spherical(ref, positions).toStlVector();
+            js["positions"]["spherical"] = calc_positions_spherical(task.ref, positions).toStlVector();
             js["gains"] = gains.toStlVector();
-            save_result(js, path_output, output_type);
+            save_result(js, task);
         }
 
         template <typename T>
-        void geometry( //
-            std::filesystem::path const& path_output,
-            OutputType output_type,
-            setup::task::VoltGainOverGeometry const& task,
-            reference::Reference const& ref,
-            ComplexScalarField<T> const& scalar_field,
-            geometry::Geometry const& geo //
-        )
+        void geometry(setup::task::VoltGainOverGeometry const& task, ComplexScalarField<T> const& scalar_field)
         {
-            auto const [positions_cartesian, data] = scalar_field.eval_geometry(geo, task.wavelength, task.n_dim1, task.n_dim2);
+            auto const [positions_cartesian, data] = scalar_field.eval_geometry(task.geo, task.wavelength, task.n_dim1, task.n_dim2);
 
             ojson js;
             js["sim_params"] = scalar_field.sim_params;
-            js["geo"] = geo;
+            js["geo"] = task.geo;
             js["task"] = task;
             js["positions"] = ojson();
             js["positions"]["cartesian"] = positions_cartesian;
-            js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);
+            js["positions"]["spherical"] = calc_positions_spherical(task.ref, positions_cartesian);
             js["gains"] = data;
-            save_result(js, path_output, output_type);
+            save_result(js, task);
         }
 
         template <typename T>
-        void geometry_at_wavelength( //
-            std::filesystem::path const& path_output,
-            OutputType output_type,
-            setup::task::VoltGainOverGeometryAtWavelength const& task,
-            reference::Reference const& ref,
-            ComplexScalarField<T> const& scalar_field,
-            geometry::Geometry const& geo,
-            sweep::Sweep const& sweep_wavelength //
-        )
+        void geometry_at_wavelength(setup::task::VoltGainOverGeometryAtWavelength const& task, ComplexScalarField<T> const& scalar_field)
         {
-            auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(geo, sweep_wavelength, task.n_dim1, task.n_dim2);
+            auto const [positions_cartesian, data] = scalar_field.eval_geometry_sweep(task.geo, task.sweep_wavelength, task.n_dim1, task.n_dim2);
 
             ojson js;
             js["sim_params"] = scalar_field.sim_params;
-            js["geo"] = geo;
-            js["sweep"] = sweep_wavelength;
+            js["geo"] = task.geo;
+            js["sweep"] = task.sweep_wavelength;
             js["task"] = task;
             js["positions"] = ojson();
             js["positions"]["cartesian"] = positions_cartesian;
-            js["positions"]["spherical"] = calc_positions_spherical(ref, positions_cartesian);
+            js["positions"]["spherical"] = calc_positions_spherical(task.ref, positions_cartesian);
             js["gains"] = data;
-            save_result(js, path_output, output_type);
+            save_result(js, task);
         }
 
         template <typename T>
-        void curve_peak_and_cutoff(std::filesystem::path const& path_output,
-            OutputType output_type,
-            setup::task::VoltGainPeakAndCutoffs const& task,
-            reference::Reference const& ref,
-            ComplexScalarField<T> const& scalar_field,
-            geometry::Curve const& curve //
-        )
+        void curve_peak_and_cutoff(setup::task::VoltGainPeakAndCutoffs const& task, ComplexScalarField<T> const& scalar_field)
         {
-            auto const curve_peak_span = scalar_field.find_curve_peak_and_cutoffs(curve, task.wavelength, task.ratio, task.n_scan);
+            auto const curve_peak_span = scalar_field.find_curve_peak_and_cutoffs(task.curve, task.wavelength, task.ratio, task.n_scan);
 
             ojson js;
             js["sim_params"] = scalar_field.sim_params;
-            js["curve"] = curve;
+            js["curve"] = task.curve;
             js["task"] = task;
             js["peak"] = curve_peak_span.peak;
             js["pos_peak"] = curve_peak_span.pos_peak;
             js["pos_left"] = curve_peak_span.pos_left;
             js["pos_right"] = curve_peak_span.pos_right;
-            save_result(js, path_output, output_type);
+            save_result(js, task);
         }
     } // namespace voltgain
 
     // -----------------------------------------------------------------------------
     // EXPLICIT INSTANTIATION
     // -----------------------------------------------------------------------------
-    template void voltgain::points<RxVoltageField>( //
-        std::filesystem::path const&,
-        OutputType,
-        setup::task::VoltGainOverPoints const&,
-        reference::Reference const&,
-        ComplexScalarField<RxVoltageField> const& //
-    );
-    template void voltgain::geometry<RxVoltageField>( //
-        std::filesystem::path const&,
-        OutputType,
-        setup::task::VoltGainOverGeometry const&,
-        reference::Reference const&,
-        ComplexScalarField<RxVoltageField> const&,
-        geometry::Geometry const&);
-    template void voltgain::geometry_at_wavelength<RxVoltageField>( //
-        std::filesystem::path const&,
-        OutputType,
-        setup::task::VoltGainOverGeometryAtWavelength const&,
-        reference::Reference const&,
-        ComplexScalarField<RxVoltageField> const&,
-        geometry::Geometry const&,
-        sweep::Sweep const& //
-        );
-    template void voltgain::curve_peak_and_cutoff<RxVoltageField>( //
-        std::filesystem::path const&,
-        OutputType,
-        setup::task::VoltGainPeakAndCutoffs const&,
-        reference::Reference const&,
-        ComplexScalarField<RxVoltageField> const&,
-        geometry::Curve const&//
-    );
+    template void voltgain::points<RxVoltageField>(setup::task::VoltGainOverPoints const& task, ComplexScalarField<RxVoltageField> const& scalar_field);
+    template void voltgain::geometry<RxVoltageField>(setup::task::VoltGainOverGeometry const& task, ComplexScalarField<RxVoltageField> const& scalar_field);
+    template void voltgain::geometry_at_wavelength<RxVoltageField>(setup::task::VoltGainOverGeometryAtWavelength const& task,
+        ComplexScalarField<RxVoltageField> const& scalar_field);
+    template void voltgain::curve_peak_and_cutoff<RxVoltageField>(setup::task::VoltGainPeakAndCutoffs const& task,
+        ComplexScalarField<RxVoltageField> const& scalar_field);
 
 } // namespace eval::output

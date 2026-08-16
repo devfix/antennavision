@@ -12,7 +12,7 @@ namespace factory
 {
     namespace
     {
-        long double parse_long_double(std::string const& expr, std::map<std::string, Var> const& variables)
+        long double parse_long_double(std::string const& expr, VarMap const& variables)
         {
             exprtk::symbol_table<long double> symbol_table;
             exprtk::expression<long double> expression;
@@ -67,12 +67,12 @@ namespace factory
         };
     }
 
-    double parse_double(std::string const& expr, std::map<std::string, Var> const& variables)
+    double parse_double(std::string const& expr, VarMap const& variables)
     {
         return static_cast<double>(parse_long_double(expr, variables));
     }
 
-    std::int64_t parse_int(std::string const& expr, std::map<std::string, Var> const& variables)
+    std::int64_t parse_int(std::string const& expr, VarMap const& variables)
     {
         return static_cast<std::int64_t>(std::roundl(parse_long_double(expr, variables)));
     }
