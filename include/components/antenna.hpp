@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <magic_enum/magic_enum.hpp>
 #include <span>
 #include <variant>
+#include <magic_enum/magic_enum.hpp>
 #include "components/uniformlineararray.hpp"
 #include "components/uniformplanararray.hpp"
 #include "customarray.hpp"

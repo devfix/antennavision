@@ -49,6 +49,7 @@ FetchContent_Declare(
         GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(nlopt)
+target_compile_options(nlopt PRIVATE -Wno-stringop-overflow)
 #########
 
 

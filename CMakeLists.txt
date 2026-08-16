@@ -3,6 +3,7 @@ project(antennavision)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 include(FetchContent)
 include(CheckIPOSupported)
 
@@ -90,59 +91,70 @@ endif ()
 include(dependencies.cmake)
 
 
-file(GLOB_RECURSE SOURCE_FILES
+######### target: antennavision::core
+file(GLOB_RECURSE FILES_CORE
         CONFIGURE_DEPENDS
-        "src/*.cpp"
-        "src/*.hpp"
         "include/*.hpp"
+        "src/core/*.cpp"
+        "src/core/*.hpp"
 )
-file(GLOB_RECURSE TEST_FILES
-        CONFIGURE_DEPENDS
-        "test/*.cpp"
-        "test/*.hpp"
-)
-
-######### target: antennavision
-add_executable(antennavision main.cpp ${SOURCE_FILES})
+set(core_library avc)  # antennavision core
+add_library(${core_library} ${FILES_CORE})
+add_library(antennavision::core ALIAS ${core_library})
 if(ANTENNAVISION_MULTI_THREADED)
-    target_compile_definitions(antennavision PRIVATE ANTENNAVISION_MULTI_THREADED=1)
+    target_compile_definitions(${core_library} PRIVATE ANTENNAVISION_MULTI_THREADED=1)
 else()
-    target_compile_definitions(antennavision PRIVATE ANTENNAVISION_MULTI_THREADED=0)
+    target_compile_definitions(${core_library} PRIVATE ANTENNAVISION_MULTI_THREADED=0)
 endif()
-target_compile_definitions(antennavision PRIVATE NUMCPP_NO_USE_BOOST)
-target_include_directories(antennavision PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(antennavision PRIVATE
+target_compile_definitions(${core_library} PRIVATE NUMCPP_NO_USE_BOOST)
+target_include_directories(${core_library} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(${core_library} PRIVATE
         NumCpp::NumCpp
         magic_enum::magic_enum
         nlopt
         CephesSiCi
         nlohmann_json::nlohmann_json
         exprtk
+)
+target_compile_definitions(${core_library} PRIVATE JSON_DIAGNOSTICS=0)
+#########
+
+
+######### target: antennavision
+file(GLOB_RECURSE FILES_CLI
+        CONFIGURE_DEPENDS
+        "include/*.hpp"
+        "src/cli/*.cpp"
+        "src/cli/*.hpp"
+)
+add_executable(antennavision ${FILES_CLI})
+target_include_directories(antennavision PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(antennavision PRIVATE
+        NumCpp::NumCpp
+        antennavision::core
+        magic_enum::magic_enum
+        nlohmann_json::nlohmann_json
         CLI11::CLI11
 )
-target_compile_definitions(antennavision PRIVATE JSON_DIAGNOSTICS=0)
 #########
 
 
 ######### target: testrunner
-add_executable(testrunner ${SOURCE_FILES} ${TEST_FILES})
-if(ANTENNAVISION_MULTI_THREADED)
-    target_compile_definitions(testrunner PRIVATE ANTENNAVISION_MULTI_THREADED=1)
-else()
-    target_compile_definitions(testrunner PRIVATE ANTENNAVISION_MULTI_THREADED=0)
-endif()
-target_compile_definitions(testrunner PRIVATE NUMCPP_NO_USE_BOOST)
+file(GLOB_RECURSE FILES_TEST
+        CONFIGURE_DEPENDS
+        "include/*.hpp"
+        "src/test/*.cpp"
+        "src/test/*.hpp"
+)
+add_executable(testrunner ${FILES_TEST})
 target_include_directories(testrunner PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(testrunner PRIVATE
         NumCpp::NumCpp
+        antennavision::core
         magic_enum::magic_enum
-        nlopt
-        CephesSiCi
         nlohmann_json::nlohmann_json
-        exprtk
         Catch2::Catch2WithMain
 )
-target_compile_definitions(testrunner PRIVATE JSON_DIAGNOSTICS=0)
 
 # Enable CTest regression testing framework integration (Optional but recommended)
 include(CTest)

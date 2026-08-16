@@ -5,7 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <print>
 #include <vector>
-#include "../../include/math/coords.hpp"
+#include "math/coords.hpp"
 #include "builtin.hpp"
 
 namespace builtin
