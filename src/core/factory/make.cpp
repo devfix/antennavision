@@ -14,7 +14,6 @@
 #include "math/coords.hpp"
 #include "math/functions.hpp"
 
-
 namespace factory
 {
     using reference::Reference;
@@ -33,34 +32,39 @@ namespace factory
             return true;
         }
 
-        Radiator make_radiator(ojson& desc, VarMap const& variables)
+        Radiator::Descriptor get_radiator_desc(ojson& desc, VarMap const& variables)
         {
             auto const id = get_string(desc, "id");
             auto const origin_id = get_string(desc, "ref", true, true);
-            auto const type = get_string(desc, "type");
-
-            if (type == "IsotropicRadiator") return Radiator::IsotropicRadiator::create(id, origin_id);
-            if (type == "HertzianDipole") return Radiator::HertzianDipole::create(id, origin_id);
-            if (type == "StandingWaveDipole")
+            auto const type_str = get_string(desc, "type");
+            auto type = magic_enum::enum_cast<Radiator::Type>(type_str);
+            if (not type) throw SimulationError("Unknown radiator type '{}'", type_str);
+            std::optional<double> dipole_length;
+            if (desc.contains("dipole_length"))
             {
                 try_resolve_double_expressions(desc, variables, "dipole_length");
-                auto const dipole_length = get_double(desc, "dipole_length", variables);
-                return Radiator::StandingWaveDipole::create(id, origin_id, dipole_length);
+                dipole_length = {get_double(desc, "dipole_length", variables)};
             }
-            if (type == "CustomRadiator")
+            std::optional<Radiator::elv_spherical_t> elv_spherical;
+            if (desc.contains(""))
             {
                 auto const effective_length_defs = get_string_vec3(desc, "effective_length");
                 std::array<std::function<Complex(double, double, double)>, 3> effective_length_parts;
                 std::ranges::transform(effective_length_defs, effective_length_parts.begin(), parse_polar_azimuth_function);
-                auto effective_length = [effective_length_parts](double const polar, double const azimuth, double const wavelength) -> ComplexArray
-                {
-                    return {effective_length_parts[0](polar, azimuth, wavelength),
-                        effective_length_parts[1](polar, azimuth, wavelength),
-                        effective_length_parts[2](polar, azimuth, wavelength)};
-                };
-                return {.type = Radiator::Type::CustomRadiator, .id = id, .origin_id = origin_id, .elv_spherical = std::move(effective_length)};
+                elv_spherical = {[effective_length_parts](double const polar, double const azimuth, double const wavelength) -> ComplexArray
+                    {
+                        return {effective_length_parts[0](polar, azimuth, wavelength),
+                            effective_length_parts[1](polar, azimuth, wavelength),
+                            effective_length_parts[2](polar, azimuth, wavelength)};
+                    }};
             }
-            throw SimulationError("Unknown radiator type '{}'", type);
+            return Radiator::Descriptor{
+                .type = type.value(),
+                .id = std::move(id),
+                .origin_id = std::move(origin_id),
+                .dipole_length = dipole_length,
+                .elv_spherical = std::move(elv_spherical) //
+            };
         }
 
         antenna::Antenna make_ula(ojson& desc, VarMap const& variables)
@@ -102,7 +106,7 @@ namespace factory
                 ula_element_desc["ref"] = references.back().id;
 
                 // call the make function recursively and append the Radiators to array_radiators
-                elements.push_back(make_radiator(ula_element_desc, variables));
+                elements.push_back(Radiator::create(get_radiator_desc(ula_element_desc, variables)));
             }
 
             return UniformLinearArray{{
@@ -160,7 +164,7 @@ namespace factory
                     ula_element_desc["ref"] = references.back().id;
 
                     // call the make function recursively and append the Radiators to array_radiators
-                    elements.push_back(make_radiator(ula_element_desc, variables));
+                    elements.push_back(Radiator::create(get_radiator_desc(ula_element_desc, variables)));
                 }
             }
 
@@ -207,7 +211,7 @@ namespace factory
             // depending on the type make a ULA, UPA or single radiator as the antenna
             if (type == "ULA") { return make_ula(desc, variables); }
             if (type == "UPA") { return make_upa(desc, variables); }
-            return make_radiator(desc, variables);
+            return Radiator::create(get_radiator_desc(desc, variables));
         }
         catch (...)
         {

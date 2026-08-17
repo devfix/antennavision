@@ -42,6 +42,11 @@
  */
 struct Radiator
 {
+
+    using elv_spherical_t = std::function<Vec(double polar, double azimuth, double wavelength)>; /// ELV in spherical coordinates from spherical position
+    using ms_elv_t = std::function<double(double wavelength)>; /// mean-squared effective length
+    static double constexpr HERTZIAN_DIPOLE_LENGTH = 1e-6; /// ideally infinitely small, we use 1um that is less than any reasonable wavelength
+
     enum struct Type
     {
         CustomRadiator = 0,
@@ -50,10 +55,14 @@ struct Radiator
         StandingWaveDipole = 3
     };
 
-    using elv_spherical_t =
-        std::function<Vec(double polar, double azimuth, double wavelength)>; /// effective length vector in spherical coordinates from spherical position
-    using ms_elv_t = std::function<double(double wavelength)>; /// mean-squared effective length
-    static double constexpr HERTZIAN_DIPOLE_LENGTH = 1e-6; /// ideally infinitely small, we use 1um that is less than any reasonable wavelength
+    struct Descriptor
+    {
+        Type type;
+        std::string id;
+        std::string origin_id;
+        std::optional<double> dipole_length;
+        std::optional<elv_spherical_t> elv_spherical;
+    };
 
     /// Provide the ELV and mean-squared ELV functions for the isotropic radiator
     struct IsotropicRadiator
@@ -79,6 +88,8 @@ struct Radiator
 
     [[nodiscard]] static double calc_ms_elv(elv_spherical_t const& elv_spherical, double wavelength, setup::SimParams const& sim_params);
     [[nodiscard]] Vec get_elv_spherical_from_cartesian(Pos const& pos_local, double wavelength) const;
+
+    [[nodiscard]] static Radiator create(Descriptor const& descriptor);
 
     Type type = Type::CustomRadiator; /// type of the radiator
     std::string id{}; /// identifier name

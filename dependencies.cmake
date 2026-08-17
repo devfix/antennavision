@@ -123,3 +123,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(Catch2)
 #########
+
+
+######### nanoflann
+FetchContent_Declare(
+        nanoflann
+        GIT_REPOSITORY https://github.com/jlblancoc/nanoflann.git
+        GIT_TAG 1.12.1
+        GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(nanoflann)
+#########
+

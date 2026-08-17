@@ -109,15 +109,30 @@ endif()
 target_compile_definitions(${core_library} PRIVATE NUMCPP_NO_USE_BOOST)
 target_include_directories(${core_library} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(${core_library} PRIVATE
+        CephesSiCi
+        exprtk
+        nlopt
         NumCpp::NumCpp
         magic_enum::magic_enum
-        nlopt
-        CephesSiCi
         nlohmann_json::nlohmann_json
-        exprtk
+        nanoflann
 )
 target_compile_definitions(${core_library} PRIVATE JSON_DIAGNOSTICS=0)
 #########
+
+
+function(make_exe target_name)
+    add_executable(${target_name} ${ARGN})
+    target_include_directories(${target_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    target_link_libraries(${target_name} PRIVATE
+            # add all header-only libraries
+            antennavision::core
+            NumCpp::NumCpp
+            magic_enum::magic_enum
+            nlohmann_json::nlohmann_json
+            nanoflann
+    )
+endfunction()
 
 
 ######### target: antennavision
@@ -127,15 +142,8 @@ file(GLOB_RECURSE FILES_CLI
         "src/cli/*.cpp"
         "src/cli/*.hpp"
 )
-add_executable(antennavision ${FILES_CLI})
-target_include_directories(antennavision PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(antennavision PRIVATE
-        NumCpp::NumCpp
-        antennavision::core
-        magic_enum::magic_enum
-        nlohmann_json::nlohmann_json
-        CLI11::CLI11
-)
+make_exe(antennavision ${FILES_CLI})
+target_link_libraries(antennavision PRIVATE CLI11::CLI11)
 #########
 
 
@@ -146,18 +154,21 @@ file(GLOB_RECURSE FILES_TEST
         "src/test/*.cpp"
         "src/test/*.hpp"
 )
-add_executable(testrunner ${FILES_TEST})
-target_include_directories(testrunner PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(testrunner PRIVATE
-        NumCpp::NumCpp
-        antennavision::core
-        magic_enum::magic_enum
-        nlohmann_json::nlohmann_json
-        Catch2::Catch2WithMain
-)
+make_exe(testrunner ${FILES_TEST})
+target_link_libraries(testrunner PRIVATE Catch2::Catch2WithMain)
 
 # Enable CTest regression testing framework integration (Optional but recommended)
 include(CTest)
 include(Catch)
 catch_discover_tests(testrunner)
+#########
+
+
+######### target: ula_cb_performance
+file(GLOB_RECURSE FILES_ULA_CB_PERFORMANCE
+        CONFIGURE_DEPENDS
+        "include/*.hpp"
+        "src/builtin/ula_cb_performance.cpp"
+)
+make_exe(ula_cb_performance ${FILES_ULA_CB_PERFORMANCE})
 #########

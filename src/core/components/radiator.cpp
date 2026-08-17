@@ -114,3 +114,16 @@ Vec Radiator::get_elv_spherical_from_cartesian(Pos const& pos_local, double wave
     auto const [r, polar, azimuth] = math::spherical_from_cartesian_pos<std::array<double, 3>>(pos_local);
     return elv_spherical(polar, azimuth, wavelength);
 }
+
+Radiator Radiator::create(Descriptor const& desc)
+{
+    switch (desc.type)
+    {
+        case Type::IsotropicRadiator: return IsotropicRadiator::create(desc.id, desc.origin_id);
+        case Type::HertzianDipole: return HertzianDipole::create(desc.id, desc.origin_id);
+        case Type::StandingWaveDipole: return StandingWaveDipole::create(desc.id, desc.origin_id, desc.dipole_length.value());
+        case Type::CustomRadiator:
+            return {.type = Type::CustomRadiator, .id = desc.id, .origin_id = desc.origin_id, .elv_spherical = desc.elv_spherical.value()};
+        default: throw SimulationError("Invalid radiator type (index: {}, name: {})", static_cast<std::size_t>(desc.type), magic_enum::enum_name(desc.type));
+    }
+}
