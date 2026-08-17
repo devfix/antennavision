@@ -42,7 +42,7 @@ namespace setup
         void run_tasks(bool force_recomputation) const;
 
         [[nodiscard]] reference::Reference const& get_reference(std::string_view id);
-        [[nodiscard]] antenna::Antenna const& get_antenna(std::string_view id);
+        [[nodiscard]] components::Antenna const& get_antenna(std::string_view id);
         [[nodiscard]] Context get_context() const;
         [[nodiscard]] double get_double(std::string const& variable_name) const;
         [[nodiscard]] std::int64_t get_int(std::string const& variable_name) const;
@@ -53,7 +53,7 @@ namespace setup
         SimParams sim_params;
         VarMap variables;
         std::vector<reference::Reference> references;
-        std::vector<antenna::Antenna> antennas;
+        std::vector<components::Antenna> antennas;
         std::vector<geometry::Geometry> geometries;
         std::vector<sweep::Sweep> sweeps;
         std::vector<task::Task> tasks;

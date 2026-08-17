@@ -23,16 +23,16 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
     auto sim_params = setup::SimParams{.system_wavelength = WAVELENGTH, .n_polar = 101, .n_azimuth = 201};
     SECTION("Hertzian Dipole")
     {
-        double const leffmean_expected = 2.0 / 3.0 * math::square(Radiator::HERTZIAN_DIPOLE_LENGTH);
+        double const leffmean_expected = 2.0 / 3.0 * math::square(components::Radiator::HERTZIAN_DIPOLE_LENGTH);
 
-        double leffmean_analytical = Radiator::HertzianDipole::ms_elv(WAVELENGTH);
+        double leffmean_analytical = components::Radiator::HertzianDipole::ms_elv(WAVELENGTH);
         CHECK_THAT(leffmean_analytical, WithinRel(leffmean_expected, 1e-3));
 
-        Radiator::elv_spherical_t elv_sherical = [](double polar, double, double) -> nc::NdArray<Complex>
+        components::Radiator::elv_spherical_t elv_sherical = [](double polar, double, double) -> nc::NdArray<Complex>
         {
-            return {0, -Radiator::HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0};
+            return {0, -components::Radiator::HERTZIAN_DIPOLE_LENGTH * std::sin(polar), 0};
         };
-        double leffmean_numerical = Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
+        double leffmean_numerical = components::Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
         CHECK_THAT(leffmean_numerical, WithinRel(leffmean_expected, 1e-3));
     }
 
@@ -41,14 +41,14 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
         double constexpr dipole_length = 0.5 * WAVELENGTH;
         double const leffmean_expected = 0.5 * math::square(WAVELENGTH / pi) * math::q_function(pi);
 
-        double leffmean_analytical = Radiator::StandingWaveDipole::ms_elv(WAVELENGTH, dipole_length);
+        double leffmean_analytical = components::Radiator::StandingWaveDipole::ms_elv(WAVELENGTH, dipole_length);
         CHECK_THAT(leffmean_analytical, WithinRel(leffmean_expected, 1e-3));
 
-        Radiator::elv_spherical_t elv_sherical = [](double polar, [[maybe_unused]] double azimuth, double WAVELENGTH) -> nc::NdArray<Complex>
+        components::Radiator::elv_spherical_t elv_sherical = [](double polar, [[maybe_unused]] double azimuth, double WAVELENGTH) -> nc::NdArray<Complex>
         {
-            return Radiator::StandingWaveDipole::elv_spherical(polar, azimuth, WAVELENGTH, dipole_length);
+            return components::Radiator::StandingWaveDipole::elv_spherical(polar, azimuth, WAVELENGTH, dipole_length);
         };
-        double leffmean_numerical = Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
+        double leffmean_numerical = components::Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
         CHECK_THAT(leffmean_numerical, WithinRel(leffmean_expected, 1e-3));
     }
 
@@ -57,14 +57,14 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
         double constexpr dipole_length = WAVELENGTH;
         double const leffmean_expected = 0.5 * math::square(WAVELENGTH / pi) * math::q_function(2 * pi);
 
-        double leffmean_analytical = Radiator::StandingWaveDipole::ms_elv(WAVELENGTH, dipole_length);
+        double leffmean_analytical = components::Radiator::StandingWaveDipole::ms_elv(WAVELENGTH, dipole_length);
         CHECK_THAT(leffmean_analytical, WithinRel(leffmean_expected, 1e-3));
 
-        Radiator::elv_spherical_t elv_sherical = [](double polar, double azimuth, double WAVELENGTH) -> nc::NdArray<Complex>
+        components::Radiator::elv_spherical_t elv_sherical = [](double polar, double azimuth, double WAVELENGTH) -> nc::NdArray<Complex>
         {
-            return Radiator::StandingWaveDipole::elv_spherical(polar, azimuth, WAVELENGTH, dipole_length);
+            return components::Radiator::StandingWaveDipole::elv_spherical(polar, azimuth, WAVELENGTH, dipole_length);
         };
-        double leffmean_numerical = Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
+        double leffmean_numerical = components::Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
         CHECK_THAT(leffmean_numerical, WithinRel(leffmean_expected, 1e-3));
     }
 
@@ -73,14 +73,14 @@ TEST_CASE("Mean squared effective length", "[Radiator]")
         double constexpr dipole_length = 1.5 * WAVELENGTH;
         double const leffmean_expected = 0.5 * math::square(WAVELENGTH / pi) * math::q_function(3 * pi);
 
-        double leffmean_analytical = Radiator::StandingWaveDipole::ms_elv(WAVELENGTH, dipole_length);
+        double leffmean_analytical = components::Radiator::StandingWaveDipole::ms_elv(WAVELENGTH, dipole_length);
         CHECK_THAT(leffmean_analytical, WithinRel(leffmean_expected, 1e-3));
 
-        Radiator::elv_spherical_t elv_sherical = [](double polar, double azimuth, double WAVELENGTH) -> nc::NdArray<Complex>
+        components::Radiator::elv_spherical_t elv_sherical = [](double polar, double azimuth, double WAVELENGTH) -> nc::NdArray<Complex>
         {
-            return Radiator::StandingWaveDipole::elv_spherical(polar, azimuth, WAVELENGTH, dipole_length);
+            return components::Radiator::StandingWaveDipole::elv_spherical(polar, azimuth, WAVELENGTH, dipole_length);
         };
-        double leffmean_numerical = Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
+        double leffmean_numerical = components::Radiator::calc_ms_elv(elv_sherical, WAVELENGTH, sim_params);
         CHECK_THAT(leffmean_numerical, WithinRel(leffmean_expected, 1e-3));
     }
 }

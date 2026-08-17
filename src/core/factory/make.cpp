@@ -4,19 +4,21 @@
 
 #include "factory/make.hpp"
 #include <locale>
-#include <nlohmann/json.hpp>
 #include <print>
-
+#include <magic_enum/magic_enum.hpp>
+#include <nlohmann/json.hpp>
 #include "NumCpp/Functions/var.hpp"
 #include "factory/find.hpp"
 #include "factory/get.hpp"
 #include "factory/parse.hpp"
 #include "math/coords.hpp"
-#include "math/functions.hpp"
 
 namespace factory
 {
     using reference::Reference;
+    using components::Radiator;
+    using components::RadiatorArray;
+    using components::Antenna;
 
     namespace
     {
@@ -34,8 +36,8 @@ namespace factory
 
         Radiator::Descriptor get_radiator_desc(ojson& desc, VarMap const& variables)
         {
-            auto const id = get_string(desc, "id");
-            auto const origin_id = get_string(desc, "ref", true, true);
+            std::string id = desc.contains("id") ? desc.at("id").get<std::string>() : "";
+            std::string origin_id = desc.contains("ref") ? desc.at("ref").get<std::string>() : "";
             auto const type_str = get_string(desc, "type");
             auto type = magic_enum::enum_cast<Radiator::Type>(type_str);
             if (not type) throw SimulationError("Unknown radiator type '{}'", type_str);
@@ -67,118 +69,70 @@ namespace factory
             };
         }
 
-        antenna::Antenna make_ula(ojson& desc, VarMap const& variables)
+        components::Antenna make_ula(ojson& js, VarMap const& variables)
         {
-            try_resolve_double_expressions(desc, variables, "spacing");
-            try_resolve_int_expressions(desc, variables, "size");
-            try_resolve_double_expressions(desc, variables, "rot");
+            try_resolve_double_expressions(js, variables, "spacing");
+            try_resolve_int_expressions(js, variables, "size");
+            try_resolve_double_expressions(js, variables, "rot");
 
-            auto const id = get_string(desc, "id");
-            auto const origin_id = get_string(desc, "ref", true, true);
-            auto const type = get_string(desc, "type");
-            auto const spacing = get_double(desc, "spacing", variables);
-            auto const size = get_uint(desc, "size", variables);
+            auto const id = get_string(js, "id");
+            auto const origin_id = get_string(js, "ref", true, true);
+            auto const type = get_string(js, "type");
+            auto const spacing = get_double(js, "spacing", variables);
+            auto const size = get_uint(js, "size", variables);
             Quaternion rot;
-            if (desc.contains("rot")) { desc.at("rot").get_to(rot); }
-            auto const prototype_desc = desc.at("radiator");
-            desc.erase("radiator");
+            if (js.contains("rot")) { js.at("rot").get_to(rot); }
+            auto prototype_desc = get_radiator_desc(js.at("radiator"), variables);
+            js.erase("radiator");
 
-            Pos constexpr dir(1.0, 0.0, 0.0);
-            double const length = spacing * (size - 1);
-            std::vector<Radiator> elements;
-            elements.reserve(size);
-            std::vector<Reference> references;
-            references.reserve(size);
-            for (std::size_t k = 0; k < size; k++)
-            {
-                double const t = math::nidx(k, size);
-                Pos const pos = dir * (t - 0.5) * length;
-                references.push_back(Reference{
-                    .id = std::format("{}:ref:{}", id, k),
-                    .origin_id = origin_id,
-                    .pos = pos,
-                    .rot = rot //
-                });
-
-                // We make a copy of the "backup" description and adapt it for the current element of the ULA
-                ojson ula_element_desc = prototype_desc;
-                ula_element_desc["id"] = std::format("{}:rad:{}", id, k);
-                ula_element_desc["ref"] = references.back().id;
-
-                // call the make function recursively and append the Radiators to array_radiators
-                elements.push_back(Radiator::create(get_radiator_desc(ula_element_desc, variables)));
-            }
-
-            return UniformLinearArray{{
-                .type = RadiatorArrayType::UniformLinearArray,
+            auto desc = components::RadiatorArray::Desciptor{
+                .type = components::RadiatorArray::Type::UniformLinearArray,
                 .id = id,
                 .origin_id = origin_id,
-                .references = std::move(references),
-                .elements = std::move(elements) //
-            }};
+                .rot = rot,
+                .prototype_desc = std::move(prototype_desc),
+                .parameters = components::RadiatorArray::UniformLinearParameters{.spacing = spacing, .size = size} //
+            };
+
+            return std::move(components::RadiatorArray::create(desc));
         }
 
-        antenna::Antenna make_upa(ojson& desc, VarMap const& variables)
+        components::Antenna make_upa(ojson& js, VarMap const& variables)
         {
-            try_resolve_double_expressions(desc, variables, "spacing_x");
-            try_resolve_double_expressions(desc, variables, "spacing_y");
-            try_resolve_int_expressions(desc, variables, "size_x");
-            try_resolve_int_expressions(desc, variables, "size_y");
-            try_resolve_double_expressions(desc, variables, "rot");
+            try_resolve_double_expressions(js, variables, "spacing_x");
+            try_resolve_double_expressions(js, variables, "spacing_y");
+            try_resolve_int_expressions(js, variables, "size_x");
+            try_resolve_int_expressions(js, variables, "size_y");
+            try_resolve_double_expressions(js, variables, "rot");
 
-            auto const id = get_string(desc, "id");
-            auto const origin_id = get_string(desc, "ref", true, true);
-            auto const type = get_string(desc, "type");
-            auto const spacing_x = get_double(desc, "spacing_x", variables);
-            auto const spacing_y = get_double(desc, "spacing_y", variables);
-            auto const size_x = get_uint(desc, "size_x", variables);
-            auto const size_y = get_uint(desc, "size_y", variables);
+            auto const id = get_string(js, "id");
+            auto const origin_id = get_string(js, "ref", true, true);
+            auto const type = get_string(js, "type");
+            auto const spacing_x = get_double(js, "spacing_x", variables);
+            auto const spacing_y = get_double(js, "spacing_y", variables);
+            auto const size_x = get_uint(js, "size_x", variables);
+            auto const size_y = get_uint(js, "size_y", variables);
             Quaternion rot;
-            if (desc.contains("rot")) { desc.at("rot").get_to(rot); }
-            auto const prototype_desc = desc.at("radiator");
-            desc.erase("radiator");
+            if (js.contains("rot")) { js.at("rot").get_to(rot); }
+            auto prototype_desc = get_radiator_desc(js.at("radiator"), variables);
+            js.erase("radiator");
 
-            double const length_x = spacing_x * (size_x - 1);
-            double const length_y = spacing_y * (size_y - 1);
-            std::vector<Radiator> elements;
-            elements.reserve(size_x * size_y);
-            std::vector<Reference> references;
-            references.reserve(size_x * size_y);
-            for (std::decay_t<decltype(size_y)> y = 0; y < size_y; y++)
-            {
-                for (std::decay_t<decltype(size_x)> x = 0; x < size_x; x++)
-                {
-                    double const tx = math::nidx(x, size_x);
-                    double const ty = math::nidx(y, size_y);
-                    Pos const pos = Pos(1.0, 0.0, 0.0) * (tx - 0.5) * length_x + Pos(0.0, 1.0, 0.0) * (ty - 0.5) * length_y;
-                    references.push_back(Reference{
-                        .id = std::format("{}:ref:{}:{}", id, x, y),
-                        .origin_id = origin_id,
-                        .pos = pos,
-                        .rot = rot //
-                    });
-
-                    // We make a copy of the "backup" description and adapt it for the current element of the ULA
-                    ojson ula_element_desc = prototype_desc;
-                    ula_element_desc["id"] = std::format("{}:rad:{}:{}", id, x, y);
-                    ula_element_desc["ref"] = references.back().id;
-
-                    // call the make function recursively and append the Radiators to array_radiators
-                    elements.push_back(Radiator::create(get_radiator_desc(ula_element_desc, variables)));
-                }
-            }
-
-            return UniformPlanarArray{
-                {
-                    .type = RadiatorArrayType::UniformPlanarArray,
-                    .id = id,
-                    .origin_id = origin_id,
-                    .references = std::move(references),
-                    .elements = std::move(elements) //
-                },
-                size_x,
-                size_y //
+            auto desc = components::RadiatorArray::Desciptor{
+                .type = components::RadiatorArray::Type::UniformPlanarArray,
+                .id = id,
+                .origin_id = origin_id,
+                .rot = rot,
+                .prototype_desc = std::move(prototype_desc),
+                .parameters =
+                    components::RadiatorArray::UniformPlanarParameters{
+                        .spacing_x = spacing_x,
+                        .spacing_y = spacing_y,
+                        .size_x = size_x,
+                        .size_y = size_y //
+                    } //
             };
+
+            return std::move(components::RadiatorArray::create(desc));
         }
     } // namespace
 
@@ -198,7 +152,7 @@ namespace factory
         }
     }
 
-    antenna::Antenna make_antenna(ojson& desc, VarMap const& variables)
+    components::Antenna make_antenna(ojson& desc, VarMap const& variables)
     {
         try
         {

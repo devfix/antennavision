@@ -12,7 +12,7 @@
 #include "math/coords.hpp"
 #include "math/functions.hpp"
 
-namespace antenna
+namespace components::antenna
 {
     using reference::Reference;
     using std::ranges::to;
@@ -56,7 +56,12 @@ namespace antenna
             double r = (tx.origin->global_from_local_pos(POS_ZERO) - rx.origin->global_from_local_pos(POS_ZERO)).norm();
             if (r <= wavelength / 100)
             {
-                antennavision::logging::warn(LOG_NAME, "\nWarning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)", tx.id, rx.id, r, r / wavelength);
+                antennavision::logging::warn(LOG_NAME,
+                    "\nWarning: Radiator {} is very close to radiator {}, distance: {} m ({} λ)",
+                    tx.id,
+                    rx.id,
+                    r,
+                    r / wavelength);
                 r = std::max(r, NUMERICAL_MARGIN); // sanity
             }
 
@@ -109,7 +114,11 @@ namespace antenna
             double r = (rad.origin->global_from_local_pos(POS_ZERO) - pos).norm();
             if (r <= wavelength / 100)
             {
-                antennavision::logging::warn(LOG_NAME, "\nWarning: Electrical field position is very close to radiator {}, distance: {} m ({} λ)", rad.id, r, r / wavelength);
+                antennavision::logging::warn(LOG_NAME,
+                    "\nWarning: Electrical field position is very close to radiator {}, distance: {} m ({} λ)",
+                    rad.id,
+                    r,
+                    r / wavelength);
                 r = std::max(r, NUMERICAL_MARGIN); // sanity
             }
 
@@ -272,7 +281,7 @@ namespace antenna
             {
                 using Type = std::decay_t<decltype(arr)>;
                 Vec field = nc::zeros<Complex>(coeffs.size(), 1);
-                if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
+                if constexpr (std::is_same_v<Type, components::RadiatorArray>)
                 {
                     // core computation loop
                     for (std::size_t k = 0; k < arr.elements.size(); k++)
@@ -438,4 +447,4 @@ namespace antenna
             });
     }
 
-} // namespace antenna
+} // namespace components::antenna

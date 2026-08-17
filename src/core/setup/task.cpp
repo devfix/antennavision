@@ -26,7 +26,7 @@ namespace setup::task
             {});
         return TaskType{
             .output_path = js.at("output_path").template get<std::string>(),
-            .tx = antenna::get(ctx.antennas, js.at("tx").template get<std::string>()),
+            .tx = components::antenna::get(ctx.antennas, js.at("tx").template get<std::string>()),
             .wavelength = js.at("wavelength").template get<double>(),
             .sweep_azimuth = sweep::get(ctx.sweeps, js.at("sweep_azimuth").template get<std::string>()), //
         };
@@ -38,7 +38,7 @@ namespace setup::task
         js = JsonType{
             {"type", name},
             {"output_path", output_path},
-            {"tx", antenna::get_id(tx)},
+            {"tx", components::antenna::get_id(tx)},
             {"wavelength", wavelength},
             {"sweep", sweep::get_id(sweep_azimuth)} //
         };
@@ -67,8 +67,8 @@ namespace setup::task
         return TaskType{
             .output_path = js.at("output_path").template get<std::string>(),
             .ref = reference::get(ctx.references, js.at("ref").template get<std::string>()),
-            .tx = antenna::get(ctx.antennas, js.at("tx").template get<std::string>()),
-            .rx = antenna::get(ctx.antennas, js.at("rx").template get<std::string>()),
+            .tx = components::antenna::get(ctx.antennas, js.at("tx").template get<std::string>()),
+            .rx = components::antenna::get(ctx.antennas, js.at("rx").template get<std::string>()),
             .tx_codebook = js.at("tx_codebook").template get<std::vector<std::string>>(),
             .rx_codebook = js.at("rx_codebook").template get<std::vector<std::string>>(),
             .points = js.at("points").template get<std::vector<Pos>>(),
@@ -83,8 +83,8 @@ namespace setup::task
             {"type", name},
             {"output_path", output_path},
             {"ref", ref.id},
-            {"tx", antenna::get_id(tx)},
-            {"rx", antenna::get_id(rx)},
+            {"tx", components::antenna::get_id(tx)},
+            {"rx", components::antenna::get_id(rx)},
             {"tx_codebook", tx_codebook},
             {"rx_codebook", rx_codebook},
             {"points", points},
@@ -118,8 +118,8 @@ namespace setup::task
         return TaskType{
             .output_path = js.at("output_path").template get<std::string>(),
             .ref = reference::get(ctx.references, js.at("ref").template get<std::string>()),
-            .tx = antenna::get(ctx.antennas, js.at("tx").template get<std::string>()),
-            .rx = antenna::get(ctx.antennas, js.at("rx").template get<std::string>()),
+            .tx = components::antenna::get(ctx.antennas, js.at("tx").template get<std::string>()),
+            .rx = components::antenna::get(ctx.antennas, js.at("rx").template get<std::string>()),
             .tx_codebook = js.at("tx_codebook").template get<std::vector<std::string>>(),
             .rx_codebook = js.at("rx_codebook").template get<std::vector<std::string>>(),
             .geo = geometry::get(ctx.geometries, js.at("geo").template get<std::string>()),
@@ -136,8 +136,8 @@ namespace setup::task
             {"type", name},
             {"output_path", output_path},
             {"ref", ref.id},
-            {"tx", antenna::get_id(tx)},
-            {"rx", antenna::get_id(rx)},
+            {"tx", components::antenna::get_id(tx)},
+            {"rx", components::antenna::get_id(rx)},
             {"tx_codebook", tx_codebook},
             {"rx_codebook", rx_codebook},
             {"geo", geometry::get_id(geo)},
@@ -172,8 +172,8 @@ namespace setup::task
         return TaskType{
             .output_path = js.at("output_path").template get<std::string>(),
             .ref = reference::get(ctx.references, js.at("ref").template get<std::string>()),
-            .tx = antenna::get(ctx.antennas, js.at("tx").template get<std::string>()),
-            .rx = antenna::get(ctx.antennas, js.at("rx").template get<std::string>()),
+            .tx = components::antenna::get(ctx.antennas, js.at("tx").template get<std::string>()),
+            .rx = components::antenna::get(ctx.antennas, js.at("rx").template get<std::string>()),
             .tx_codebook = js.at("tx_codebook").template get<std::vector<std::string>>(),
             .rx_codebook = js.at("rx_codebook").template get<std::vector<std::string>>(),
             .geo = geometry::get(ctx.geometries, js.at("geo").template get<std::string>()),
@@ -190,8 +190,8 @@ namespace setup::task
             {"type", name},
             {"output_path", output_path},
             {"ref", ref.id},
-            {"tx", antenna::get_id(tx)},
-            {"rx", antenna::get_id(rx)},
+            {"tx", components::antenna::get_id(tx)},
+            {"rx", components::antenna::get_id(rx)},
             {"tx_codebook", tx_codebook},
             {"rx_codebook", rx_codebook},
             {"geo", geometry::get_id(geo)},
@@ -227,8 +227,8 @@ namespace setup::task
         return TaskType{
             .output_path = js.at("output_path").template get<std::string>(),
             .ref = reference::get(ctx.references, js.at("ref").template get<std::string>()),
-            .tx = antenna::get(ctx.antennas, js.at("tx").template get<std::string>()),
-            .rx = antenna::get(ctx.antennas, js.at("rx").template get<std::string>()),
+            .tx = components::antenna::get(ctx.antennas, js.at("tx").template get<std::string>()),
+            .rx = components::antenna::get(ctx.antennas, js.at("rx").template get<std::string>()),
             .tx_codebook = js.at("tx_codebook").template get<std::vector<std::string>>(),
             .rx_codebook = js.at("rx_codebook").template get<std::vector<std::string>>(),
             .curve = geometry::curve::get(ctx.geometries, js.at("curve").template get<std::string>()),
@@ -245,8 +245,8 @@ namespace setup::task
             {"type", name},
             {"output_path", output_path},
             {"ref", ref.id},
-            {"tx", antenna::get_id(tx)},
-            {"rx", antenna::get_id(rx)},
+            {"tx", components::antenna::get_id(tx)},
+            {"rx", components::antenna::get_id(rx)},
             {"tx_codebook", tx_codebook},
             {"rx_codebook", rx_codebook},
             {"curve", geometry::get_id(curve)},

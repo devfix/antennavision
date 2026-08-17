@@ -32,11 +32,11 @@ namespace setup::task
         void to_json(JsonType& js) const;
 
         std::filesystem::path output_path;
-        antenna::Antenna const& tx;
+        components::Antenna const& tx;
         double wavelength;
         sweep::Sweep sweep_azimuth;
 
-        [[nodiscard]] std::string id() const { return std::format("{}.{}.{}", name, antenna::get_id(tx), sweep::get_id(sweep_azimuth)); }
+        [[nodiscard]] std::string id() const { return std::format("{}.{}.{}", name, components::antenna::get_id(tx), sweep::get_id(sweep_azimuth)); }
     };
 
     struct VoltGainOverPoints
@@ -50,8 +50,8 @@ namespace setup::task
 
         std::filesystem::path output_path;
         reference::Reference const& ref;
-        antenna::Antenna const& tx;
-        antenna::Antenna const& rx;
+        components::Antenna const& tx;
+        components::Antenna const& rx;
         std::vector<std::string> tx_codebook;
         std::vector<std::string> rx_codebook;
         std::vector<Pos> points;
@@ -62,8 +62,8 @@ namespace setup::task
             return std::format("{}.{}.{}.{}.{}.{:06.0f}",
                 name,
                 reference::get_id(ref),
-                antenna::get_id(tx),
-                antenna::get_id(rx),
+                components::antenna::get_id(tx),
+                components::antenna::get_id(rx),
                 points.size(),
                 wavelength * 1e6);
         }
@@ -80,8 +80,8 @@ namespace setup::task
 
         std::filesystem::path output_path;
         reference::Reference const& ref;
-        antenna::Antenna const& tx;
-        antenna::Antenna const& rx;
+        components::Antenna const& tx;
+        components::Antenna const& rx;
         std::vector<std::string> tx_codebook;
         std::vector<std::string> rx_codebook;
         geometry::Geometry const& geo;
@@ -94,8 +94,8 @@ namespace setup::task
             return std::format("{}.{}.{}.{}.{}.{}.{}.{:06.0f}",
                 name,
                 reference::get_id(ref),
-                antenna::get_id(tx),
-                antenna::get_id(rx),
+                components::antenna::get_id(tx),
+                components::antenna::get_id(rx),
                 geometry::get_id(geo),
                 n_dim1,
                 n_dim2,
@@ -114,8 +114,8 @@ namespace setup::task
 
         std::filesystem::path output_path;
         reference::Reference const& ref;
-        antenna::Antenna const& tx;
-        antenna::Antenna const& rx;
+        components::Antenna const& tx;
+        components::Antenna const& rx;
         std::vector<std::string> tx_codebook;
         std::vector<std::string> rx_codebook;
         geometry::Geometry geo;
@@ -128,8 +128,8 @@ namespace setup::task
             return std::format("{}.{}.{}.{}.{}.{}.{}",
                 name,
                 reference::get_id(ref),
-                antenna::get_id(tx),
-                antenna::get_id(rx),
+                components::antenna::get_id(tx),
+                components::antenna::get_id(rx),
                 geometry::get_id(geo),
                 n_dim1,
                 n_dim2,
@@ -148,8 +148,8 @@ namespace setup::task
 
         std::filesystem::path output_path;
         reference::Reference const& ref;
-        antenna::Antenna const& tx;
-        antenna::Antenna const& rx;
+        components::Antenna const& tx;
+        components::Antenna const& rx;
         std::vector<std::string> tx_codebook;
         std::vector<std::string> rx_codebook;
         geometry::Curve curve;
@@ -162,8 +162,8 @@ namespace setup::task
             return std::format("{}.{}.{}.{}.{}.{}.{:03.0f}.{:06.0f}",
                 name,
                 reference::get_id(ref),
-                antenna::get_id(tx),
-                antenna::get_id(rx),
+                components::antenna::get_id(tx),
+                components::antenna::get_id(rx),
                 geometry::get_id(curve),
                 n_scan,
                 ratio * 1e3,

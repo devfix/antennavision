@@ -52,7 +52,7 @@ namespace eval::output
         auto const polar_angles = nc::linspace(0.0, nc::constants::pi, 51);
         auto const azimuths = sweep::get_values(task.sweep_azimuth);
 
-        std::vector<Complex> coeffs(antenna::size(task.tx), 1.0);
+        std::vector<Complex> coeffs(components::antenna::size(task.tx), 1.0);
 
         std::vector<ojson> entries;
         for (auto const azimuth : azimuths)
@@ -64,7 +64,7 @@ namespace eval::output
                 directivities.begin(),
                 [&](double polar)
                 {
-                    return antenna::calc_directivity_from_spherical(task.tx, polar, azimuth, task.wavelength, coeffs, sim_params);
+                    return components::antenna::calc_directivity_from_spherical(task.tx, polar, azimuth, task.wavelength, coeffs, sim_params);
                 } //
             );
             js_entry["azimuth"] = azimuth;

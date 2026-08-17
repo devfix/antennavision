@@ -41,7 +41,7 @@ namespace
      * @param ant antenna, used to determine correct vector size
      * @return vector of ones
      */
-    std::vector<Complex> uc(antenna::Antenna const& ant) { return std::vector<Complex>(antenna::size(ant), 1.0); }
+    std::vector<Complex> uc(components::Antenna const& ant) { return std::vector<Complex>(components::antenna::size(ant), 1.0); }
 
     double normalize(ComplexArray& values)
     {

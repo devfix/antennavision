@@ -21,7 +21,7 @@ namespace
      * @param ant antenna, used to determine correct vector size
      * @return vector of ones
      */
-    std::vector<Complex> uc(antenna::Antenna const& ant) { return std::vector<Complex>(antenna::size(ant), 1.0); }
+    std::vector<Complex> uc(components::Antenna const& ant) { return std::vector<Complex>(components::antenna::size(ant), 1.0); }
 } // namespace
 
 TEST_CASE("ULA position and rotation", "[TestULA]")
@@ -61,7 +61,7 @@ TEST_CASE("ULA position and rotation", "[TestULA]")
 )JSON");
     auto su = setup::Setup::from_json(js);
     auto const& wavelength = su.sim_params.system_wavelength;
-    auto const& ula = antenna::cast<UniformLinearArray>(su.get_antenna("ula1"));
+    auto const& ula = components::antenna::cast<components::RadiatorArray>(su.get_antenna("ula1"));
 
     // check ULA element references
     for (std::size_t i = 0; i < 8; i++)
@@ -149,7 +149,7 @@ TEST_CASE("ULA gain", "[TestULA]")
     {
         double const f = static_cast<double>(k) / static_cast<double>(n_points - 1);
         const_cast<Pos&>(ref_start.pos) = ref_start_initial.pos + pos_delta * f; // TODO user better approach than const_cast
-        gains.at(k) = antenna::calc_voltage_gain(tx, rx, su.sim_params.system_wavelength, uc(tx), uc(rx), su.sim_params);
+        gains.at(k) = components::antenna::calc_voltage_gain(tx, rx, su.sim_params.system_wavelength, uc(tx), uc(rx), su.sim_params);
         distances.at(k) = *distance_ptr;
     }
     const_cast<Pos&>(ref_start.pos) = ref_start_initial.pos; // TODO user better approach than const_cast
@@ -232,7 +232,7 @@ TEST_CASE("ULA gain using ScalarField", "[TestULA]")
     reference::Reference const& ref_stop = su.get_reference("ref_rx_stop");
     auto voltage_field = eval::RxVoltageField(tx, rx, uc(tx), uc(rx), su.sim_params);
 
-    Pos const pos_start = antenna::get_origin(rx)->global_pos();
+    Pos const pos_start = components::antenna::get_origin(rx)->global_pos();
     Pos const pos_end = ref_stop.global_pos();
 
     geometry::Line line("", pos_start, pos_end);

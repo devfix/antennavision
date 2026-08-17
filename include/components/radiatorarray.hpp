@@ -4,31 +4,60 @@
 
 #pragma once
 
-#include "codebook.hpp"
 #include "components/radiator.hpp"
+#include "reference.hpp"
 
-enum struct RadiatorArrayType
+namespace components
 {
-    CustomArray = 0,
-    UniformLinearArray = 1,
-    UniformPlanarArray = 2,
-};
+    struct RadiatorArray
+    {
+        enum struct Type
+        {
+            CustomArray = 0,
+            UniformLinearArray = 1,
+            UniformPlanarArray = 2,
+            UniformCircularArray = 3,
+        };
 
-/**
- * @brief Base class implementing the Curiously Recurring Template Pattern (CRTP). The derived classes are of Aggregate Type.
- * @tparam Derived The derived class extending this CRTP base.
- */
-template <typename Derived>
-struct RadiatorArray
-{
-    // RadiatorArray(std::string_view const id, std::string const& origin_id, std::vector<Radiator>&& elements, std::vector<complex_t>&& coefficients) :
-    //     id(id), origin_id(origin_id), size(elements.size()), elements(std::move(elements)), coefficients(std::move(coefficients))
-    // {}
+        struct UniformLinearParameters
+        {
+            double spacing;
+            std::size_t size;
+        };
 
-    RadiatorArrayType type = RadiatorArrayType::CustomArray;
-    std::string id{};
-    std::string origin_id{};
-    std::vector<reference::Reference> references{};
-    std::vector<Radiator> elements{};
-    reference::Reference* origin{};
-};
+        struct UniformPlanarParameters
+        {
+            double spacing_x;
+            double spacing_y;
+            std::size_t size_x;
+            std::size_t size_y;
+        };
+
+        using Parameters = std::variant<UniformLinearParameters, UniformPlanarParameters>;
+
+        struct Desciptor
+        {
+            Type type;
+            std::string const& id;
+            std::string origin_id;
+            Quaternion rot;
+            Radiator::Descriptor prototype_desc;
+            Parameters parameters;
+        };
+
+        [[nodiscard]] static RadiatorArray create_ula(Desciptor const& desc);
+        [[nodiscard]] static RadiatorArray create_upa(Desciptor const& desc);
+
+        [[nodiscard]] static RadiatorArray create(Desciptor const& desc);
+
+        [[nodiscard]] reference::Reference const& get_reference(std::size_t idx_x, std::size_t idx_y = 0) const;
+
+        Type type = Type::CustomArray;
+        std::string id;
+        std::string origin_id;
+        std::vector<reference::Reference> references;
+        std::vector<Radiator> elements;
+        reference::Reference* origin;
+        Parameters params;
+    };
+} // namespace components

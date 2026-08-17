@@ -57,7 +57,7 @@ namespace
         double const k = 2.0 * pi / wavelength; // wave number
 
         // Far field magnitude/phase term for E_theta
-        Complex const E_theta_mag = j * Z0 * (k * i_exc * Radiator::HERTZIAN_DIPOLE_LENGTH) / (4.0 * pi * r) * std::exp(-j * k * r) * std::sin(theta);
+        Complex const E_theta_mag = j * Z0 * (k * i_exc * components::Radiator::HERTZIAN_DIPOLE_LENGTH) / (4.0 * pi * r) * std::exp(-j * k * r) * std::sin(theta);
 
         // Convert spherical unit vector e_theta to Cartesian coordinates
         return nc::dot(math::get_rot_mat_from_spherical(theta, phi), math::vec<Complex>(0, E_theta_mag, 0));
@@ -68,8 +68,8 @@ TEST_CASE("Electric Field: Z-Directed Hertzian Dipole in the Far-Field", "[radia
 {
     // Hertzian Dipole aligned with z-axis, placed in the origin
     reference::Reference origin_ref{.id = "origin_ref"};
-    antenna::Antenna ant = Radiator::HertzianDipole::create("dipole_tx", "origin_ref");
-    antenna::rebind_origin_pointers({ant}, {origin_ref});
+    components::Antenna ant = components::Radiator::HertzianDipole::create("dipole_tx", "origin_ref");
+    components::antenna::rebind_origin_pointers({ant}, {origin_ref});
 
     for (auto const& pt : target_points)
     {
@@ -77,7 +77,7 @@ TEST_CASE("Electric Field: Z-Directed Hertzian Dipole in the Far-Field", "[radia
         {
             Pos const pos_cartesian = math::cartesian_from_spherical_pos(pt.r, pt.theta, pt.phi);
             Vec const field_expected = calc_analytical_hertzian_far_field(pt.r, pt.theta, pt.phi, wavelength, i_exc);
-            Vec const field_actual = antenna::calc_electrical_field(ant, pos_cartesian, i_exc, wavelength, std::span{&coeff, 1}, sim_params);
+            Vec const field_actual = components::antenna::calc_electrical_field(ant, pos_cartesian, i_exc, wavelength, std::span{&coeff, 1}, sim_params);
 
             // Compare Magnitude
             double const mag_expected = std::abs(nc::norm(field_expected).item());
@@ -114,18 +114,18 @@ TEST_CASE("Electric Field: Superposition of Z-Directed Hertzian Dipoles in the F
         reference::Reference{.id = "ref3", .pos = {0, 0, wavelength}} //
     };
     std::vector elements = {
-        Radiator::HertzianDipole::create("tx1", "ref1"),
-        Radiator::HertzianDipole::create("tx2", "ref2"),
-        Radiator::HertzianDipole::create("tx3", "ref3") //
+        components::Radiator::HertzianDipole::create("tx1", "ref1"),
+        components::Radiator::HertzianDipole::create("tx2", "ref2"),
+        components::Radiator::HertzianDipole::create("tx3", "ref3") //
     };
-    antenna::Antenna ant = CustomArray{{
-        .type = RadiatorArrayType::CustomArray,
+    components::Antenna ant = components::RadiatorArray{
+        .type = components::RadiatorArray::Type::CustomArray,
         .id = "array",
         .origin_id = "",
         .references = references,
         .elements = elements //
-    }};
-    antenna::rebind_origin_pointers({ant}, {});
+    };
+    components::antenna::rebind_origin_pointers({ant}, {});
     std::array<Complex, 3> constexpr coeffs = {1.0, 1.0, 1.0};
 
     for (auto const& pt : target_points)
@@ -140,7 +140,7 @@ TEST_CASE("Electric Field: Superposition of Z-Directed Hertzian Dipoles in the F
                 calc_analytical_hertzian_far_field(pos_spherical0[0], pos_spherical0[1], pos_spherical0[2], wavelength, i_exc) +
                 calc_analytical_hertzian_far_field(pos_spherical1[0], pos_spherical1[1], pos_spherical1[2], wavelength, i_exc) +
                 calc_analytical_hertzian_far_field(pos_spherical2[0], pos_spherical2[1], pos_spherical2[2], wavelength, i_exc);
-            Vec const field_actual = antenna::calc_electrical_field(ant, pos_cartesian, i_exc, wavelength, coeffs, sim_params);
+            Vec const field_actual = components::antenna::calc_electrical_field(ant, pos_cartesian, i_exc, wavelength, coeffs, sim_params);
 
             // Compare Magnitude
             double const mag_expected = std::abs(nc::norm(field_expected).item());

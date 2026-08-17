@@ -6,6 +6,7 @@
 #include <fstream>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <magic_enum/magic_enum.hpp>
 #include <print>
 #include <variant>
 #include "convert.hpp"
@@ -186,9 +187,9 @@ namespace setup
             return std::move(references);
         }
 
-        std::vector<antenna::Antenna> extract_antennas(ojson& js, VarMap const& variables)
+        std::vector<components::Antenna> extract_antennas(ojson& js, VarMap const& variables)
         {
-            std::vector<antenna::Antenna> antennas;
+            std::vector<components::Antenna> antennas;
             if (!js.contains("antennas")) { return std::move(antennas); }
             for (auto& ants_desc = js.at("antennas"); auto& desc : ants_desc)
             { //
@@ -289,7 +290,7 @@ namespace setup
         SimParams sim_params = extract_sim_params(js, variables);
         if (not variables.contains("system_wavelength")) variables["system_wavelength"] = sim_params.system_wavelength;
         std::vector<Reference> references = extract_references(js, variables);
-        std::vector<antenna::Antenna> antennas = extract_antennas(js, variables);
+        std::vector<components::Antenna> antennas = extract_antennas(js, variables);
         std::vector<geometry::Geometry> geometries = extract_geometries(js, variables);
         std::vector<sweep::Sweep> sweeps = extract_sweeps(js, variables);
         Context ctx{
@@ -307,7 +308,7 @@ namespace setup
 
         // crucial: trace all origins by their id and connect the pointers
         reference::resolve_origins(references);
-        antenna::rebind_origin_pointers(antennas, references);
+        components::antenna::rebind_origin_pointers(antennas, references);
 
         return {
             //
@@ -331,7 +332,7 @@ namespace setup
     {
         // crucial: trace all origins by their id and connect the pointers
         reference::resolve_origins(references);
-        antenna::rebind_origin_pointers(antennas, references);
+        components::antenna::rebind_origin_pointers(antennas, references);
     }
 
     void Setup::print_meta() const
@@ -405,15 +406,15 @@ namespace setup
                 [](const auto& a)
                 {
                     using Type = std::decay_t<decltype(a)>;
-                    if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
+                    if constexpr (std::is_same_v<Type, components::RadiatorArray>)
                     {
                         antennavision::logging::info(LOG_NAME, "  * Array '{}' of type {} placed at '{}'", a.id, magic_enum::enum_name(a.type), a.origin_id);
                         for (Reference const& ref : a.references) //
                             print_reference(ref, "    ~ ");
-                        for (Radiator const& el : a.elements) //
+                        for (components::Radiator const& el : a.elements) //
                             std::println("    ~ Element '{}' of type {} placed at '{}'", el.id, magic_enum::enum_name(el.type), el.origin_id);
                     }
-                    else if constexpr (std::is_same_v<Radiator, Type>)
+                    else if constexpr (std::is_same_v<components::Radiator, Type>)
                     {
                         antennavision::logging::info(LOG_NAME,
                             "  * Radiator '{}' of type {} with origin ref '{}'",
@@ -459,7 +460,7 @@ namespace setup
                 0.25 * system_wavelength));
         }
 
-        auto add_radiator = [&container, &system_wavelength](Radiator const& radiator)
+        auto add_radiator = [&container, &system_wavelength](components::Radiator const& radiator)
         {
             auto pos_center = radiator.origin->global_from_local_pos(POS_ZERO);
             double const radiator_length = 0.49 * system_wavelength;
@@ -474,8 +475,8 @@ namespace setup
                 [&](auto const& ant)
                 {
                     using Type = std::decay_t<decltype(ant)>;
-                    if constexpr (std::is_same_v<Type, Radiator>) { add_radiator(ant); }
-                    else if constexpr (std::is_base_of_v<RadiatorArray<Type>, Type>)
+                    if constexpr (std::is_same_v<Type, components::Radiator>) { add_radiator(ant); }
+                    else if constexpr (std::is_same_v<Type, components::RadiatorArray>)
                     {
                         for (auto const& element : ant.elements) { add_radiator(element); }
                     }
@@ -530,11 +531,11 @@ namespace setup
                     else if constexpr (std::is_same_v<TaskType, task::VoltGainOverPoints>)
                     {
                         auto const tx_coeffs = t.tx_codebook.empty() //
-                            ? std::vector<Complex>(antenna::size(t.tx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.tx), 1.0)
                             : get_coeffs_from_codebook(codebooks, t.tx_codebook);
 
                         auto const rx_coeffs = t.rx_codebook.empty() //
-                            ? std::vector<Complex>(antenna::size(t.rx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.rx), 1.0)
                             : get_coeffs_from_codebook(codebooks, t.rx_codebook);
 
                         auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params);
@@ -543,11 +544,11 @@ namespace setup
                     else if constexpr (std::is_same_v<TaskType, task::VoltGainOverGeometry>)
                     {
                         auto const tx_coeffs = t.tx_codebook.empty() //
-                            ? std::vector<Complex>(antenna::size(t.tx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.tx), 1.0)
                             : get_coeffs_from_codebook(codebooks, t.tx_codebook);
 
                         auto const rx_coeffs = t.rx_codebook.empty() //
-                            ? std::vector<Complex>(antenna::size(t.rx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.rx), 1.0)
                             : get_coeffs_from_codebook(codebooks, t.rx_codebook);
 
                         auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params);
@@ -556,11 +557,11 @@ namespace setup
                     else if constexpr (std::is_same_v<TaskType, task::VoltGainOverGeometryAtWavelength>)
                     {
                         auto const tx_coeffs = t.tx_codebook.empty() //
-                            ? std::vector<Complex>(antenna::size(t.tx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.tx), 1.0)
                             : get_coeffs_from_codebook(codebooks, t.tx_codebook);
 
                         auto const rx_coeffs = t.rx_codebook.empty() //
-                            ? std::vector<Complex>(antenna::size(t.rx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.rx), 1.0)
                             : get_coeffs_from_codebook(codebooks, t.rx_codebook);
 
                         auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params);
@@ -569,11 +570,11 @@ namespace setup
                     else if constexpr (std::is_same_v<TaskType, task::VoltGainPeakAndCutoffs>)
                     {
                         auto const tx_coeffs = t.tx_codebook.empty() //
-                            ? std::vector<Complex>(antenna::size(t.tx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.tx), 1.0)
                             : get_coeffs_from_codebook(codebooks, t.tx_codebook);
 
                         auto const rx_coeffs = t.rx_codebook.empty() //
-                            ? std::vector<Complex>(antenna::size(t.rx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.rx), 1.0)
                             : get_coeffs_from_codebook(codebooks, t.rx_codebook);
 
                         auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params);
@@ -585,7 +586,7 @@ namespace setup
 
     Reference const& Setup::get_reference(std::string_view id) { return reference::get(std::span<reference::Reference const>(references), id); }
 
-    antenna::Antenna const& Setup::get_antenna(std::string_view id) { return antenna::get(std::span<antenna::Antenna const>(antennas), id); }
+    components::Antenna const& Setup::get_antenna(std::string_view id) { return components::antenna::get(std::span<components::Antenna const>(antennas), id); }
 
     Context Setup::get_context() const
     {

@@ -4,24 +4,23 @@
 
 #pragma once
 #include <ranges>
-
 #include "components/antenna.hpp"
 #include "eval/scalarfield.hpp"
-#include "appparams.hpp"
 
 namespace eval
 {
-
     struct RxVoltageField : ComplexScalarField<RxVoltageField>
     {
+        using Antenna = components::Antenna;
+
         struct Context : ComplexScalarField<RxVoltageField>::Context<Context>
         {
             [[nodiscard]] explicit Context(RxVoltageField const& field, double wavelength) :
                 field(field), rx_(field.rx_), wavelength_(wavelength), sim_params_(field.sim_params)
             {
-                for (const auto* origin = antenna::get_origin(rx_); origin; origin = origin->origin) references_.push_back(*origin);
+                for (const auto* origin = components::antenna::get_origin(rx_); origin; origin = origin->origin) references_.push_back(*origin);
                 reconcile();
-                rx_origin_ = antenna::get_origin(rx_);
+                rx_origin_ = components::antenna::get_origin(rx_);
             }
 
             Context(Context const&) = delete;
@@ -32,18 +31,18 @@ namespace eval
             [[nodiscard]] Complex eval(Pos const& pos) const
             {
                 rx_origin_->pos = pos;
-                return antenna::calc_voltage_gain(field.tx_, rx_, wavelength_, field.tx_coeffs_, field.rx_coeffs_, sim_params_);
+                return components::antenna::calc_voltage_gain(field.tx_, rx_, wavelength_, field.tx_coeffs_, field.rx_coeffs_, sim_params_);
             }
 
         private:
             void reconcile()
             {
                 reference::resolve_origins(references_);
-                antenna::rebind_origin_pointers(std::span(&rx_, 1), references_);
+                components::antenna::rebind_origin_pointers(std::span(&rx_, 1), references_);
             }
 
             RxVoltageField const& field;
-            antenna::Antenna rx_; /// copy of the rx antenna
+            Antenna rx_; /// copy of the rx antenna
             double const wavelength_;
             setup::SimParams const& sim_params_;
             std::vector<reference::Reference> references_;
@@ -51,8 +50,8 @@ namespace eval
         };
 
         [[nodiscard]] RxVoltageField( //
-            antenna::Antenna const& tx,
-            antenna::Antenna const& rx,
+            Antenna const& tx,
+            Antenna const& rx,
             std::span<Complex const> tx_coeffs,
             std::span<Complex const> rx_coeffs,
             setup::SimParams const& sim_params //
@@ -62,8 +61,8 @@ namespace eval
         { sim_params.assert_integrity(); }
 
     private:
-        antenna::Antenna const& tx_;
-        antenna::Antenna const& rx_;
+        Antenna const& tx_;
+        Antenna const& rx_;
         std::vector<Complex> tx_coeffs_;
         std::vector<Complex> rx_coeffs_;
     };
