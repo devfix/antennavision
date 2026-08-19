@@ -50,7 +50,8 @@ namespace components
 
         [[nodiscard]] static RadiatorArray create(Desciptor const& desc);
 
-        [[nodiscard]] reference::Reference const& get_reference(std::size_t idx_x, std::size_t idx_y = 0) const;
+        [[nodiscard]] reference::Reference const& get_origin(std::size_t idx_x, std::size_t idx_y = 0) const;
+        [[nodiscard]] Radiator const& get_element(std::size_t idx_x, std::size_t idx_y = 0) const;
 
         Type type = Type::CustomArray;
         std::string id;

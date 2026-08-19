@@ -126,15 +126,15 @@ function load_scene() {
 
     // 1. Setup Scene, Camera, and Renderer
     const scene = new THREE.Scene();
-    scene.add(new THREE.AmbientLight(0x666666)); // Soft ambient light
+    scene.add(new THREE.AmbientLight(0xffffff)); // ambient light
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(10, 20, 15);
-    scene.add(dirLight);
+    //const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    //dirLight.position.set(10, 20, 15);
+    //scene.add(dirLight);
 
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.001, 1000);
     camera.up.set(0, 0, 1);  // Set the camera's up vector to Z BEFORE initializing OrbitControls
-    camera.position.set(10, 0, 0);
+    camera.position.set(0, 0, 0.1);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -143,7 +143,7 @@ function load_scene() {
     // 2. Add Controls and Helpers
     const controls = new OrbitControls(camera, renderer.domElement);
 
-    const gridHelper = new THREE.GridHelper(1000, 1000, 0xff0000, 0x444444);
+    const gridHelper = new THREE.GridHelper(100, 100, 0xff0000, 0x444444);
     gridHelper.rotation.x = Math.PI / 2;  // Rotate the grid 90 degrees (Math.PI / 2) around X-axis to lay flat on the X-Y plane
     scene.add(gridHelper); // Visual ground plane reference
 

@@ -133,9 +133,9 @@ TEST_CASE("Electric Field: Superposition of Z-Directed Hertzian Dipoles in the F
         SECTION(pt.name)
         {
             Pos const pos_cartesian = math::cartesian_from_spherical_pos(pt.r, pt.theta, pt.phi);
-            auto pos_spherical0 = math::spherical_from_cartesian_pos<std::array<double, 3>>(pos_cartesian - references[0].pos);
-            auto pos_spherical1 = math::spherical_from_cartesian_pos<std::array<double, 3>>(pos_cartesian - references[1].pos);
-            auto pos_spherical2 = math::spherical_from_cartesian_pos<std::array<double, 3>>(pos_cartesian - references[2].pos);
+            auto pos_spherical0 = math::spherical_from_cartesian_pos(pos_cartesian - references[0].pos);
+            auto pos_spherical1 = math::spherical_from_cartesian_pos(pos_cartesian - references[1].pos);
+            auto pos_spherical2 = math::spherical_from_cartesian_pos(pos_cartesian - references[2].pos);
             Vec const field_expected = //
                 calc_analytical_hertzian_far_field(pos_spherical0[0], pos_spherical0[1], pos_spherical0[2], wavelength, i_exc) +
                 calc_analytical_hertzian_far_field(pos_spherical1[0], pos_spherical1[1], pos_spherical1[2], wavelength, i_exc) +

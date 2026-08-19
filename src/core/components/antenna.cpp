@@ -391,7 +391,7 @@ namespace components::antenna
         std::span<Complex const> coeffs,
         setup::SimParams const& sim_params)
     {
-        auto const [r, polar, azimuth] = math::spherical_from_cartesian_pos<std::array<double, 3>>(pos_local);
+        auto const [r, polar, azimuth] = math::spherical_from_cartesian_pos(pos_local);
         return calc_directivity_from_spherical(ant, polar, azimuth, wavelength, coeffs, sim_params);
     }
 

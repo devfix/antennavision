@@ -6,6 +6,7 @@
 
 #include <vector>
 #include "color.hpp"
+#include "context.hpp"
 #include "setup/geometry.hpp"
 #include "types/json.hpp"
 #include "types/math.hpp"
@@ -31,4 +32,6 @@ namespace three
     [[nodiscard]] std::vector<json> create_arrow(Pos const& pos_start, Pos const& pos_end, double len_head, double radius_line, double radius_head, Color color = Color::white);
     [[nodiscard]] std::vector<json> create_coordinate_arrows(Pos const& pos_center, Pos const& dir_x, Pos const& dir_y, Pos const& dir_z, double len_arrow);
     [[nodiscard]] std::vector<json> export_geometry(geometry::Geometry const& geo);
+
+    void export_context(Context const& ctx, double system_wavelength, std::filesystem::path const& path_objects);
 } // namespace three

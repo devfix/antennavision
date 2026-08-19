@@ -39,7 +39,7 @@ namespace math
     [[nodiscard]] Complex constexpr complex_from_polar(double const mag, double const phi) { return {mag * std::cos(phi), mag * std::sin(phi)}; }
 
     template <typename T>
-    [[nodiscard]] T constexpr spherical_from_cartesian_pos(Pos const& pos)
+    [[nodiscard]] constexpr T spherical_from_cartesian_pos_impl(Pos const& pos)
     {
         double const r = std::hypot(pos.x, pos.y, pos.z);
         if (r < NUMERICAL_MARGIN) { return {0, 0, 0}; }
@@ -47,6 +47,11 @@ namespace math
         double const polar = std::atan2(rho, pos.z);
         double const azimuth = std::atan2(pos.y, pos.x);
         return {r, polar, azimuth};
+    }
+
+    [[nodiscard]] constexpr std::array<double, 3> spherical_from_cartesian_pos(Pos const& pos)
+    {
+       return spherical_from_cartesian_pos_impl<std::array<double, 3>>(pos);
     }
 
     template <typename T>
@@ -97,7 +102,7 @@ namespace math
 
     [[nodiscard]] RealArray constexpr get_rot_mat_from_cartesian(Pos const& pos_local)
     {
-        auto const [r, polar, azimuth] = spherical_from_cartesian_pos<std::array<double, 3>>(pos_local);
+        auto const [r, polar, azimuth] = spherical_from_cartesian_pos_impl<std::array<double, 3>>(pos_local);
         return get_rot_mat_from_spherical(polar, azimuth);
     }
 

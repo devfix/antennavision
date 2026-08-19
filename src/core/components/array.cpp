@@ -92,6 +92,7 @@ namespace components
             .id = desc.id,
             .origin_id = desc.origin_id,
             .references = std::move(references),
+            .elements = std::move(elements),
             .params = params //
         };
     }
@@ -109,24 +110,27 @@ namespace components
         }
     }
 
-    reference::Reference const& RadiatorArray::get_reference(std::size_t idx_x, std::size_t idx_y) const
+    reference::Reference const& RadiatorArray::get_origin(std::size_t idx_x, std::size_t idx_y) const
+    {
+        auto &element = get_element(idx_x, idx_y);
+        if (not element.origin) throw SimulationError("Radiator array element '{}' has unconfigured origin '{}'", element.id, element.origin_id);
+        return *element.origin;
+    }
+
+    Radiator const& RadiatorArray::get_element(std::size_t idx_x, std::size_t idx_y) const
     {
         switch (type)
         {
             case Type::CustomArray: [[fallthrough]];
             case Type::UniformLinearArray:
             {
-                if (idx_y != 0) throw SimulationError("RadiatorArray has no y-dimension");
-                auto const ptr = elements.at(idx_x).origin;
-                if (!ptr) { throw SimulationError("Element {} in RadiatorArray '{}' has unconfigured origin", idx_x, id); }
-                return *ptr;
+                if (idx_y != 0) throw SimulationError("Radiator array has no y-dimension and requires y=0");
+                return elements.at(idx_x);
             }
             case Type::UniformPlanarArray:
             {
                 auto const& upa = std::get<UniformPlanarParameters>(params);
-                auto const ptr = elements.at(idx_y * upa.size_x + idx_x).origin;
-                if (!ptr) { throw SimulationError("Element {}:{} in UniformPlanarArray '{}' has unconfigured origin", idx_x, idx_y, id); }
-                return *ptr;
+                return elements.at(idx_y * upa.size_x + idx_x);
             }
             default: throw SimulationError("Invalid radiator array type");
         }

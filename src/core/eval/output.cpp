@@ -26,7 +26,7 @@ namespace eval::output
                 positions_spherical.begin(),
                 [&ref](Pos const& pos) -> Pos
                 {
-                    return math::spherical_from_cartesian_pos<Pos>(ref.local_from_global_pos(pos));
+                    return math::spherical_from_cartesian_pos_impl<Pos>(ref.local_from_global_pos(pos));
                 } //
             );
             return positions_spherical;

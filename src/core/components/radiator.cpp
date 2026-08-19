@@ -114,7 +114,7 @@ namespace components
 
     Vec Radiator::get_elv_spherical_from_cartesian(Pos const& pos_local, double wavelength) const
     {
-        auto const [r, polar, azimuth] = math::spherical_from_cartesian_pos<std::array<double, 3>>(pos_local);
+        auto const [r, polar, azimuth] = math::spherical_from_cartesian_pos(pos_local);
         return elv_spherical(polar, azimuth, wavelength);
     }
 

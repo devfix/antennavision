@@ -443,52 +443,7 @@ namespace setup
 
     void Setup::export_to_three(std::filesystem::path const& path_objects) const
     {
-        auto const& system_wavelength = sim_params.system_wavelength;
-
-        three::Container container;
-        for (auto const& reference : references)
-        {
-            if (!reference.origin) { continue; } // we skip the dummy reference
-            auto const pos_center = reference.global_from_local_pos(POS_ZERO);
-            auto const pos_origin = reference.origin->global_from_local_pos(POS_ZERO);
-            // auto const distance = (pos_center - pos_origin).norm();
-            container.add(three::make_line(pos_origin, pos_center, 1.0, Color::white));
-            container.add(three::create_coordinate_arrows(pos_center,
-                reference.global_from_local_pos({1, 0, 0}) - pos_center,
-                reference.global_from_local_pos({0, 1, 0}) - pos_center,
-                reference.global_from_local_pos({0, 0, 1}) - pos_center,
-                0.25 * system_wavelength));
-        }
-
-        auto add_radiator = [&container, &system_wavelength](components::Radiator const& radiator)
-        {
-            auto pos_center = radiator.origin->global_from_local_pos(POS_ZERO);
-            double const radiator_length = 0.49 * system_wavelength;
-            auto pos_end = radiator.origin->global_from_local_pos({0.0, 0.0, 0.5 * radiator_length});
-            auto const pos_start = pos_center - (pos_end - pos_center);
-            double const radius = 0.1 * radiator_length;
-            container.add(three::make_cylinder(pos_start, pos_end, radius, radius));
-        };
-        for (auto const& ant : antennas)
-        {
-            ant.visit(
-                [&](auto const& ant)
-                {
-                    using Type = std::decay_t<decltype(ant)>;
-                    if constexpr (std::is_same_v<Type, components::Radiator>) { add_radiator(ant); }
-                    else if constexpr (std::is_same_v<Type, components::RadiatorArray>)
-                    {
-                        for (auto const& element : ant.elements) { add_radiator(element); }
-                    }
-                    else
-                    {
-                        throw SimulationError("Invalid antenna type");
-                    }
-                });
-        }
-
-        for (auto const& geo : geometries) container.add(three::export_geometry(geo));
-        container.export_to_javascript(path_objects);
+        three::export_context(get_context(), sim_params.system_wavelength, path_objects);
         antennavision::logging::info(LOG_NAME, "Exported objects to {}", path_objects.string());
     }
 
