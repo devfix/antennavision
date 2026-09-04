@@ -103,7 +103,7 @@ endif ()
 FetchContent_Declare(
         exprtk
         GIT_REPOSITORY https://github.com/ArashPartow/exprtk.git
-        GIT_TAG 66883f0ddb034371ef38f2799f772c05bc904571
+        GIT_TAG 1e4a80b5ec9b4832ed59c6faa65f625a01b18ef0
         GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(exprtk)
