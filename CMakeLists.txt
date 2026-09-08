@@ -54,11 +54,6 @@ if (BUILD_ALL_SHARED)
     # Force non-interface targets to build as SHARED
     set(BUILD_SHARED_LIBS ON CACHE BOOL "Build all libraries as shared" FORCE)
 
-    #  Output ALL targets (executables & .so files) into the same bin/ directory
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-
     #  Configure RPATH so the linker finds .so files next to the binary at runtime
     if (NOT WIN32)
         set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
@@ -74,6 +69,12 @@ else ()
     # static dependency linkage
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 endif ()
+
+
+#  Output ALL targets (executables & .so files) into the same bin/ directory
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 
 ######### Enable CCache if available
@@ -171,4 +172,14 @@ file(GLOB_RECURSE FILES_ULA_CB_PERFORMANCE
         "src/builtin/ula_cb_performance.cpp"
 )
 make_exe(ula_cb_performance ${FILES_ULA_CB_PERFORMANCE})
+#########
+
+
+######### target: ula_sfc_performance
+file(GLOB_RECURSE FILES_ULA_SFC_PERFORMANCE
+        CONFIGURE_DEPENDS
+        "include/*.hpp"
+        "src/builtin/ula_sfc_performance.cpp"
+)
+make_exe(ula_sfc_performance ${FILES_ULA_SFC_PERFORMANCE})
 #########

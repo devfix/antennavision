@@ -140,12 +140,9 @@ namespace components::antenna
         void resolve_origin_impl(Antenna& ant, std::span<Reference*> refs)
         {
             auto origin_id = get_origin_id(ant);
-            if (not origin_id.empty()) // TODO is this safe?
-            {
-                auto const it = std::ranges::find(refs, origin_id, [](Reference* ref) -> std::string const& { return ref->id; });
-                if (it == refs.end()) { throw SimulationError("Antenna '{}' has non-existing origin '{}'", get_id(ant), origin_id); }
-                get_origin(ant) = *it;
-            }
+            auto const it = std::ranges::find(refs, origin_id, [](Reference* ref) -> std::string const& { return ref->id; });
+            if (it == refs.end()) { throw SimulationError("Antenna '{}' has non-existing origin '{}'", get_id(ant), origin_id); }
+            get_origin(ant) = *it;
 
             ant.visit(
                 [&refs](auto& a)
