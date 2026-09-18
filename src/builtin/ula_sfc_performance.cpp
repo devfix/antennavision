@@ -209,34 +209,45 @@ int main(int argc, char* argv[])
     double gain_min = static_cast<double>(codebook.ula_size);
     double gain_max = 0;
     PolarPos pos_gain_min{};
+
+    auto progress_steps = static_cast<std::size_t>(std::round(static_cast<double>(number_of_points) / 1000.0));
+
     while (gains.size() < number_of_points)
     {
-        auto [cart_pos, polar_pos] = rs.visit([](auto& space) -> std::pair<Pos, PolarPos> { return space.random_pos(); });
-        ref_rx.pos = cart_pos; // update receiver location
-
-        // std::print("pos: x={:.04f} y={:.04f} z={:.04f}\n", ref_rx.pos.x, ref_rx.pos.y, ref_rx.pos.z);
-        // std::print("r={:.03f} theta={:.03f}\n", polar_pos.r / WAVELENGTH, polar_pos.polar / pi);
-
-        auto beamforming_vector = codebook.get_vector(polar_pos.r / WAVELENGTH, polar_pos.polar);
-
-        auto voltage_gain = antenna::calc_voltage_gain(tx, rx, WAVELENGTH, beamforming_vector, {1}, sim_params);
-
-        if (enable_path_loss)
+        std::print("\033[2K\r{: 5.1f}%", 100.0 * static_cast<double>(gains.size()) / static_cast<double>(number_of_points));
+        std::cout << std::flush;
+        for (std::size_t k = 0; k < progress_steps and gains.size() < number_of_points; k++)
         {
-            auto gain_norm = antenna::calc_voltage_gain(tx_norm, rx, WAVELENGTH, {1}, {1}, sim_params);
-            voltage_gain /= gain_norm;
-        }
-        double gain = math::square(std::abs(voltage_gain)) / static_cast<double>(codebook.ula_size);
-        gain_max = std::max(gain_max, gain);
-        if (gain < gain_min)
-        {
-            gain_min = gain;
-            pos_gain_min = {polar_pos.r / WAVELENGTH, polar_pos.polar};
-        }
+            auto [cart_pos, polar_pos] = rs.visit([](auto& space) -> std::pair<Pos, PolarPos> { return space.random_pos(); });
+            ref_rx.pos = cart_pos; // update receiver location
 
-        // std::cout << "gain: " << gain << '\n';
-        gains.push_back(gain);
+            // std::print("pos: x={:.04f} y={:.04f} z={:.04f}\n", ref_rx.pos.x, ref_rx.pos.y, ref_rx.pos.z);
+            // std::print("r={:.03f} theta={:.03f}\n", polar_pos.r / WAVELENGTH, polar_pos.polar / pi);
+
+            auto beamforming_vector = codebook.get_vector(polar_pos.r / WAVELENGTH, polar_pos.polar);
+
+            auto voltage_gain = antenna::calc_voltage_gain(tx, rx, WAVELENGTH, beamforming_vector, {1}, sim_params);
+
+            if (enable_path_loss)
+            {
+                auto gain_norm = antenna::calc_voltage_gain(tx_norm, rx, WAVELENGTH, {1}, {1}, sim_params);
+                voltage_gain /= gain_norm;
+            }
+            double gain = math::square(std::abs(voltage_gain)) / static_cast<double>(codebook.ula_size);
+            gain_max = std::max(gain_max, gain);
+            if (gain < gain_min)
+            {
+                gain_min = gain;
+                pos_gain_min = {polar_pos.r / WAVELENGTH, polar_pos.polar};
+            }
+
+            // std::cout << "gain: " << gain << '\n';
+            gains.push_back(gain);
+        }
     }
+    std::println("100.0%");
+
+    assert(gains.size() == number_of_points);
 
     std::println("min gain: {:.03f}", gain_min);
     std::println("max gain: {:.03f}", gain_max);

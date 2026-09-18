@@ -133,7 +133,11 @@ namespace components::antenna
         void resolve_origin_impl(Radiator& rad, std::span<Reference*> refs)
         {
             auto const it = std::ranges::find(refs, rad.origin_id, [](Reference* ref) -> std::string const& { return ref->id; });
-            if (it == refs.end()) { throw SimulationError("Radiator '{}' has non-existing origin '{}'", rad.id, rad.origin_id); }
+            if (it == refs.end())
+            {
+                if (rad.origin_id.empty()) { throw SimulationError("Radiator '{}' requires global origin but it was not created", rad.id, rad.origin_id); }
+                throw SimulationError("Radiator '{}' has non-existing origin '{}'", rad.id, rad.origin_id);
+            }
             rad.origin = *it;
         }
 
@@ -141,7 +145,11 @@ namespace components::antenna
         {
             auto origin_id = get_origin_id(ant);
             auto const it = std::ranges::find(refs, origin_id, [](Reference* ref) -> std::string const& { return ref->id; });
-            if (it == refs.end()) { throw SimulationError("Antenna '{}' has non-existing origin '{}'", get_id(ant), origin_id); }
+            if (it == refs.end())
+            {
+                if (origin_id.empty()) { throw SimulationError("Antenna '{}' requires global origin but it was not created", get_id(ant), origin_id); }
+                throw SimulationError("Antenna '{}' has non-existing origin '{}'", get_id(ant), origin_id);
+            }
             get_origin(ant) = *it;
 
             ant.visit(

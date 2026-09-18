@@ -111,8 +111,10 @@ TEST_CASE("Electric Field: Superposition of Z-Directed Hertzian Dipoles in the F
     std::vector<reference::Reference> references{
         reference::Reference{.id = "ref1", .pos = {wavelength, 0, 0}},
         reference::Reference{.id = "ref2", .pos = {0, wavelength, 0}},
-        reference::Reference{.id = "ref3", .pos = {0, 0, wavelength}} //
+        reference::Reference{.id = "ref3", .pos = {0, 0, wavelength}},
+        reference::Reference{}, // global origin
     };
+
     std::vector elements = {
         components::Radiator::HertzianDipole::create("tx1", "ref1"),
         components::Radiator::HertzianDipole::create("tx2", "ref2"),
@@ -122,10 +124,10 @@ TEST_CASE("Electric Field: Superposition of Z-Directed Hertzian Dipoles in the F
         .type = components::RadiatorArray::Type::CustomArray,
         .id = "array",
         .origin_id = "",
-        .references = references,
+        .references = std::vector(references.begin(), references.end() - 1), // skip the global origin, it is not an element reference
         .elements = elements //
     };
-    components::antenna::rebind_origin_pointers({ant}, {});
+    components::antenna::rebind_origin_pointers(std::span{&ant, 1}, references);
     std::array<Complex, 3> constexpr coeffs = {1.0, 1.0, 1.0};
 
     for (auto const& pt : target_points)
