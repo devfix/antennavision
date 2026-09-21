@@ -179,7 +179,7 @@ namespace setup::task
             .geo = geometry::get(ctx.geometries, js.at("geo").template get<std::string>()),
             .n_dim1 = js.at("n_dim1").template get<std::size_t>(),
             .n_dim2 = js.at("n_dim2").template get<std::size_t>(),
-            .sweep_wavelength = sweep::get(ctx.sweeps, js.at("sweep").template get<std::string>()), //
+            .sweep_wavelength = sweep::get(ctx.sweeps, js.at("sweep_wavelength").template get<std::string>()), //
         };
     }
 

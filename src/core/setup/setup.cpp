@@ -485,12 +485,16 @@ namespace setup
                     if constexpr (std::is_same_v<TaskType, task::DirectivityOverPolarAtAzimuth>) { eval::output::directivity_over_polar(t, sim_params); }
                     else if constexpr (std::is_same_v<TaskType, task::VoltGainOverPoints>)
                     {
+                        // default precoder normalization: 1/sqrt(N_tx)
+                        double const pre_factor_tx = 1.0 / std::sqrt(static_cast<double>(components::antenna::size(t.tx)));
                         auto const tx_coeffs = t.tx_codebook.empty() //
-                            ? std::vector<Complex>(components::antenna::size(t.tx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.tx), pre_factor_tx)
                             : get_coeffs_from_codebook(codebooks, t.tx_codebook);
 
+                        // default combiner normalization: 1/sqrt(N_rx)
+                        double const pre_factor_rx = 1.0 / std::sqrt(static_cast<double>(components::antenna::size(t.rx)));
                         auto const rx_coeffs = t.rx_codebook.empty() //
-                            ? std::vector<Complex>(components::antenna::size(t.rx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.rx), pre_factor_rx)
                             : get_coeffs_from_codebook(codebooks, t.rx_codebook);
 
                         auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params);
@@ -498,12 +502,16 @@ namespace setup
                     }
                     else if constexpr (std::is_same_v<TaskType, task::VoltGainOverGeometry>)
                     {
+                        // default precoder normalization: 1/sqrt(N_tx)
+                        double const pre_factor_tx = 1.0 / std::sqrt(static_cast<double>(components::antenna::size(t.tx)));
                         auto const tx_coeffs = t.tx_codebook.empty() //
-                            ? std::vector<Complex>(components::antenna::size(t.tx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.tx), pre_factor_tx)
                             : get_coeffs_from_codebook(codebooks, t.tx_codebook);
 
+                        // default combiner normalization: 1/sqrt(N_rx)
+                        double const pre_factor_rx = 1.0 / std::sqrt(static_cast<double>(components::antenna::size(t.rx)));
                         auto const rx_coeffs = t.rx_codebook.empty() //
-                            ? std::vector<Complex>(components::antenna::size(t.rx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.rx), pre_factor_rx)
                             : get_coeffs_from_codebook(codebooks, t.rx_codebook);
 
                         auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params);
@@ -511,12 +519,16 @@ namespace setup
                     }
                     else if constexpr (std::is_same_v<TaskType, task::VoltGainOverGeometryAtWavelength>)
                     {
+                        // default precoder normalization: 1/sqrt(N_tx)
+                        double const pre_factor_tx = 1.0 / std::sqrt(static_cast<double>(components::antenna::size(t.tx)));
                         auto const tx_coeffs = t.tx_codebook.empty() //
-                            ? std::vector<Complex>(components::antenna::size(t.tx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.tx), pre_factor_tx)
                             : get_coeffs_from_codebook(codebooks, t.tx_codebook);
 
+                        // default combiner normalization: 1/sqrt(N_rx)
+                        double const pre_factor_rx = 1.0 / std::sqrt(static_cast<double>(components::antenna::size(t.rx)));
                         auto const rx_coeffs = t.rx_codebook.empty() //
-                            ? std::vector<Complex>(components::antenna::size(t.rx), 1.0)
+                            ? std::vector<Complex>(components::antenna::size(t.rx), pre_factor_rx)
                             : get_coeffs_from_codebook(codebooks, t.rx_codebook);
 
                         auto const field = eval::RxVoltageField(t.tx, t.rx, tx_coeffs, rx_coeffs, sim_params);

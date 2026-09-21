@@ -388,7 +388,7 @@ namespace eval
                                 local_counter = 0;
 
                                 std::lock_guard lock(print_mutex);
-                                double const p = static_cast<double>(current_total) / static_cast<double>(total_size);
+                                double const p = 100.0 * static_cast<double>(current_total) / static_cast<double>(total_size);
                                 antennavision::logging::log( //
                                     LogLevel::INFO,
                                     LOG_NAME,
@@ -420,7 +420,7 @@ namespace eval
                 // Periodic terminal update without atomic/mutex overhead
                 if (k % N_BATCH_PROGRESS_REPORT == 0)
                 {
-                    double const p = static_cast<double>(k) / static_cast<double>(total_size);
+                    double const p = 100.0 * static_cast<double>(k) / static_cast<double>(total_size);
                     antennavision::logging::log( //
                         LogLevel::INFO,
                         LOG_NAME,

@@ -55,7 +55,7 @@ namespace
         app.add_flag("-a,--antennas", app_params.print_antennas, "Print constructed antennas");
         app.add_flag("-r,--run-tasks", app_params.run_tasks, "Run setup tasks");
         app.add_flag("-f,--force", app_params.force_recomputation, "Force recomputation of all tasks");
-        app.add_option("-s,--setup", app_params.path_setup, "Set path to setups");
+        app.add_option("-s,--setup,setup", app_params.path_setup, "Set path to setup file");
         app.add_option("-o,--objects", app_params.path_objects, "Set path to objects (three) export");
 
         try
