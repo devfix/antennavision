@@ -62,7 +62,7 @@ namespace components
     Vec Radiator::StandingWaveDipole::elv_spherical(double polar, [[maybe_unused]] double azimuth, double wavelength, double dipole_length)
     {
         double x = pi * dipole_length / wavelength;
-        Complex const polar_comp = -wavelength / (pi * std::sin(polar)) * (std::cos(x * std::cos(polar)) - cos(x));
+        Complex const polar_comp = -wavelength / (pi * std::sin(polar)) * (std::cos(x * std::cos(polar)) - std::cos(x));
         return math::vec<Complex>(0, polar_comp, 0);
     }
 

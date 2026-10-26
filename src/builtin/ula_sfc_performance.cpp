@@ -141,6 +141,7 @@ int main(int argc, char* argv[])
     std::println("path result: {}", path_result.string());
 
     auto codebook = codebooks::ULA_SFC::from_file(path_codebook);
+    std::println("ula size: {}", codebook.ula_size);
 
     std::array<Antenna, 3> antennas = {
         RadiatorArray::create({
@@ -221,8 +222,6 @@ int main(int argc, char* argv[])
             auto [cart_pos, polar_pos] = rs.visit([](auto& space) -> std::pair<Pos, PolarPos> { return space.random_pos(); });
             ref_rx.pos = cart_pos; // update receiver location
 
-            // std::print("pos: x={:.04f} y={:.04f} z={:.04f}\n", ref_rx.pos.x, ref_rx.pos.y, ref_rx.pos.z);
-            // std::print("r={:.03f} theta={:.03f}\n", polar_pos.r / WAVELENGTH, polar_pos.polar / pi);
 
             auto beamforming_vector = codebook.get_vector(polar_pos.r / WAVELENGTH, polar_pos.polar);
 
@@ -239,6 +238,14 @@ int main(int argc, char* argv[])
             {
                 gain_min = gain;
                 pos_gain_min = {polar_pos.r / WAVELENGTH, polar_pos.polar};
+            }
+
+            if (gain < 0.5 and false)
+            {
+                std::println("\nlow gain: {:.06f} at", gain);
+                std::println("  pos: x={:.04f} y={:.04f} z={:.04f}", ref_rx.pos.x, ref_rx.pos.y, ref_rx.pos.z);
+                std::println("  r={:.06f} theta={:.06f}", polar_pos.r / WAVELENGTH, polar_pos.polar / pi);
+                std::println("  trp={:.06f} tap={:.06f}", WAVELENGTH / polar_pos.r, std::cos(polar_pos.polar));
             }
 
             // std::cout << "gain: " << gain << '\n';
