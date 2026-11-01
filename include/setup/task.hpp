@@ -13,15 +13,6 @@
 
 namespace setup::task
 {
-    enum struct OutputType
-    {
-        JSON,
-        BSON,
-        CBOR,
-        MSGPACK,
-        UBJSON
-    };
-
     struct DirectivityOverPolarAtAzimuth
     {
         static constexpr std::string_view name = "DirectivityOverPolar@Azimuth";
@@ -185,7 +176,6 @@ namespace setup::task
     template <AnyJson JsonType>
     void to_json(JsonType& js, Task const& task);
 
-    std::optional<OutputType> output_type_from_ext(std::string_view ext);
 
     [[nodiscard]] constexpr std::string_view get_name(Task const& task) noexcept
     {
@@ -197,7 +187,7 @@ namespace setup::task
         return task.visit([](auto const& t) -> std::filesystem::path const& { return t.output_path; });
     }
 
-    [[nodiscard]] OutputType get_output_type(Task const& task);
+    [[nodiscard]] serialization::FileType get_output_type(Task const& task);
 
     [[nodiscard]] constexpr std::string get_id(Task const& task) noexcept
     {

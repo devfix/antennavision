@@ -280,20 +280,10 @@ namespace setup::task
         task.visit([&js](auto const& t) { t.to_json(js); });
     }
 
-    std::optional<OutputType> output_type_from_ext(std::string_view ext)
-    {
-        if (ext == ".json") return OutputType::JSON;
-        if (ext == ".bson") return OutputType::BSON;
-        if (ext == ".cbor") return OutputType::CBOR;
-        if (ext == ".mpk" || ext == ".msgpack") return OutputType::MSGPACK;
-        if (ext == ".ubj" || ext == ".ubjson") return OutputType::UBJSON;
-        return std::nullopt;
-    }
-
-    OutputType get_output_type(Task const& task)
+    serialization::FileType get_output_type(Task const& task)
     {
         auto ext = get_output_path(task).extension().string();
-        auto output_type_opt = output_type_from_ext(ext);
+        auto output_type_opt = serialization::file_type_from_ext(ext);
         if (not output_type_opt) throw SimulationError("Task '{}' has invalid output file type '{}'", get_id(task), ext);
         return output_type_opt.value();
     }

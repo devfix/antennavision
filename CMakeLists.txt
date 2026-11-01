@@ -136,18 +136,6 @@ function(make_exe target_name)
 endfunction()
 
 
-######### target: antennavision
-file(GLOB_RECURSE FILES_CLI
-        CONFIGURE_DEPENDS
-        "include/*.hpp"
-        "src/cli/*.cpp"
-        "src/cli/*.hpp"
-)
-make_exe(antennavision ${FILES_CLI})
-target_link_libraries(antennavision PRIVATE CLI11::CLI11)
-#########
-
-
 ######### target: testrunner
 file(GLOB_RECURSE FILES_TEST
         CONFIGURE_DEPENDS
@@ -165,21 +153,25 @@ catch_discover_tests(testrunner)
 #########
 
 
-######### target: ula_cb_performance
-file(GLOB_RECURSE FILES_ULA_CB_PERFORMANCE
-        CONFIGURE_DEPENDS
-        "include/*.hpp"
-        "src/builtin/ula_cb_performance.cpp"
-)
-make_exe(ula_cb_performance ${FILES_ULA_CB_PERFORMANCE})
-#########
+function(add_cli target)
+    cmake_parse_arguments(ARG "" "" "LIBS" ${ARGN})
+
+    file(GLOB_RECURSE files
+            CONFIGURE_DEPENDS
+            "include/*.hpp"
+            "src/cli/${target}/*.cpp"
+            "src/cli/${target}/*.hpp"
+    )
+
+    make_exe(${target} ${files})
+
+    if(ARG_LIBS)
+        target_link_libraries(${target} PRIVATE ${ARG_LIBS})
+    endif()
+endfunction()
 
 
-######### target: ula_sfc_performance
-file(GLOB_RECURSE FILES_ULA_SFC_PERFORMANCE
-        CONFIGURE_DEPENDS
-        "include/*.hpp"
-        "src/builtin/ula_sfc_performance.cpp"
-)
-make_exe(ula_sfc_performance ${FILES_ULA_SFC_PERFORMANCE})
+######### cli-targets
+add_cli(antennavision LIBS CLI11::CLI11)
+add_cli(ulacodebookperformance LIBS CLI11::CLI11)
 #########

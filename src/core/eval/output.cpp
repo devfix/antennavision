@@ -11,7 +11,6 @@
 
 namespace eval::output
 {
-    using setup::task::OutputType;
     using std::ranges::transform;
 
     namespace
@@ -30,20 +29,6 @@ namespace eval::output
                 } //
             );
             return positions_spherical;
-        }
-
-        template <AnyJson JsonType>
-        void save_result(JsonType const& js, setup::task::Task const& task)
-        {
-            std::ofstream ofs(setup::task::get_output_path(task), std::ios::binary);
-            switch (setup::task::get_output_type(task))
-            {
-                case OutputType::JSON: ofs << js.dump(2) << '\n'; break;
-                case OutputType::BSON: json::to_bson(js, ofs); break;
-                case OutputType::CBOR: json::to_cbor(js, ofs); break;
-                case OutputType::MSGPACK: json::to_msgpack(js, ofs); break;
-                case OutputType::UBJSON: json::to_ubjson(js, ofs); break;
-            }
         }
     } // namespace
 
@@ -77,7 +62,7 @@ namespace eval::output
         js["sweep"] = task.sweep_azimuth;
         js["sim_params"] = sim_params;
         js["data"] = entries;
-        save_result(js, task);
+        serialization::store_file(js, setup::task::get_output_path(task));
     }
 
     namespace voltgain
@@ -97,7 +82,7 @@ namespace eval::output
             js["positions"]["cartesian"] = task.points;
             js["positions"]["spherical"] = calc_positions_spherical(task.ref, positions).toStlVector();
             js["gains"] = gains.toStlVector();
-            save_result(js, task);
+            serialization::store_file(js, setup::task::get_output_path(task));
         }
 
         template <typename T>
@@ -113,7 +98,7 @@ namespace eval::output
             js["positions"]["cartesian"] = positions_cartesian;
             js["positions"]["spherical"] = calc_positions_spherical(task.ref, positions_cartesian);
             js["gains"] = data;
-            save_result(js, task);
+            serialization::store_file(js, setup::task::get_output_path(task));
         }
 
         template <typename T>
@@ -130,7 +115,7 @@ namespace eval::output
             js["positions"]["cartesian"] = positions_cartesian;
             js["positions"]["spherical"] = calc_positions_spherical(task.ref, positions_cartesian);
             js["gains"] = data;
-            save_result(js, task);
+            serialization::store_file(js, setup::task::get_output_path(task));
         }
 
         template <typename T>
@@ -146,7 +131,7 @@ namespace eval::output
             js["pos_peak"] = curve_peak_span.pos_peak;
             js["pos_left"] = curve_peak_span.pos_left;
             js["pos_right"] = curve_peak_span.pos_right;
-            save_result(js, task);
+            serialization::store_file(js, setup::task::get_output_path(task));
         }
     } // namespace voltgain
 

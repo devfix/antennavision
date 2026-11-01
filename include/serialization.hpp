@@ -12,6 +12,24 @@
 
 namespace serialization
 {
+    enum struct FileType
+    {
+        JSON,
+        BSON,
+        CBOR,
+        MSGPACK,
+        UBJSON
+    };
+
+    [[nodiscard]] std::optional<FileType> file_type_from_ext(std::string_view ext);
+    [[nodiscard]] std::string_view ext_from_file_type(FileType output_type);
+
+    template <AnyJson JsonType>
+    JsonType load_file(std::filesystem::path const& path);
+
+    template <AnyJson JsonType>
+    void store_file(JsonType const& js, std::filesystem::path const& path);
+
     struct JsonField
     {
         template <typename T>

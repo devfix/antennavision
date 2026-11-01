@@ -1,6 +1,6 @@
+#include <CLI/CLI.hpp>
 #include <optional>
 #include <ranges>
-#include <CLI/CLI.hpp>
 #include "appparams.hpp"
 #include "bitmap.hpp"
 #include "convert.hpp"

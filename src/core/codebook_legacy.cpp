@@ -2,9 +2,9 @@
 // Created by Tristan Krause on 2026-07-07.
 //
 
-#include "codebook.hpp"
 #include <nlohmann/json.hpp>
 #include <print>
+#include "codebook_legacy.hpp"
 
 #include "math/coords.hpp"
 #include "simulationerror.hpp"

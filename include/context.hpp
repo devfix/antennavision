@@ -3,9 +3,9 @@
 //
 
 #pragma once
+#include "codebook_legacy.hpp"
 #include "components/antenna.hpp"
 #include "reference.hpp"
-#include "codebook.hpp"
 #include "setup/geometry.hpp"
 #include "setup/sweep.hpp"
 #include "types/setup.hpp"
