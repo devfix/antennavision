@@ -14,9 +14,9 @@ struct AppParams
 
     std::string path_codebook{};
     bool enable_path_loss = false;
-    std::size_t n_points = 100'000;
-    std::size_t n_sector_bins = 10;
-    std::size_t n_service_bins = 100;
+    std::size_t n_samples = 100'000;
+    std::size_t n_sector_points = 50;
+    std::size_t n_service_points = 100;
     float sector_ccdf_linear_min = 0.5;
     float sector_ccdf_linear_max= 1.0;
     float sector_ccdf_decibel_min = -3.0;

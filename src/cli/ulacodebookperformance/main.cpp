@@ -25,6 +25,8 @@ using namespace antennavision;
 using namespace components;
 using reference::Reference;
 
+constexpr double ABS_THRESHOLD_TOLERANCE = 0.0001;
+
 // ---- begin ccdf
 namespace
 {
@@ -55,7 +57,7 @@ namespace
         // fraction of gains >= threshold (linear)
         auto const ccdf = [&gains](double threshold)
         {
-            auto const first = std::ranges::lower_bound(gains, threshold);
+            auto const first = std::ranges::lower_bound(gains, threshold - ABS_THRESHOLD_TOLERANCE);
             return static_cast<double>(gains.end() - first) / static_cast<double>(gains.size());
         };
 
@@ -131,14 +133,6 @@ int main(int argc, char* argv[])
             ) //
     };
     antenna::rebind_origin_pointers(antennas, references);
-    // Context ctx{
-    //     .codebooks = {},
-    //     .variables = {},
-    //     .references = references,
-    //     .antennas = antennas,
-    //     .geometries = {},
-    //     .sweeps = {} //
-    // };
     setup::SimParams sim_params{.system_wavelength = wavelength, .enable_path_loss = params.enable_path_loss};
     Reference& ref_rx = references[1];
 
@@ -159,7 +153,7 @@ int main(int argc, char* argv[])
         return math::square(std::abs(voltage_gain)) / n_elements;
     };
 
-    std::println("Pass 1: Computing Sector CCDF");
+    std::println("Pass 1: Running Sector Simulation");
     std::cout << std::flush;
 
     // ---- sector CCDF: the receiver is placed on every sector center, i.e. in the focal point of its own vector
@@ -179,8 +173,12 @@ int main(int argc, char* argv[])
         }
         assert(sector_gains.size() == codebook.n_sectors());
     }
+
+    std::println("Pass 2: Computing Sector CCDF");
+    std::cout << std::flush;
+
     auto const sector_ccdfs = calc_ccdfs(sector_gains,
-        params.n_sector_bins,
+        params.n_sector_points,
         codebook.power_ratio(),
         params.sector_ccdf_linear_min,
         params.sector_ccdf_linear_max,
@@ -191,23 +189,25 @@ int main(int argc, char* argv[])
     std::println("  gain max={:.6f}", sector_ccdfs.gain_max);
 
     // ---- service CCDF: Monte Carlo simulation at random receiver positions
-    std::println("Pass 2: Computing Service CCDF");
+    std::println("Pass 3: Running Service Simulation");
+    std::cout << std::flush;
+
     RandomSpace rs = PolarNearFieldSpace::create(codebook.n_elements(), wavelength, codebook.amplitude_ratio());
 
     std::vector<double> gains;
-    gains.reserve(params.n_points);
+    gains.reserve(params.n_samples);
 
     std::cout << std::flush;
     double service_gain_min = std::numeric_limits<double>::infinity();
     PolarPos pos_gain_min{};
 
-    auto const progress_steps = std::max<std::size_t>(1, static_cast<std::size_t>(std::round(static_cast<double>(params.n_points) / 1000.0)));
+    auto const progress_steps = std::max<std::size_t>(1, static_cast<std::size_t>(std::round(static_cast<double>(params.n_samples) / 1000.0)));
 
-    while (gains.size() < params.n_points)
+    while (gains.size() < params.n_samples)
     {
-        std::print("Simulating: \033[2K\r{: 5.1f}%", 100.0 * static_cast<double>(gains.size()) / static_cast<double>(params.n_points));
+        std::print("\033[2K\rSimulating: {: 5.1f}%", 100.0 * static_cast<double>(gains.size()) / static_cast<double>(params.n_samples));
         std::cout << std::flush;
-        for (std::size_t k = 0; k < progress_steps and gains.size() < params.n_points; k++)
+        for (std::size_t k = 0; k < progress_steps and gains.size() < params.n_samples; k++)
         {
             auto [cart_pos, polar_pos] = rs.visit([](auto& space) -> std::pair<Pos, PolarPos> { return space.random_pos(); });
 
@@ -220,13 +220,15 @@ int main(int argc, char* argv[])
             gains.push_back(gain);
         }
     }
-    std::println("Simulating: \033[2K\r100.0%");
+    std::println("\033[2K\r");
 
     assert(gains.size() == params.n_points);
 
+    std::println("Pass 4: Computing Service CCDF");
+    std::cout << std::flush;
 
     auto const service_ccdfs = calc_ccdfs(std::move(gains),
-        params.n_service_bins,
+        params.n_service_points,
         codebook.power_ratio(),
         params.service_ccdf_linear_min,
         params.service_ccdf_linear_max,
@@ -240,9 +242,9 @@ int main(int argc, char* argv[])
     // ---- result: the keys are the fields of CodebookPerformanceResult (codebook.py)
     ojson const result = {
         {"enable_path_loss", params.enable_path_loss},
-        {"n_points", params.n_points},
-        {"n_sector_bins", params.n_sector_bins},
-        {"n_service_bins", params.n_service_bins},
+        {"n_samples", params.n_samples},
+        {"n_sector_points", params.n_sector_points},
+        {"n_service_points", params.n_service_points},
         {"sector_ccdf_linear_min", params.sector_ccdf_linear_min},
         {"sector_ccdf_linear_max", params.sector_ccdf_linear_max},
         {"sector_ccdf_decibel_min", params.sector_ccdf_decibel_min},

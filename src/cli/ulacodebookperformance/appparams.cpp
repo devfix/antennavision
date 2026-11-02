@@ -12,9 +12,9 @@ AppParams AppParams::parse(int argc, char* argv[])
     CLI::App app{"Gain statistics of a ULA codebook at random receiver positions"};
     app.add_option("-c,--codebook,codebook", app_params.path_codebook, "Path to the codebook")->required()->check(CLI::ExistingFile);
     app.add_flag("--path-loss", app_params.enable_path_loss, "Enable path loss")->capture_default_str();
-    app.add_option("--n-points", app_params.n_points, "Number of random receiver positions")->check(CLI::PositiveNumber)->capture_default_str();
-    app.add_option("--n-sector-bins", app_params.n_sector_bins, "Number of bins of the sector CCDF")->check(CLI::PositiveNumber)->capture_default_str();
-    app.add_option("--n-service-bins", app_params.n_service_bins, "Number of bins of the service CCDF")->check(CLI::PositiveNumber)->capture_default_str();
+    app.add_option("--n-samples", app_params.n_samples, "Number of random receiver positions")->check(CLI::PositiveNumber)->capture_default_str();
+    app.add_option("--n-sector-points", app_params.n_sector_points, "Number of points of the sector CCDF")->check(CLI::PositiveNumber)->capture_default_str();
+    app.add_option("--n-service-points", app_params.n_service_points, "Number of points of the service CCDF")->check(CLI::PositiveNumber)->capture_default_str();
     app.add_option("--sector-ccdf-linear-min", app_params.sector_ccdf_linear_min, "")->check(CLI::NonNegativeNumber)->capture_default_str();
     app.add_option("--sector-ccdf-linear-max", app_params.sector_ccdf_linear_max, "")->capture_default_str();
     app.add_option("--sector-ccdf-decibel-min", app_params.sector_ccdf_decibel_min, "")->capture_default_str();
@@ -49,9 +49,9 @@ void AppParams::print() const
     std::println("App Parameters:");
     std::println("  path codebook: {}", path_codebook);
     std::println("  enable path loss: {}", enable_path_loss);
-    std::println("  n points: {}", n_points);
-    std::println("  n sector bins: {}", n_sector_bins);
-    std::println("  n service bins: {}", n_service_bins);
+    std::println("  number of samples: {}", n_samples);
+    std::println("  number of sector points: {}", n_sector_points);
+    std::println("  number of service points: {}", n_service_points);
     std::println("  sector ccdf linear min: {}", sector_ccdf_linear_min);
     std::println("  sector ccdf linear max: {}", sector_ccdf_linear_max);
     std::println("  sector ccdf decibel min: {}", sector_ccdf_decibel_min);
