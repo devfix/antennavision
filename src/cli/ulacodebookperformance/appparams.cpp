@@ -23,6 +23,10 @@ AppParams AppParams::parse(int argc, char* argv[])
     app.add_option("--service-ccdf-linear-max", app_params.service_ccdf_linear_max, "")->capture_default_str();
     app.add_option("--service-ccdf-decibel-min", app_params.service_ccdf_decibel_min, "")->capture_default_str();
     app.add_option("--service-ccdf-decibel-max", app_params.service_ccdf_decibel_max, "")->capture_default_str();
+    app.add_option("--n-snr-points", app_params.n_snr_points, "Number of points of the SNR_0 grid of the capacity curves")->check(CLI::PositiveNumber)->capture_default_str();
+    app.add_option("--snr-db-min", app_params.snr_db_min, "Minimum SNR_0 (ideally focused beam) in dB")->capture_default_str();
+    app.add_option("--snr-db-max", app_params.snr_db_max, "Maximum SNR_0 (ideally focused beam) in dB")->capture_default_str();
+    app.add_option("--outage-epsilon", app_params.outage_epsilon, "Outage probability of the outage metrics")->check(CLI::Range(0.0, 1.0))->capture_default_str();
     app.add_option("-r,--result", app_params.path_result, "Path of the result file (.json, otherwise msgpack)")->required();
     app.add_option("-o,--objects", app_params.path_objects, "Set path to objects (three) export")->capture_default_str();
 
@@ -60,6 +64,10 @@ void AppParams::print() const
     std::println("  service ccdf linear max: {}", service_ccdf_linear_max);
     std::println("  service ccdf decibel min: {}", service_ccdf_decibel_min);
     std::println("  service ccdf decibel max: {}", service_ccdf_decibel_max);
+    std::println("  number of snr points: {}", n_snr_points);
+    std::println("  snr db min: {}", snr_db_min);
+    std::println("  snr db max: {}", snr_db_max);
+    std::println("  outage epsilon: {}", outage_epsilon);
     std::println("  path result: {}", path_result);
     std::println("  path objects: {}", path_objects);
 }

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <limits>
 #include <nlohmann/json.hpp>
+#include <numbers>
 #include <print>
 #include <string>
 #include <vector>
@@ -80,6 +81,80 @@ namespace
 } // namespace
 
 // ---- end ccdf
+
+// ---- begin capacity
+namespace
+{
+    /// Gains below this are clipped in -E[log2(eta)], otherwise a single deep null dominates the mean
+    constexpr double ETA_FLOOR = 1e-6;
+
+    /// Capacity metrics of a set of normalized gains eta = G / G_max (single stream, SNR_0 = SNR of an ideally focused beam)
+    struct CapacityMetrics
+    {
+        double mean_eta{}; ///< E[eta]
+        double mean_eta_db{}; ///< 10 log10 E[eta]
+        double delta_c_inf{}; ///< -E[log2 eta] in bit/s/Hz: capacity loss versus ideal focusing for SNR_0 -> infinity
+        double clipped_fraction{}; ///< fraction of the samples below ETA_FLOOR (clipped in delta_c_inf)
+        double eta_outage{}; ///< eps-quantile of eta: exceeded by (1 - eps) of the positions
+        std::vector<double> snr_db; ///< SNR_0 grid in dB
+        std::vector<double> capacity_ideal; ///< log2(1 + SNR_0)
+        std::vector<double> capacity_ergodic; ///< E[log2(1 + SNR_0 eta)]
+        std::vector<double> capacity_outage; ///< log2(1 + SNR_0 eta_outage): rate that (1 - eps) of the positions reach
+        std::vector<double> capacity_efficiency; ///< capacity_ergodic / capacity_ideal
+    };
+
+    /// q-quantile of sorted values, linear interpolation (same as numpy.quantile)
+    double quantile_sorted(std::vector<double> const& sorted, double q)
+    {
+        double const pos = q * static_cast<double>(sorted.size() - 1);
+        auto const lo = static_cast<std::size_t>(std::floor(pos));
+        auto const hi = std::min(lo + 1, sorted.size() - 1);
+        return std::lerp(sorted[lo], sorted[hi], pos - static_cast<double>(lo));
+    }
+
+    CapacityMetrics calc_capacity_metrics(std::vector<double> gains, std::size_t n_snr, double snr_db_min, double snr_db_max, double outage_eps)
+    {
+        if (gains.empty()) throw SimulationError("calc_capacity_metrics: no gains");
+        if (not(outage_eps > 0.0 and outage_eps < 1.0)) throw SimulationError("calc_capacity_metrics: invalid outage epsilon {}", outage_eps);
+        std::ranges::sort(gains);
+        auto const n = static_cast<double>(gains.size());
+        double constexpr ln2 = std::numbers::ln2;
+
+        CapacityMetrics m;
+        double sum_eta = 0.0;
+        double sum_log2 = 0.0;
+        std::size_t n_clipped = 0;
+        for (double g : gains)
+        {
+            sum_eta += g;
+            if (g < ETA_FLOOR) n_clipped++;
+            sum_log2 += std::log2(std::max(g, ETA_FLOOR));
+        }
+        m.mean_eta = sum_eta / n;
+        m.mean_eta_db = 10.0 * std::log10(m.mean_eta);
+        m.delta_c_inf = -sum_log2 / n;
+        m.clipped_fraction = static_cast<double>(n_clipped) / n;
+        m.eta_outage = quantile_sorted(gains, outage_eps);
+
+        for (double db : evenly_spaced(snr_db_min, snr_db_max, n_snr))
+        {
+            double const snr = std::pow(10.0, db / 10.0);
+            double sum_c = 0.0;
+            for (double g : gains) sum_c += std::log1p(snr * g);
+            double const ideal = std::log1p(snr) / ln2;
+            double const ergodic = sum_c / n / ln2;
+            m.snr_db.push_back(db);
+            m.capacity_ideal.push_back(ideal);
+            m.capacity_ergodic.push_back(ergodic);
+            // C is monotone in eta, so the eps-quantile of C is C of the eps-quantile of eta
+            m.capacity_outage.push_back(std::log1p(snr * m.eta_outage) / ln2);
+            m.capacity_efficiency.push_back(ergodic / ideal);
+        }
+        return m;
+    }
+} // namespace
+
+// ---- end capacity
 
 int main(int argc, char* argv[])
 {
@@ -222,9 +297,26 @@ int main(int argc, char* argv[])
     }
     std::println("\033[2K\r");
 
-    assert(gains.size() == params.n_points);
+    assert(gains.size() == params.n_samples);
 
-    std::println("Pass 4: Computing Service CCDF");
+    std::println("Pass 4: Computing Service Capacity Metrics");
+    std::cout << std::flush;
+
+    // gains are G / G_max = eta of the codeword that is selected for each receiver position (see main notes)
+    auto const capacity = calc_capacity_metrics(gains, params.n_snr_points, params.snr_db_min, params.snr_db_max, params.outage_epsilon);
+    std::println("Service capacity (eps={}):", params.outage_epsilon);
+    std::println("  mean eta={:.6f} ({:.3f} dB)", capacity.mean_eta, capacity.mean_eta_db);
+    std::println("  high-SNR capacity loss={:.4f} bit/s/Hz ({:.4g} % of the samples clipped at {:g})", capacity.delta_c_inf, 100.0 * capacity.clipped_fraction, ETA_FLOOR);
+    std::println("  outage eta={:.6f} ({:.3f} dB)", capacity.eta_outage, 10.0 * std::log10(capacity.eta_outage));
+    for (std::size_t i : {std::size_t{0}, capacity.snr_db.size() / 2, capacity.snr_db.size() - 1})
+        std::println("  SNR_0={:6.1f} dB: ideal={:.3f} ergodic={:.3f} outage={:.3f} efficiency={:.4f}",
+            capacity.snr_db[i],
+            capacity.capacity_ideal[i],
+            capacity.capacity_ergodic[i],
+            capacity.capacity_outage[i],
+            capacity.capacity_efficiency[i]);
+
+    std::println("Pass 5: Computing Service CCDF");
     std::cout << std::flush;
 
     auto const service_ccdfs = calc_ccdfs(std::move(gains),
@@ -253,6 +345,20 @@ int main(int argc, char* argv[])
         {"service_ccdf_linear_max", params.service_ccdf_linear_max},
         {"service_ccdf_decibel_min", params.service_ccdf_decibel_min},
         {"service_ccdf_decibel_max", params.service_ccdf_decibel_max},
+        {"n_snr_points", params.n_snr_points},
+        {"snr_db_min", params.snr_db_min},
+        {"snr_db_max", params.snr_db_max},
+        {"outage_epsilon", params.outage_epsilon},
+        {"service_mean_eta", capacity.mean_eta},
+        {"service_mean_eta_db", capacity.mean_eta_db},
+        {"service_delta_c_inf", capacity.delta_c_inf},
+        {"service_delta_c_inf_clipped_fraction", capacity.clipped_fraction},
+        {"service_eta_outage", capacity.eta_outage},
+        {"service_capacity_snr_db", capacity.snr_db},
+        {"service_capacity_ideal", capacity.capacity_ideal},
+        {"service_capacity_ergodic", capacity.capacity_ergodic},
+        {"service_capacity_outage", capacity.capacity_outage},
+        {"service_capacity_efficiency", capacity.capacity_efficiency},
         {"sector_gain_min", sector_ccdfs.gain_min},
         {"sector_gain_max", sector_ccdfs.gain_max},
         {"sector_coverage", sector_ccdfs.coverage},
