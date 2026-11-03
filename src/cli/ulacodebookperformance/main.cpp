@@ -162,7 +162,6 @@ int main(int argc, char* argv[])
     params.print();
 
     auto codebook = codebooks::UlaFtCodebook(params.path_codebook);
-    auto const wavelength = codebook.wavelength();
     std::println("UlaFtCodebook");
     std::println("  description: {}", codebook.description());
     std::println("  n_elements: {}", codebook.n_elements());
@@ -182,7 +181,7 @@ int main(int argc, char* argv[])
                 {
                     .type = Radiator::Type::IsotropicRadiator,
                 },
-            .parameters = RadiatorArray::UniformLinearParameters{.spacing = 0.5 * wavelength, .size = codebook.n_elements()} //
+            .parameters = RadiatorArray::UniformLinearParameters{.spacing = 0.5 * params.wavelength, .size = codebook.n_elements()} //
         }),
         Radiator::create({
             .type = Radiator::Type::IsotropicRadiator,
@@ -208,7 +207,7 @@ int main(int argc, char* argv[])
             ) //
     };
     antenna::rebind_origin_pointers(antennas, references);
-    setup::SimParams sim_params{.system_wavelength = wavelength, .enable_path_loss = params.enable_path_loss};
+    setup::SimParams sim_params{.system_wavelength = codebook.wavelength(), .enable_path_loss = params.enable_path_loss};
     Reference& ref_rx = references[1];
 
     // three::export_context(ctx, sim_params.system_wavelength, params.path_objects);
@@ -219,10 +218,10 @@ int main(int argc, char* argv[])
     auto const gain_at = [&](Pos const& pos, double tas, double trs)
     {
         ref_rx.pos = pos; // update receiver location
-        auto voltage_gain = antenna::calc_voltage_gain(tx, rx, wavelength, codebook.get_vector(tas, trs), {1}, sim_params);
+        auto voltage_gain = antenna::calc_voltage_gain(tx, rx, params.wavelength, codebook.get_vector(tas, trs), {1}, sim_params);
         if (params.enable_path_loss)
         {
-            auto gain_norm = antenna::calc_voltage_gain(tx_norm, rx, wavelength, {1}, {1}, sim_params);
+            auto gain_norm = antenna::calc_voltage_gain(tx_norm, rx, params.wavelength, {1}, {1}, sim_params);
             voltage_gain /= gain_norm;
         }
         return math::square(std::abs(voltage_gain)) / n_elements;
@@ -243,7 +242,7 @@ int main(int argc, char* argv[])
             if (not(std::abs(tas) <= 1.0 and trs > 0.0)) throw SimulationError("sector center {} (tas={}, trs={}) is outside of the TTS", i, tas, trs);
 
             // TTS -> Cartesian, same mapping as TTSSpace: r = lambda_0 / trs, cos(polar) = tas
-            double const r = wavelength / trs;
+            double const r = params.wavelength / trs;
             sector_gains.push_back(gain_at(Pos{r * tas, r * std::sqrt(1.0 - tas * tas), 0.0}, tas, trs));
         }
         assert(sector_gains.size() == codebook.n_sectors());
@@ -267,7 +266,7 @@ int main(int argc, char* argv[])
     std::println("Pass 3: Running Service Simulation");
     std::cout << std::flush;
 
-    RandomSpace rs = PolarNearFieldSpace::create(codebook.n_elements(), wavelength, codebook.amplitude_ratio());
+    RandomSpace rs = PolarNearFieldSpace::create(codebook.n_elements(), params.wavelength, codebook.amplitude_ratio());
 
     std::vector<double> gains;
     gains.reserve(params.n_samples);
@@ -286,11 +285,11 @@ int main(int argc, char* argv[])
         {
             auto [cart_pos, polar_pos] = rs.visit([](auto& space) -> std::pair<Pos, PolarPos> { return space.random_pos(); });
 
-            double gain = gain_at(cart_pos, std::cos(polar_pos.polar), wavelength / polar_pos.r);
+            double gain = gain_at(cart_pos, std::cos(polar_pos.polar), params.wavelength / polar_pos.r);
             if (gain < service_gain_min)
             {
                 service_gain_min = gain;
-                pos_gain_min = {polar_pos.r / wavelength, polar_pos.polar};
+                pos_gain_min = {polar_pos.r / params.wavelength, polar_pos.polar};
             }
             gains.push_back(gain);
         }
@@ -333,6 +332,7 @@ int main(int argc, char* argv[])
 
     // ---- result: the keys are the fields of CodebookPerformanceResult (codebook.py)
     ojson const result = {
+        {"wavelength", params.wavelength},
         {"enable_path_loss", params.enable_path_loss},
         {"n_samples", params.n_samples},
         {"n_sector_points", params.n_sector_points},
