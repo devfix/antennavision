@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
     std::println("  wavelength: {:.03f} mm", codebook.wavelength() * 1e3);
     std::println("  relative_spacing: {:.03f}", codebook.relative_spacing());
     std::println("  power_ratio: {:.03f}", codebook.power_ratio());
-    std::println("  amplitude_ratio: {:.06f}", codebook.amplitude_ratio());
+    std::println("  rmin_rel: {:.06f}", codebook.r_min_rel());
     std::println("  n_sectors: {}", codebook.n_sectors());
 
     std::array<Antenna, 3> antennas = {
@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
     std::println("Pass 3: Running Service Simulation");
     std::cout << std::flush;
 
-    RandomSpace rs = PolarNearFieldSpace::create(codebook.n_elements(), params.wavelength, codebook.amplitude_ratio());
+    RandomSpace rs = PolarNearFieldSpace::create(codebook.n_elements(), params.wavelength, codebook.r_min_rel(), codebook.power_ratio(), codebook.relative_spacing());
 
     std::vector<double> gains;
     gains.reserve(params.n_samples);

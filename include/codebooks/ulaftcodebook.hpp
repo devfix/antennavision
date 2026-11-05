@@ -20,7 +20,7 @@ namespace antennavision::codebooks
     ///
     /// JSON layout (all keys are required, unknown keys are ignored):
     ///   { "description": <text>, "n_elements": <N>, "wavelength": <design wavelength in m>,
-    ///     "relative_spacing": <d / wavelength>, "power_ratio": <rho>, "amplitude_ratio": <kappa0>,
+    ///     "relative_spacing": <d / wavelength>, "power_ratio": <rho>, "rmin_rel": <xi>,
     ///     "n_sectors": <number of vectors>,
     ///     "weights": [ [ tas, [ [ trs, [ [re, im], ... N elements ... ] ], ... ] ], ... ] }
     ///
@@ -47,7 +47,7 @@ namespace antennavision::codebooks
         [[nodiscard]] double wavelength() const override; /// design wavelength in m
         [[nodiscard]] double relative_spacing() const; /// ULA element spacing divided by the design wavelength
         [[nodiscard]] double power_ratio() const; /// cut-off power ratio rho the codebook was designed for
-        [[nodiscard]] double amplitude_ratio() const; /// amplitude ratio kappa0 of the uniform-power distance
+        [[nodiscard]] double r_min_rel() const; /// minimal distance of the codebook relative to the aperture length D_A = (N - 1) * d
         [[nodiscard]] std::size_t n_sectors() const override; /// total number of sectors, equals the number of vectors
 
         [[nodiscard]] std::size_t column_count() const; /// number of transverse positions
@@ -67,9 +67,9 @@ namespace antennavision::codebooks
         std::string description_;
         std::size_t n_elements_ = 0;
         double wavelength_ = 0;
-        double relative_spacing_ = 0;
+        double d_rel_ = 0;
         double power_ratio_ = 0;
-        double amplitude_ratio_ = 0;
+        double r_min_rel_ = 0;
         std::size_t n_sectors_ = 0;
 
         // the weights of the Python class, flattened for fast lookup

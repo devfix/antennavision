@@ -16,8 +16,8 @@ struct AppParams
     double wavelength{};
     bool enable_path_loss = false;
     std::size_t n_samples = 100'000;
-    std::size_t n_sector_points = 50;
-    std::size_t n_service_points = 100;
+    std::size_t n_sector_points = 201;
+    std::size_t n_service_points = 401;
     double sector_ccdf_linear_min = 0.5;
     double sector_ccdf_linear_max= 1.0;
     double sector_ccdf_decibel_min = -3.0;

@@ -35,9 +35,9 @@ namespace antennavision::codebooks
         description_ = doc.at("description").get<std::string>();
         n_elements_ = doc.at("n_elements").get<std::size_t>();
         wavelength_ = doc.at("wavelength").get<double>();
-        relative_spacing_ = doc.at("relative_spacing").get<double>();
+        d_rel_ = doc.at("d_rel").get<double>();
         power_ratio_ = doc.at("power_ratio").get<double>();
-        amplitude_ratio_ = doc.at("amplitude_ratio").get<double>();
+        r_min_rel_ = doc.at("r_min_rel").get<double>();
         n_sectors_ = doc.at("n_sectors").get<std::size_t>();
 
         if (n_elements_ == 0) throw std::runtime_error("UlaFtCodebook: n_elements must be positive");
@@ -79,11 +79,11 @@ namespace antennavision::codebooks
 
     double UlaFtCodebook::wavelength() const { return wavelength_; }
 
-    double UlaFtCodebook::relative_spacing() const { return relative_spacing_; }
+    double UlaFtCodebook::relative_spacing() const { return d_rel_; }
 
     double UlaFtCodebook::power_ratio() const { return power_ratio_; }
 
-    double UlaFtCodebook::amplitude_ratio() const { return amplitude_ratio_; }
+    double UlaFtCodebook::r_min_rel() const { return r_min_rel_; }
 
     std::size_t UlaFtCodebook::n_sectors() const { return n_sectors_; }
 
